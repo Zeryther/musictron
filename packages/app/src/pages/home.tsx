@@ -54,7 +54,7 @@ export function HomePage() {
             <h2 className="text-[20px] font-semibold tracking-tight mb-4">
               Recently Played
             </h2>
-            <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
+            <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
               {recentlyPlayed.map((item: MusicKit.Resource) => (
                 <MediaCard
                   key={item.id}
@@ -98,7 +98,7 @@ export function HomePage() {
                   </p>
                 )}
               </div>
-              <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
+              <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
                 {items.slice(0, 8).map((item: MusicKit.Resource) => (
                   <MediaCard
                     key={item.id}
@@ -178,7 +178,7 @@ export function HomePage() {
                 See All <ChevronRight className="w-3.5 h-3.5" />
               </Button>
             </div>
-            <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
+            <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
               {topAlbums.slice(0, 8).map((album: MusicKit.Resource) => (
                 <MediaCard
                   key={album.id}
@@ -200,7 +200,7 @@ export function HomePage() {
             <h2 className="text-[20px] font-semibold tracking-tight mb-4">
               Featured Playlists
             </h2>
-            <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
+            <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
               {topPlaylists.slice(0, 8).map((playlist: MusicKit.Resource) => (
                 <MediaCard
                   key={playlist.id}

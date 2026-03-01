@@ -229,7 +229,7 @@ export function SearchPage() {
               <h2 className="text-[17px] font-semibold tracking-tight mb-3">
                 Artists
               </h2>
-              <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
+              <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
                 {artists.slice(0, 8).map((artist: MusicKit.Resource) => (
                   <div
                     key={artist.id}
