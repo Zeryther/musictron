@@ -18,7 +18,7 @@ import {
   useRenamePlaylist,
 } from '@/hooks/use-playlists'
 import { usePlayerStore } from '@/stores/player-store'
-import { formatArtworkUrl, formatDuration } from '@/lib/utils'
+import { formatArtworkUrl, formatDuration, extractAlbumIdFromUrl } from '@/lib/utils'
 import {
   Play,
   Shuffle,
@@ -229,6 +229,7 @@ export function PlaylistDetailPage() {
             name={track.attributes?.name}
             artistName={track.attributes?.artistName}
             albumName={track.attributes?.albumName}
+            albumId={extractAlbumIdFromUrl(track.attributes?.url as string | undefined)}
             artworkUrl={track.attributes?.artwork?.url}
             duration={track.attributes?.durationInMillis || 0}
             isActive={nowPlaying?.id === track.id}

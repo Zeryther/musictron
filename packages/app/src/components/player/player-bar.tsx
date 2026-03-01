@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { cn, formatTime } from '@/lib/utils'
 import { Artwork } from '@/components/ui/artwork'
 import { Slider } from '@/components/ui/slider'
@@ -39,6 +40,7 @@ export function PlayerBar() {
     toggleQueue,
     setFullscreen,
   } = usePlayerStore()
+  const navigate = useNavigate()
 
   return (
     <div className="h-[84px] border-t border-white/[0.06] surface-glass-heavy flex flex-col shrink-0">
@@ -73,7 +75,19 @@ export function PlayerBar() {
                   {nowPlaying.name}
                 </p>
                 <p className="text-[12px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
-                  {nowPlaying.artistName}
+                  {nowPlaying.artistId ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate(`/artist/${nowPlaying.artistId}`)
+                      }}
+                      className="hover:underline hover:text-foreground transition-colors"
+                    >
+                      {nowPlaying.artistName}
+                    </button>
+                  ) : (
+                    nowPlaying.artistName
+                  )}
                 </p>
               </div>
             </>

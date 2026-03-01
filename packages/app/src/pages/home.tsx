@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { usePlayerStore } from '@/stores/player-store'
 import { useCharts, getChartData } from '@/hooks/use-charts'
 import { useRecommendations, useRecentlyPlayed } from '@/hooks/use-recommendations'
-import { getGreeting } from '@/lib/utils'
+import { getGreeting, extractAlbumIdFromUrl } from '@/lib/utils'
 import { ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -150,6 +150,7 @@ export function HomePage() {
                     name={song.attributes?.name}
                     artistName={song.attributes?.artistName}
                     albumName={song.attributes?.albumName}
+                    albumId={extractAlbumIdFromUrl(song.attributes?.url as string | undefined)}
                     artworkUrl={song.attributes?.artwork?.url}
                     duration={song.attributes?.durationInMillis || 0}
                     onClick={() => {

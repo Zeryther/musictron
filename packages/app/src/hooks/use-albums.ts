@@ -15,11 +15,13 @@ export function useAlbumDetail(albumId: string | undefined) {
         ? `/v1/me/library/albums/${albumId}`
         : `/v1/catalog/{{storefrontId}}/albums/${albumId}`
 
-      const data = await musicAPI(path, { include: 'tracks' })
+      const data = await musicAPI(path, { include: 'tracks,artists' })
       const album = data.data?.[0] ?? null
       const tracks: MusicKit.Resource[] =
         album?.relationships?.tracks?.data || []
-      return { album, tracks }
+      const artists: MusicKit.Resource[] =
+        album?.relationships?.artists?.data || []
+      return { album, tracks, artists }
     },
     enabled: !!albumId,
   })

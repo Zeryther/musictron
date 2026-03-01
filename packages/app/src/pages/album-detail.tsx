@@ -16,6 +16,8 @@ export function AlbumDetailPage() {
   const { data, isLoading: loading } = useAlbumDetail(id)
   const album = data?.album ?? null
   const tracks = data?.tracks ?? []
+  const artists = data?.artists ?? []
+  const primaryArtistId = artists[0]?.id
 
   if (loading) {
     return (
@@ -69,7 +71,16 @@ export function AlbumDetailPage() {
             {attrs?.name}
           </h1>
           <p className="text-[16px] text-muted-foreground mb-1.5">
-            {attrs?.artistName}
+            {primaryArtistId ? (
+              <button
+                onClick={() => navigate(`/artist/${primaryArtistId}`)}
+                className="hover:underline hover:text-foreground transition-colors"
+              >
+                {attrs?.artistName}
+              </button>
+            ) : (
+              attrs?.artistName
+            )}
           </p>
           <div className="flex items-center gap-2 text-[12px] text-muted-foreground/50 mb-5">
             {attrs?.genreNames?.[0] && <span>{attrs.genreNames[0]}</span>}
@@ -122,6 +133,7 @@ export function AlbumDetailPage() {
             id={track.id}
             name={track.attributes?.name}
             artistName={track.attributes?.artistName}
+            artistId={primaryArtistId}
             albumName={attrs?.name}
             artworkUrl={track.attributes?.artwork?.url}
             duration={track.attributes?.durationInMillis || 0}

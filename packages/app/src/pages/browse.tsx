@@ -5,6 +5,7 @@ import { SongRow } from '@/components/ui/song-row'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useCharts, useGenreCharts, getChartData } from '@/hooks/use-charts'
 import { usePlayerStore } from '@/stores/player-store'
+import { extractAlbumIdFromUrl } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 
 const genres = [
@@ -71,6 +72,7 @@ export function BrowsePage() {
                         name={song.attributes?.name}
                         artistName={song.attributes?.artistName}
                         albumName={song.attributes?.albumName}
+                        albumId={extractAlbumIdFromUrl(song.attributes?.url as string | undefined)}
                         artworkUrl={song.attributes?.artwork?.url}
                         duration={song.attributes?.durationInMillis || 0}
                         onClick={() => {
@@ -179,6 +181,7 @@ export function BrowsePage() {
                                   name={song.attributes?.name}
                                   artistName={song.attributes?.artistName}
                                   albumName={song.attributes?.albumName}
+                                  albumId={extractAlbumIdFromUrl(song.attributes?.url as string | undefined)}
                                   artworkUrl={song.attributes?.artwork?.url}
                                   duration={
                                     song.attributes?.durationInMillis || 0

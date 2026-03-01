@@ -43,3 +43,15 @@ export function getGreeting(): string {
   if (hour < 17) return 'Good Afternoon'
   return 'Good Evening'
 }
+
+/**
+ * Extract the catalog album ID from an Apple Music song URL.
+ * URL format: https://music.apple.com/{storefront}/album/{slug}/{albumId}?i={songId}
+ */
+export function extractAlbumIdFromUrl(
+  url: string | undefined,
+): string | undefined {
+  if (!url) return undefined
+  const match = url.match(/\/album\/[^/]+\/(\d+)/)
+  return match?.[1]
+}

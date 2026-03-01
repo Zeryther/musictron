@@ -6,7 +6,7 @@ import { SongRow } from '@/components/ui/song-row'
 import { Artwork } from '@/components/ui/artwork'
 import { useSearch, useSearchHints } from '@/hooks/use-search'
 import { usePlayerStore } from '@/stores/player-store'
-import { formatArtworkUrl } from '@/lib/utils'
+import { formatArtworkUrl, extractAlbumIdFromUrl } from '@/lib/utils'
 import { Search as SearchIcon, Loader2, X } from 'lucide-react'
 
 export function SearchPage() {
@@ -209,6 +209,7 @@ export function SearchPage() {
                         id={song.id}
                         name={song.attributes?.name}
                         artistName={song.attributes?.artistName}
+                        albumId={extractAlbumIdFromUrl(song.attributes?.url as string | undefined)}
                         artworkUrl={song.attributes?.artwork?.url}
                         duration={song.attributes?.durationInMillis || 0}
                         showAlbum={false}

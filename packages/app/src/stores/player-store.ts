@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { getMusicKitInstance } from '@/lib/musickit'
+import { getMusicKitInstance, musicAPI } from '@/lib/musickit'
 import { formatArtworkUrl } from '@/lib/utils'
 
 export interface NowPlayingItem {
@@ -9,6 +9,8 @@ export interface NowPlayingItem {
   albumName: string
   artworkUrl: string
   duration: number
+  artistId?: string
+  albumId?: string
   artworkColors?: {
     bg: string
     text1: string
@@ -237,6 +239,14 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
 
     const item = mk.nowPlayingItem
     if (item) {
+      // Parse album ID from the Apple Music URL if available.
+      // URLs look like: https://music.apple.com/us/album/{slug}/{albumId}?i={songId}
+      let albumId: string | undefined
+      if (item.attributes.url) {
+        const match = item.attributes.url.match(/\/album\/[^/]+\/(\d+)/)
+        if (match) albumId = match[1]
+      }
+
       const nowPlaying: NowPlayingItem = {
         id: item.id,
         name: item.attributes.name,
@@ -244,6 +254,7 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
         albumName: item.attributes.albumName,
         artworkUrl: formatArtworkUrl(item.attributes.artwork?.url, 600),
         duration: (item.attributes.durationInMillis || 0) / 1000,
+        albumId,
         artworkColors: item.attributes.artwork
           ? {
               bg: `#${item.attributes.artwork.bgColor || '1a1a1a'}`,
@@ -253,6 +264,28 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
           : undefined,
       }
       set({ nowPlaying })
+
+      // Resolve artist ID asynchronously via the catalog API.
+      // This is a lightweight call that runs in the background.
+      const songCatalogId = item.attributes.playParams?.catalogId || item.id
+      musicAPI(`/v1/catalog/{{storefrontId}}/songs/${songCatalogId}`, {
+        'fields[songs]': 'artistUrl',
+        relate: 'artists',
+        'fields[artists]': 'name',
+      })
+        .then((data) => {
+          const artistEntry = data.data?.[0]?.relationships?.artists?.data?.[0]
+          if (artistEntry?.id) {
+            const current = get().nowPlaying
+            // Only update if we're still on the same track
+            if (current?.id === item.id) {
+              set({ nowPlaying: { ...current, artistId: artistEntry.id } })
+            }
+          }
+        })
+        .catch(() => {
+          // Non-critical — artist link just won't be available
+        })
     }
 
     // Sync queue

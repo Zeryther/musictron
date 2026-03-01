@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { cn, formatTime } from '@/lib/utils'
 import { Artwork } from '@/components/ui/artwork'
 import { Slider } from '@/components/ui/slider'
@@ -37,6 +38,8 @@ export function FullscreenPlayer() {
     setFullscreen,
     toggleQueue,
   } = usePlayerStore()
+
+  const navigate = useNavigate()
 
   if (!nowPlaying) return null
 
@@ -87,11 +90,35 @@ export function FullscreenPlayer() {
           {nowPlaying.name}
         </h2>
         <p className="text-[16px] text-white/50 font-medium">
-          {nowPlaying.artistName}
+          {nowPlaying.artistId ? (
+            <button
+              onClick={() => {
+                setFullscreen(false)
+                navigate(`/artist/${nowPlaying.artistId}`)
+              }}
+              className="hover:underline hover:text-white/70 transition-colors"
+            >
+              {nowPlaying.artistName}
+            </button>
+          ) : (
+            nowPlaying.artistName
+          )}
         </p>
         {nowPlaying.albumName && (
           <p className="text-[13px] text-white/30 mt-1">
-            {nowPlaying.albumName}
+            {nowPlaying.albumId ? (
+              <button
+                onClick={() => {
+                  setFullscreen(false)
+                  navigate(`/album/${nowPlaying.albumId}`)
+                }}
+                className="hover:underline hover:text-white/50 transition-colors"
+              >
+                {nowPlaying.albumName}
+              </button>
+            ) : (
+              nowPlaying.albumName
+            )}
           </p>
         )}
       </div>

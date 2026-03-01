@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { formatTime } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Artwork } from '@/components/ui/artwork'
@@ -8,6 +9,7 @@ import { X, Music } from 'lucide-react'
 
 export function QueuePanel() {
   const { queue, queuePosition, nowPlaying, toggleQueue } = usePlayerStore()
+  const navigate = useNavigate()
 
   const upNext = queue.slice(queuePosition + 1)
 
@@ -46,7 +48,16 @@ export function QueuePanel() {
                     {nowPlaying.name}
                   </p>
                   <p className="text-[11px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
-                    {nowPlaying.artistName}
+                    {nowPlaying.artistId ? (
+                      <button
+                        onClick={() => navigate(`/artist/${nowPlaying.artistId}`)}
+                        className="hover:underline hover:text-foreground transition-colors"
+                      >
+                        {nowPlaying.artistName}
+                      </button>
+                    ) : (
+                      nowPlaying.artistName
+                    )}
                   </p>
                 </div>
                 <span className="text-[11px] tabular-nums text-muted-foreground/50">

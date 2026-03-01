@@ -24,6 +24,7 @@ export function ArtistDetailPage() {
 
   const artist = artistData?.artist ?? null
   const albums = artistData?.albums ?? []
+  const catalogArtistId = artistData?.catalogId ?? id
 
   if (loading) {
     return (
@@ -122,6 +123,7 @@ export function ArtistDetailPage() {
                   id={song.id}
                   name={song.attributes?.name}
                   artistName={song.attributes?.artistName}
+                  artistId={catalogArtistId}
                   albumName={song.attributes?.albumName}
                   artworkUrl={song.attributes?.artwork?.url}
                   duration={song.attributes?.durationInMillis || 0}

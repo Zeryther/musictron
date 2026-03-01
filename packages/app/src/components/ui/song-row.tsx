@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { cn, formatArtworkUrl, formatDuration } from '@/lib/utils'
 import { Artwork } from './artwork'
 import {
@@ -22,7 +23,9 @@ interface SongRowProps {
   id: string
   name?: string
   artistName?: string
+  artistId?: string
   albumName?: string
+  albumId?: string
   artworkUrl?: string
   duration: number
   trackNumber?: number
@@ -41,7 +44,9 @@ export function SongRow({
   id,
   name,
   artistName,
+  artistId,
   albumName,
+  albumId,
   artworkUrl,
   duration,
   trackNumber,
@@ -53,6 +58,7 @@ export function SongRow({
   className,
   onClick,
 }: SongRowProps) {
+  const navigate = useNavigate()
   const { playTrack, playNext, addToQueue } = usePlayerStore()
 
   const handlePlay = () => {
@@ -142,7 +148,19 @@ export function SongRow({
           {name}
         </p>
         <p className="text-[12px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
-          {artistName}
+          {artistId ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                navigate(`/artist/${artistId}`)
+              }}
+              className="hover:underline hover:text-foreground transition-colors"
+            >
+              {artistName}
+            </button>
+          ) : (
+            artistName
+          )}
         </p>
       </div>
 
@@ -150,7 +168,19 @@ export function SongRow({
       {showAlbum && albumName && (
         <div className="hidden md:block flex-1 min-w-0 max-w-[200px]">
           <p className="text-[12px] text-muted-foreground/70 line-clamp-1">
-            {albumName}
+            {albumId ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigate(`/album/${albumId}`)
+                }}
+                className="hover:underline hover:text-foreground transition-colors"
+              >
+                {albumName}
+              </button>
+            ) : (
+              albumName
+            )}
           </p>
         </div>
       )}
