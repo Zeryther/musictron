@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/auth-store'
+import { useThemeStore, type Theme } from '@/stores/theme-store'
 import {
   Music2,
   Key,
@@ -14,6 +15,10 @@ import {
   Server,
   Globe,
   RefreshCw,
+  Sun,
+  Moon,
+  Monitor,
+  Palette,
 } from 'lucide-react'
 
 export function SettingsPage() {
@@ -33,6 +38,8 @@ export function SettingsPage() {
     checkServer,
     fetchTokenFromServer,
   } = useAuthStore()
+
+  const { theme, setTheme } = useThemeStore()
 
   const [tokenInput, setTokenInput] = useState(
     tokenSource === 'manual' ? developerToken : '',
@@ -277,6 +284,44 @@ export function SettingsPage() {
                 Sign Out
               </Button>
             )}
+          </div>
+        </div>
+
+        {/* Appearance */}
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+              <Palette className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-[16px] font-semibold">Appearance</h2>
+              <p className="text-[12px] text-muted-foreground/60">
+                Choose how Musictron looks
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2.5">
+            {(
+              [
+                { value: 'light', label: 'Light', icon: Sun },
+                { value: 'dark', label: 'Dark', icon: Moon },
+                { value: 'system', label: 'System', icon: Monitor },
+              ] as const
+            ).map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                onClick={() => setTheme(value as Theme)}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-150 ${
+                  theme === value
+                    ? 'border-primary bg-primary/[0.08] text-foreground'
+                    : 'border-border text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-[13px] font-medium">{label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
