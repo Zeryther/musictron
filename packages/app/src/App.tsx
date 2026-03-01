@@ -15,6 +15,7 @@ import { usePlayerStore } from '@/stores/player-store'
 import { useLibraryStore } from '@/stores/library-store'
 import { initializePlayerEvents } from '@/stores/player-store'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
+import { getPlatformAdapter } from '@/lib/platform'
 
 export default function App() {
   const { initialize, isAuthorized, developerToken } = useAuthStore()
@@ -39,10 +40,11 @@ export default function App() {
     }
   }, [isAuthorized])
 
-  // Listen for media keys from Electron
+  // Listen for media keys from the platform adapter (Electron only)
   useEffect(() => {
-    if (window.electronAPI) {
-      const cleanup = window.electronAPI.onMediaKey((key: string) => {
+    const platform = getPlatformAdapter()
+    if (platform.onMediaKey) {
+      const cleanup = platform.onMediaKey((key: string) => {
         const store = usePlayerStore.getState()
         switch (key) {
           case 'play-pause':
@@ -60,11 +62,12 @@ export default function App() {
     }
   }, [])
 
-  // Update window title with now playing
+  // Update window/document title with now playing
   useEffect(() => {
+    const platform = getPlatformAdapter()
     const unsub = usePlayerStore.subscribe((state) => {
-      if (state.nowPlaying && window.electronAPI) {
-        window.electronAPI.setTitle(
+      if (state.nowPlaying) {
+        platform.setTitle(
           `${state.nowPlaying.name} - ${state.nowPlaying.artistName}`,
         )
       }

@@ -287,7 +287,7 @@ export function SettingsPage() {
               v1.0.0
             </p>
             <p>
-              A beautiful Apple Music client built with Electron, React, and
+              A beautiful Apple Music client built with React and
               MusicKit JS.
             </p>
           </div>

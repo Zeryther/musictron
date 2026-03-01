@@ -38,7 +38,9 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      // Resolve the shared package's internal @/ alias so that Vite can
+      // bundle the source files from packages/app/src directly.
+      '@': path.resolve(__dirname, '../../packages/app/src'),
     },
   },
   css: {

@@ -1,36 +1,39 @@
 import React, { useEffect, useState } from 'react'
 import { Minus, Square, X, Copy } from 'lucide-react'
+import { getPlatformAdapter } from '@/lib/platform'
 
 /**
  * Custom window controls (minimize, maximize/restore, close) for Windows and Linux.
- * On macOS, the native traffic lights are used instead and this component renders nothing.
+ * On macOS the native traffic lights are used; on the web this component is never
+ * rendered (the parent layout guards it).
  */
 export function WindowControls() {
-  const [platform, setPlatform] = useState<string>('linux')
   const [isMaximized, setIsMaximized] = useState(false)
 
   useEffect(() => {
-    window.electronAPI.getPlatform().then(setPlatform)
-    window.electronAPI.windowIsMaximized().then(setIsMaximized)
+    const adapter = getPlatformAdapter()
+    adapter.windowIsMaximized?.().then(setIsMaximized)
 
-    const cleanup = window.electronAPI.onWindowMaximizedChange(setIsMaximized)
+    const cleanup = adapter.onWindowMaximizedChange?.(setIsMaximized)
     return cleanup
   }, [])
 
-  // Don't render on macOS — native traffic lights are used
-  if (platform === 'darwin') return null
+  const adapter = getPlatformAdapter()
+
+  // If the platform adapter doesn't expose window controls, render nothing.
+  if (!adapter.windowMinimize) return null
 
   return (
     <div className="flex items-center no-drag">
       <button
-        onClick={() => window.electronAPI.windowMinimize()}
+        onClick={() => adapter.windowMinimize?.()}
         className="inline-flex items-center justify-center w-[46px] h-8 hover:bg-white/10 transition-colors"
         aria-label="Minimize"
       >
         <Minus className="w-4 h-4 text-foreground/80" />
       </button>
       <button
-        onClick={() => window.electronAPI.windowMaximize()}
+        onClick={() => adapter.windowMaximize?.()}
         className="inline-flex items-center justify-center w-[46px] h-8 hover:bg-white/10 transition-colors"
         aria-label={isMaximized ? 'Restore' : 'Maximize'}
       >
@@ -41,7 +44,7 @@ export function WindowControls() {
         )}
       </button>
       <button
-        onClick={() => window.electronAPI.windowClose()}
+        onClick={() => adapter.windowClose?.()}
         className="inline-flex items-center justify-center w-[46px] h-8 hover:bg-red-500 transition-colors"
         aria-label="Close"
       >

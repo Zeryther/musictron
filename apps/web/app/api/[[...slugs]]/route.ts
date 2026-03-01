@@ -1,4 +1,4 @@
-import { api } from '@/lib/api'
+import { api } from '@web/lib/api'
 
 export const GET = api.handle
 export const POST = api.handle

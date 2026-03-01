@@ -12,16 +12,10 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["../../packages/app/src/*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "src/**/*.d.ts",
-    "../../packages/app/src/**/*",
-    "../../packages/app/src/**/*.d.ts"
-  ]
+  "include": ["src/**/*", "src/**/*.d.ts"]
 }

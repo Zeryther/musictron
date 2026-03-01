@@ -1,11 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { configureMusicKit, getMusicKitInstance } from '@/lib/musickit'
-
-// Default server URL — points to the official Musictron API.
-// Self-hosters can override this in the UI or via env var.
-const DEFAULT_SERVER_URL =
-  import.meta.env.VITE_MUSICTRON_SERVER_URL || 'http://localhost:3000'
+import { getAppConfig } from '@/lib/platform'
 
 interface AuthState {
   isAuthorized: boolean
@@ -31,10 +27,10 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       isAuthorized: false,
       isLoading: true,
-      developerToken: import.meta.env.VITE_MUSICKIT_DEVELOPER_TOKEN || '',
+      developerToken: '',
       musicUserToken: null,
       error: null,
-      serverUrl: DEFAULT_SERVER_URL,
+      serverUrl: '',
       serverConfigured: null,
       tokenSource: 'none',
 
@@ -86,6 +82,18 @@ export const useAuthStore = create<AuthState>()(
 
       initialize: async () => {
         set({ isLoading: true, error: null })
+
+        // Hydrate defaults from AppConfig on first run.
+        // If the store already has persisted values, those take precedence.
+        const config = getAppConfig()
+        const state = get()
+
+        if (!state.serverUrl) {
+          set({ serverUrl: config.serverUrl })
+        }
+        if (!state.developerToken && config.developerToken) {
+          set({ developerToken: config.developerToken })
+        }
 
         let token = get().developerToken
 

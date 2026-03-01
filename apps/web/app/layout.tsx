@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Musictron',
-  description: 'Apple Music client — API server',
+  description: 'Apple Music client',
 }
 
 export default function RootLayout({
@@ -11,7 +11,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
+      <head>
+        <meta name="apple-music-developer-token" content="" />
+        <meta name="apple-music-app-name" content="Musictron" />
+        <meta name="apple-music-app-build" content="1.0.0" />
+      </head>
       <body
         style={{
           margin: 0,

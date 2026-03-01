@@ -7,22 +7,25 @@ import { QueuePanel } from '../player/queue-panel'
 import { FullscreenPlayer } from '../player/fullscreen-player'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { usePlayerStore } from '@/stores/player-store'
+import { getPlatformAdapter } from '@/lib/platform'
 
 export function MainLayout() {
   const isQueueOpen = usePlayerStore((s) => s.isQueueOpen)
   const isFullscreen = usePlayerStore((s) => s.isFullscreen)
-  const [platform, setPlatform] = useState<string>('linux')
+  const [platform, setPlatform] = useState<string>('web')
 
   useEffect(() => {
-    window.electronAPI?.getPlatform().then(setPlatform)
+    getPlatformAdapter().getPlatform().then(setPlatform)
   }, [])
 
+  const isDesktop = platform === 'darwin' || platform === 'win32' || platform === 'linux'
   const isMac = platform === 'darwin'
+  const showTitleBar = isDesktop && !isMac
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden">
-      {/* Windows/Linux: custom title bar with drag region and window controls */}
-      {!isMac && (
+      {/* Windows/Linux desktop: custom title bar with drag region and window controls */}
+      {showTitleBar && (
         <div className="flex items-center justify-between h-8 bg-background/50 border-b border-border/30 drag-region shrink-0">
           <div className="flex items-center gap-2 px-4 no-drag">
             <span className="text-xs font-medium text-muted-foreground">Musictron</span>
