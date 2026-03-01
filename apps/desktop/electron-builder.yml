@@ -1,0 +1,29 @@
+appId: com.musictron.app
+productName: Musictron
+directories:
+  buildResources: build
+  output: release
+files:
+  - dist
+  - dist-electron
+asar: true
+mac:
+  target:
+    - dmg
+    - zip
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  category: public.app-category.music
+win:
+  target:
+    - nsis
+  artifactName: "${productName}-${version}-setup.${ext}"
+linux:
+  target:
+    - AppImage
+    - deb
+  artifactName: "${productName}-${version}.${ext}"
+  category: Audio
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true

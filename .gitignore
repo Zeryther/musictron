@@ -1,0 +1,19 @@
+node_modules/
+dist/
+dist-electron/
+release/
+.turbo/
+*.log
+.DS_Store
+
+# Environment files (may contain developer token)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Apple MusicKit private keys -- NEVER commit these
+*.p8
+
+# TypeScript build info
+*.tsbuildinfo

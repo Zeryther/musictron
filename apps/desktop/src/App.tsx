@@ -1,0 +1,90 @@
+import React, { useEffect } from 'react'
+import { Routes, Route } from 'react-router-dom'
+import { MainLayout } from '@/components/layout/main-layout'
+import { HomePage } from '@/pages/home'
+import { BrowsePage } from '@/pages/browse'
+import { SearchPage } from '@/pages/search'
+import { RadioPage } from '@/pages/radio'
+import { LibraryPage } from '@/pages/library'
+import { AlbumDetailPage } from '@/pages/album-detail'
+import { PlaylistDetailPage } from '@/pages/playlist-detail'
+import { ArtistDetailPage } from '@/pages/artist-detail'
+import { SettingsPage } from '@/pages/settings'
+import { useAuthStore } from '@/stores/auth-store'
+import { usePlayerStore } from '@/stores/player-store'
+import { useLibraryStore } from '@/stores/library-store'
+import { initializePlayerEvents } from '@/stores/player-store'
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
+
+export default function App() {
+  const { initialize, isAuthorized, developerToken } = useAuthStore()
+  const { fetchPlaylists } = useLibraryStore()
+
+  // Set up keyboard shortcuts
+  useKeyboardShortcuts()
+
+  // Initialize MusicKit on load
+  useEffect(() => {
+    if (developerToken) {
+      initialize().then(() => {
+        initializePlayerEvents()
+      })
+    }
+  }, [developerToken])
+
+  // Fetch playlists when authorized
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchPlaylists()
+    }
+  }, [isAuthorized])
+
+  // Listen for media keys from Electron
+  useEffect(() => {
+    if (window.electronAPI) {
+      const cleanup = window.electronAPI.onMediaKey((key: string) => {
+        const store = usePlayerStore.getState()
+        switch (key) {
+          case 'play-pause':
+            store.togglePlayPause()
+            break
+          case 'next':
+            store.skipNext()
+            break
+          case 'previous':
+            store.skipPrevious()
+            break
+        }
+      })
+      return cleanup
+    }
+  }, [])
+
+  // Update window title with now playing
+  useEffect(() => {
+    const unsub = usePlayerStore.subscribe((state) => {
+      if (state.nowPlaying && window.electronAPI) {
+        window.electronAPI.setTitle(
+          `${state.nowPlaying.name} - ${state.nowPlaying.artistName}`,
+        )
+      }
+    })
+    return unsub
+  }, [])
+
+  return (
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/browse" element={<BrowsePage />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="/radio" element={<RadioPage />} />
+        <Route path="/library/:section" element={<LibraryPage />} />
+        <Route path="/album/:id" element={<AlbumDetailPage />} />
+        <Route path="/playlist/:id" element={<PlaylistDetailPage />} />
+        <Route path="/artist/:id" element={<ArtistDetailPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Route>
+    </Routes>
+  )
+}

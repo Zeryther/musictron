@@ -1,0 +1,271 @@
+import React, { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Artwork } from '@/components/ui/artwork'
+import { SongRow } from '@/components/ui/song-row'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import { musicAPI } from '@/lib/musickit'
+import { usePlayerStore } from '@/stores/player-store'
+import { useLibraryStore } from '@/stores/library-store'
+import { formatArtworkUrl, formatDuration } from '@/lib/utils'
+import {
+  Play,
+  Shuffle,
+  Loader2,
+  ArrowLeft,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+
+export function PlaylistDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const { playPlaylist, playSongs, nowPlaying, isPlaying } = usePlayerStore()
+  const { deletePlaylist, renamePlaylist } = useLibraryStore()
+  const [playlist, setPlaylist] = useState<any>(null)
+  const [tracks, setTracks] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editName, setEditName] = useState('')
+
+  useEffect(() => {
+    if (!id) return
+
+    async function fetchPlaylist() {
+      setLoading(true)
+      try {
+        const isLibrary = id!.startsWith('p.')
+        const path = isLibrary
+          ? `/v1/me/library/playlists/${id}`
+          : `/v1/catalog/us/playlists/${id}`
+
+        const data = await musicAPI(path, {
+          include: 'tracks',
+          'include[library-playlists]': 'tracks',
+        })
+        const playlistData = data.data?.[0]
+        setPlaylist(playlistData)
+        setTracks(playlistData?.relationships?.tracks?.data || [])
+      } catch (error) {
+        console.error('Failed to fetch playlist:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPlaylist()
+  }, [id])
+
+  const handleRename = async () => {
+    if (!id || !editName.trim()) return
+    await renamePlaylist(id, editName.trim())
+    setPlaylist((prev: any) => ({
+      ...prev,
+      attributes: { ...prev?.attributes, name: editName.trim() },
+    }))
+    setEditDialogOpen(false)
+  }
+
+  const handleDelete = async () => {
+    if (!id) return
+    await deletePlaylist(id)
+    navigate('/library/playlists')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (!playlist) {
+    return (
+      <div className="text-center py-20 text-muted-foreground">
+        Playlist not found
+      </div>
+    )
+  }
+
+  const attrs = playlist.attributes
+  const isLibrary = id?.startsWith('p.')
+  const artworkUrl = formatArtworkUrl(attrs?.artwork?.url, 600)
+  const totalDuration = tracks.reduce(
+    (acc: number, t: any) => acc + (t.attributes?.durationInMillis || 0),
+    0,
+  )
+
+  return (
+    <div className="animate-fade-in">
+      {/* Back button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back
+      </button>
+
+      {/* Playlist header */}
+      <div className="flex gap-8 mb-8">
+        <Artwork
+          src={artworkUrl}
+          alt={attrs?.name}
+          size={240}
+          rounded="lg"
+          shadow
+        />
+        <div className="flex flex-col justify-end min-w-0">
+          <p className="text-sm text-muted-foreground uppercase tracking-wider font-medium mb-1">
+            Playlist
+          </p>
+          <h1 className="text-3xl font-bold mb-1 line-clamp-2">
+            {attrs?.name}
+          </h1>
+          {attrs?.curatorName && (
+            <p className="text-lg text-muted-foreground mb-1">
+              {attrs.curatorName}
+            </p>
+          )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+            <span>
+              {tracks.length} songs
+              {totalDuration > 0 && `, ${formatDuration(totalDuration)}`}
+            </span>
+          </div>
+
+          {attrs?.description?.short && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4 max-w-md">
+              {attrs.description.short}
+            </p>
+          )}
+
+          <div className="flex gap-3">
+            <Button
+              onClick={() => id && playPlaylist(id)}
+              className="gap-2"
+            >
+              <Play className="w-4 h-4" fill="currentColor" />
+              Play
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (tracks.length > 0) {
+                  const ids = tracks.map((t: any) => t.id)
+                  const shuffled = [...ids].sort(() => Math.random() - 0.5)
+                  playSongs(shuffled)
+                }
+              }}
+              className="gap-2"
+            >
+              <Shuffle className="w-4 h-4" />
+              Shuffle
+            </Button>
+
+            {/* Edit menu for library playlists */}
+            {isLibrary && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setEditName(attrs?.name || '')
+                      setEditDialogOpen(true)
+                    }}
+                  >
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Playlist
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Track list */}
+      <div className="space-y-0.5">
+        {tracks.map((track: any, idx: number) => (
+          <SongRow
+            key={track.id}
+            id={track.id}
+            name={track.attributes?.name}
+            artistName={track.attributes?.artistName}
+            albumName={track.attributes?.albumName}
+            artworkUrl={track.attributes?.artwork?.url}
+            duration={track.attributes?.durationInMillis || 0}
+            isActive={nowPlaying?.id === track.id}
+            isPlaying={nowPlaying?.id === track.id && isPlaying}
+            onClick={() => {
+              const ids = tracks.map((t: any) => t.id)
+              playSongs(ids, idx)
+            }}
+          />
+        ))}
+      </div>
+
+      {tracks.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">
+          <p className="text-lg">This playlist is empty</p>
+          <p className="text-sm mt-1">Search for songs to add</p>
+        </div>
+      )}
+
+      {/* Edit dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Playlist</DialogTitle>
+            <DialogDescription>
+              Enter a new name for your playlist.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="Playlist name"
+            onKeyDown={(e) => e.key === 'Enter' && handleRename()}
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleRename}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
