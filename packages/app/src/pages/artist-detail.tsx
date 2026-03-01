@@ -11,7 +11,7 @@ import {
 } from '@/hooks/use-artists'
 import { usePlayerStore } from '@/stores/player-store'
 import { formatArtworkUrl } from '@/lib/utils'
-import { Play, Shuffle, Loader2, ArrowLeft } from 'lucide-react'
+import { Play, Shuffle, Loader2 } from 'lucide-react'
 
 export function ArtistDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -46,15 +46,6 @@ export function ArtistDetailPage() {
 
   return (
     <div className="animate-fade-in">
-      {/* Back */}
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-[13px] text-muted-foreground/50 hover:text-foreground transition-colors duration-100 mb-5"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </button>
-
       {/* Artist header with gradient */}
       <div className="relative mb-10 -mx-8 -mt-6 px-8 pt-6">
         <div
