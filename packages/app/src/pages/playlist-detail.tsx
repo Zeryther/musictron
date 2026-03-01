@@ -89,15 +89,15 @@ export function PlaylistDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
       </div>
     )
   }
 
   if (!playlist) {
     return (
-      <div className="text-center py-20 text-muted-foreground">
+      <div className="text-center py-24 text-muted-foreground/50 text-[15px]">
         Playlist not found
       </div>
     )
@@ -113,37 +113,37 @@ export function PlaylistDetailPage() {
 
   return (
     <div className="animate-fade-in">
-      {/* Back button */}
+      {/* Back */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+        className="flex items-center gap-1 text-[13px] text-muted-foreground/50 hover:text-foreground transition-colors duration-100 mb-5"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
       </button>
 
-      {/* Playlist header */}
+      {/* Header */}
       <div className="flex gap-8 mb-8">
         <Artwork
           src={artworkUrl}
           alt={attrs?.name}
-          size={240}
+          size={232}
           rounded="lg"
           shadow
         />
         <div className="flex flex-col justify-end min-w-0">
-          <p className="text-sm text-muted-foreground uppercase tracking-wider font-medium mb-1">
+          <p className="text-[11px] text-muted-foreground/40 uppercase tracking-widest font-semibold mb-1.5">
             Playlist
           </p>
-          <h1 className="text-3xl font-bold mb-1 line-clamp-2">
+          <h1 className="text-[28px] font-bold tracking-tight mb-1 line-clamp-2 leading-tight">
             {attrs?.name}
           </h1>
           {attrs?.curatorName && (
-            <p className="text-lg text-muted-foreground mb-1">
+            <p className="text-[16px] text-muted-foreground mb-1.5">
               {attrs.curatorName}
             </p>
           )}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <div className="flex items-center gap-2 text-[12px] text-muted-foreground/50 mb-5">
             <span>
               {tracks.length} songs
               {totalDuration > 0 && `, ${formatDuration(totalDuration)}`}
@@ -151,12 +151,12 @@ export function PlaylistDetailPage() {
           </div>
 
           {attrs?.description?.short && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-4 max-w-md">
+            <p className="text-[13px] text-muted-foreground/60 line-clamp-2 mb-5 max-w-md leading-relaxed">
               {attrs.description.short}
             </p>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex gap-2.5">
             <Button
               onClick={() => id && playPlaylist(id)}
               className="gap-2"
@@ -179,7 +179,6 @@ export function PlaylistDetailPage() {
               Shuffle
             </Button>
 
-            {/* Edit menu for library playlists */}
             {isLibrary && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -212,8 +211,8 @@ export function PlaylistDetailPage() {
         </div>
       </div>
 
-      {/* Track list */}
-      <div className="space-y-0.5">
+      {/* Tracks */}
+      <div className="space-y-px">
         {tracks.map((track: any, idx: number) => (
           <SongRow
             key={track.id}
@@ -234,9 +233,9 @@ export function PlaylistDetailPage() {
       </div>
 
       {tracks.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground">
-          <p className="text-lg">This playlist is empty</p>
-          <p className="text-sm mt-1">Search for songs to add</p>
+        <div className="text-center py-20 text-muted-foreground/40">
+          <p className="text-[15px]">This playlist is empty</p>
+          <p className="text-[13px] mt-0.5">Search for songs to add</p>
         </div>
       )}
 

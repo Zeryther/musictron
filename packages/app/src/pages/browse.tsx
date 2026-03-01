@@ -81,10 +81,8 @@ export function BrowsePage() {
   const topPlaylists = charts?.results?.playlists?.[0]?.data || []
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="pt-2">
-        <h1 className="text-3xl font-bold">Browse</h1>
-      </div>
+    <div className="animate-fade-in">
+      <h1 className="text-[28px] font-bold tracking-tight mb-6">Browse</h1>
 
       <Tabs defaultValue="charts" className="space-y-6">
         <TabsList>
@@ -94,87 +92,95 @@ export function BrowsePage() {
 
         <TabsContent value="charts">
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-24">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
             </div>
           ) : (
             <div className="space-y-10">
-              {/* Top Songs */}
-              <section>
-                <h2 className="text-xl font-semibold mb-4">Top Songs</h2>
-                <div className="space-y-0.5">
-                  {topSongs.map((song: any, idx: number) => (
-                    <SongRow
-                      key={song.id}
-                      id={song.id}
-                      name={song.attributes?.name}
-                      artistName={song.attributes?.artistName}
-                      albumName={song.attributes?.albumName}
-                      artworkUrl={song.attributes?.artwork?.url}
-                      duration={song.attributes?.durationInMillis || 0}
-                      onClick={() => {
-                        const ids = topSongs.map((s: any) => s.id)
-                        playSongs(ids, idx)
-                      }}
-                    />
-                  ))}
-                </div>
-              </section>
+              {topSongs.length > 0 && (
+                <section className="animate-fade-in-up stagger-1">
+                  <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+                    Top Songs
+                  </h2>
+                  <div className="space-y-px">
+                    {topSongs.map((song: any, idx: number) => (
+                      <SongRow
+                        key={song.id}
+                        id={song.id}
+                        name={song.attributes?.name}
+                        artistName={song.attributes?.artistName}
+                        albumName={song.attributes?.albumName}
+                        artworkUrl={song.attributes?.artwork?.url}
+                        duration={song.attributes?.durationInMillis || 0}
+                        onClick={() => {
+                          const ids = topSongs.map((s: any) => s.id)
+                          playSongs(ids, idx)
+                        }}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-              {/* Top Albums */}
-              <section>
-                <h2 className="text-xl font-semibold mb-4">Top Albums</h2>
-                <div className="flex flex-wrap gap-4">
-                  {topAlbums.map((album: any) => (
-                    <MediaCard
-                      key={album.id}
-                      id={album.id}
-                      type="album"
-                      name={album.attributes?.name}
-                      subtitle={album.attributes?.artistName}
-                      artworkUrl={album.attributes?.artwork?.url}
-                      onClick={() => navigate(`/album/${album.id}`)}
-                    />
-                  ))}
-                </div>
-              </section>
+              {topAlbums.length > 0 && (
+                <section className="animate-fade-in-up stagger-2">
+                  <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+                    Top Albums
+                  </h2>
+                  <div className="flex flex-wrap gap-5">
+                    {topAlbums.map((album: any) => (
+                      <MediaCard
+                        key={album.id}
+                        id={album.id}
+                        type="album"
+                        name={album.attributes?.name}
+                        subtitle={album.attributes?.artistName}
+                        artworkUrl={album.attributes?.artwork?.url}
+                        onClick={() => navigate(`/album/${album.id}`)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-              {/* Top Playlists */}
-              <section>
-                <h2 className="text-xl font-semibold mb-4">Top Playlists</h2>
-                <div className="flex flex-wrap gap-4">
-                  {topPlaylists.map((playlist: any) => (
-                    <MediaCard
-                      key={playlist.id}
-                      id={playlist.id}
-                      type="playlist"
-                      name={playlist.attributes?.name}
-                      subtitle={playlist.attributes?.curatorName}
-                      artworkUrl={playlist.attributes?.artwork?.url}
-                      onClick={() => navigate(`/playlist/${playlist.id}`)}
-                    />
-                  ))}
-                </div>
-              </section>
+              {topPlaylists.length > 0 && (
+                <section className="animate-fade-in-up stagger-3">
+                  <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+                    Top Playlists
+                  </h2>
+                  <div className="flex flex-wrap gap-5">
+                    {topPlaylists.map((playlist: any) => (
+                      <MediaCard
+                        key={playlist.id}
+                        id={playlist.id}
+                        type="playlist"
+                        name={playlist.attributes?.name}
+                        subtitle={playlist.attributes?.curatorName}
+                        artworkUrl={playlist.attributes?.artwork?.url}
+                        onClick={() => navigate(`/playlist/${playlist.id}`)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="genres">
           <div className="space-y-6">
-            {/* Genre grid */}
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
               {genres.map((genre) => (
                 <button
-                  key={genre.id}
+                  key={genre.id + genre.name}
                   onClick={() =>
                     setSelectedGenre(
                       selectedGenre === genre.id ? null : genre.id,
                     )
                   }
-                  className={`relative p-4 rounded-xl text-white font-semibold text-sm text-left overflow-hidden transition-all hover:scale-[1.02] ${
+                  className={`relative px-4 py-3 rounded-xl text-white font-semibold text-[13px] text-left overflow-hidden transition-all duration-150 hover:brightness-110 active:scale-[0.98] ${
                     selectedGenre === genre.id
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-background'
+                      ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-background scale-[0.98]'
                       : ''
                   }`}
                   style={{ backgroundColor: genre.color }}
@@ -184,21 +190,20 @@ export function BrowsePage() {
               ))}
             </div>
 
-            {/* Genre charts */}
             {selectedGenre && (
-              <div className="space-y-8">
+              <div className="space-y-8 animate-fade-in-up">
                 {loadingGenre ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
                   </div>
                 ) : (
                   <>
                     {genreData?.results?.songs?.[0]?.data?.length > 0 && (
                       <section>
-                        <h3 className="text-lg font-semibold mb-3">
+                        <h3 className="text-[17px] font-semibold tracking-tight mb-3">
                           Top Songs
                         </h3>
-                        <div className="space-y-0.5">
+                        <div className="space-y-px">
                           {genreData.results.songs[0].data
                             .slice(0, 15)
                             .map((song: any, idx: number) => (
@@ -226,10 +231,10 @@ export function BrowsePage() {
                     )}
                     {genreData?.results?.albums?.[0]?.data?.length > 0 && (
                       <section>
-                        <h3 className="text-lg font-semibold mb-3">
+                        <h3 className="text-[17px] font-semibold tracking-tight mb-3">
                           Top Albums
                         </h3>
-                        <div className="flex flex-wrap gap-4">
+                        <div className="flex flex-wrap gap-5">
                           {genreData.results.albums[0].data
                             .slice(0, 10)
                             .map((album: any) => (

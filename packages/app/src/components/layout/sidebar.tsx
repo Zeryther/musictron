@@ -9,7 +9,6 @@ import {
   Library,
   ListMusic,
   Radio,
-  Heart,
   Clock,
   Plus,
   Music2,
@@ -53,40 +52,41 @@ export function Sidebar({ platform }: { platform: string }) {
   }
 
   return (
-    <div className="w-[240px] h-full flex flex-col border-r border-border/50 bg-background/50 backdrop-blur-xl">
-      {/* Drag region / title area — macOS only (Windows/Linux has a top-level title bar) */}
+    <div className="w-[240px] h-full flex flex-col border-r border-white/[0.06] surface-glass-heavy">
+      {/* Drag region / title area */}
       {platform === 'darwin' ? (
-        <div className="h-12 drag-region flex items-center px-4">
+        <div className="h-[52px] drag-region flex items-center px-5 shrink-0">
           <div className="no-drag flex items-center gap-2 ml-16">
-            <Music2 className="w-5 h-5 text-primary" />
-            <span className="font-semibold text-sm">Musictron</span>
+            <Music2 className="w-[18px] h-[18px] text-primary" />
+            <span className="font-semibold text-[13px] tracking-tight">Musictron</span>
           </div>
         </div>
       ) : (
-        <div className="h-10 flex items-center px-4">
+        <div className="h-11 flex items-center px-5 shrink-0">
           <div className="flex items-center gap-2">
-            <Music2 className="w-5 h-5 text-primary" />
-            <span className="font-semibold text-sm">Musictron</span>
+            <Music2 className="w-[18px] h-[18px] text-primary" />
+            <span className="font-semibold text-[13px] tracking-tight">Musictron</span>
           </div>
         </div>
       )}
 
       {/* Main navigation */}
-      <nav className="px-3 py-2 space-y-0.5">
+      <nav className="px-3 py-1 space-y-px">
         {mainNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
+            end={item.to === '/'}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors no-drag',
+                'flex items-center gap-3 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-colors duration-100 no-drag',
                 isActive
-                  ? 'bg-accent text-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+                  ? 'bg-white/[0.08] text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.04]',
               )
             }
           >
-            <item.icon className="w-4 h-4" />
+            <item.icon className="w-[18px] h-[18px]" />
             {item.label}
           </NavLink>
         ))}
@@ -95,40 +95,40 @@ export function Sidebar({ platform }: { platform: string }) {
       {/* Library section */}
       {isAuthorized && (
         <>
-          <div className="px-6 pt-4 pb-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="px-6 pt-5 pb-1.5">
+            <h3 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
               Library
             </h3>
           </div>
-          <nav className="px-3 space-y-0.5">
+          <nav className="px-3 space-y-px">
             {libraryNavItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors no-drag',
+                    'flex items-center gap-3 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-colors duration-100 no-drag',
                     isActive
-                      ? 'bg-accent text-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+                      ? 'bg-white/[0.08] text-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.04]',
                   )
                 }
               >
-                <item.icon className="w-4 h-4" />
+                <item.icon className="w-[18px] h-[18px]" />
                 {item.label}
               </NavLink>
             ))}
           </nav>
 
           {/* Playlists */}
-          <div className="px-3 pt-4 pb-2 flex items-center justify-between">
-            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="px-3 pt-5 pb-1.5 flex items-center justify-between">
+            <h3 className="px-3 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
               Playlists
             </h3>
             <Button
               variant="ghost"
               size="icon-sm"
-              className="no-drag"
+              className="no-drag text-muted-foreground/50 hover:text-foreground"
               onClick={handleCreatePlaylist}
             >
               <Plus className="w-4 h-4" />
@@ -136,14 +136,14 @@ export function Sidebar({ platform }: { platform: string }) {
           </div>
 
           <ScrollArea className="flex-1 px-3">
-            <div className="space-y-0.5 pb-4">
+            <div className="space-y-px pb-4">
               {playlists.map((playlist) => (
                 <button
                   key={playlist.id}
                   onClick={() => navigate(`/playlist/${playlist.id}`)}
-                  className="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors text-left no-drag"
+                  className="w-full flex items-center gap-3 px-3 py-[6px] rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors duration-100 text-left no-drag"
                 >
-                  <ListMusic className="w-4 h-4 flex-shrink-0" />
+                  <ListMusic className="w-[16px] h-[16px] flex-shrink-0 opacity-50" />
                   <span className="line-clamp-1">{playlist.name}</span>
                 </button>
               ))}
@@ -152,15 +152,20 @@ export function Sidebar({ platform }: { platform: string }) {
         </>
       )}
 
+      {/* Spacer when not authorized */}
+      {!isAuthorized && <div className="flex-1" />}
+
       {/* Bottom section */}
-      <div className="p-3 border-t border-border/50">
+      <div className="p-3 border-t border-white/[0.06]">
         {isAuthorized ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors no-drag">
-                <User className="w-4 h-4" />
-                <span className="flex-1 text-left">Account</span>
-                <ChevronDown className="w-3 h-3" />
+              <button className="w-full flex items-center gap-2 px-3 py-[7px] rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors duration-100 no-drag">
+                <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">
+                  <User className="w-3.5 h-3.5" />
+                </div>
+                <span className="flex-1 text-left font-medium">Account</span>
+                <ChevronDown className="w-3 h-3 opacity-40" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" className="w-48">
@@ -178,7 +183,7 @@ export function Sidebar({ platform }: { platform: string }) {
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start no-drag"
+            className="w-full justify-start no-drag text-muted-foreground hover:text-foreground"
             onClick={() => navigate('/settings')}
           >
             <Settings className="w-4 h-4 mr-2" />

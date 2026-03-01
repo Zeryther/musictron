@@ -39,7 +39,6 @@ export function ArtistDetailPage() {
         setAlbums(a?.relationships?.albums?.data || [])
         setTopSongs(songsData?.data || [])
 
-        // Also fetch playlists featuring this artist
         const playlistData = await musicAPI(
           `/v1/catalog/us/artists/${id}/view/featured-playlists`,
           { limit: 10 },
@@ -57,15 +56,15 @@ export function ArtistDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
       </div>
     )
   }
 
   if (!artist) {
     return (
-      <div className="text-center py-20 text-muted-foreground">
+      <div className="text-center py-24 text-muted-foreground/50 text-[15px]">
         Artist not found
       </div>
     )
@@ -73,48 +72,46 @@ export function ArtistDetailPage() {
 
   const attrs = artist.attributes
   const artworkUrl = formatArtworkUrl(attrs?.artwork?.url, 600)
-  const heroUrl = attrs?.editorialArtwork?.superHeroWide?.url
-    ? formatArtworkUrl(attrs.editorialArtwork.superHeroWide.url, 1200)
-    : artworkUrl
 
   return (
     <div className="animate-fade-in">
-      {/* Back button */}
+      {/* Back */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+        className="flex items-center gap-1 text-[13px] text-muted-foreground/50 hover:text-foreground transition-colors duration-100 mb-5"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
       </button>
 
-      {/* Artist header */}
-      <div className="relative mb-8 -mx-6 -mt-6 px-6 pt-6">
-        {/* Background gradient */}
+      {/* Artist header with gradient */}
+      <div className="relative mb-10 -mx-8 -mt-6 px-8 pt-6">
         <div
-          className="absolute inset-0 bg-gradient-to-b from-primary/20 to-transparent rounded-b-3xl"
-          style={{ height: '300px' }}
+          className="absolute inset-0 bg-gradient-to-b from-primary/[0.08] to-transparent"
+          style={{ height: '280px' }}
         />
 
-        <div className="relative flex items-end gap-6 pb-6" style={{ minHeight: '240px' }}>
+        <div className="relative flex items-end gap-7 pb-6" style={{ minHeight: '220px' }}>
           <Artwork
             src={artworkUrl}
             alt={attrs?.name}
-            size={180}
+            size={172}
             rounded="full"
             shadow
           />
-          <div className="min-w-0 pb-2">
-            <p className="text-sm text-muted-foreground uppercase tracking-wider font-medium mb-1">
+          <div className="min-w-0 pb-1">
+            <p className="text-[11px] text-muted-foreground/40 uppercase tracking-widest font-semibold mb-1.5">
               Artist
             </p>
-            <h1 className="text-4xl font-bold mb-3">{attrs?.name}</h1>
+            <h1 className="text-[36px] font-bold tracking-tight leading-tight mb-2">
+              {attrs?.name}
+            </h1>
             {attrs?.genreNames?.length > 0 && (
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-[13px] text-muted-foreground/50 mb-5">
                 {attrs.genreNames.join(', ')}
               </p>
             )}
-            <div className="flex gap-3">
+            <div className="flex gap-2.5">
               <Button
                 onClick={() => {
                   if (topSongs.length > 0) {
@@ -147,9 +144,9 @@ export function ArtistDetailPage() {
 
       {/* Top Songs */}
       {topSongs.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-xl font-semibold mb-4">Top Songs</h2>
-          <div className="space-y-0.5">
+        <section className="mb-10 animate-fade-in-up stagger-1">
+          <h2 className="text-[20px] font-semibold tracking-tight mb-4">Top Songs</h2>
+          <div className="space-y-px">
             {topSongs.slice(0, 10).map((song: any, idx: number) => (
               <SongRow
                 key={song.id}
@@ -171,9 +168,9 @@ export function ArtistDetailPage() {
 
       {/* Albums */}
       {albums.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-xl font-semibold mb-4">Albums</h2>
-          <div className="flex flex-wrap gap-4">
+        <section className="mb-10 animate-fade-in-up stagger-2">
+          <h2 className="text-[20px] font-semibold tracking-tight mb-4">Albums</h2>
+          <div className="flex flex-wrap gap-5">
             {albums.map((album: any) => (
               <MediaCard
                 key={album.id}
@@ -191,9 +188,9 @@ export function ArtistDetailPage() {
 
       {/* Featured Playlists */}
       {playlists.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-xl font-semibold mb-4">Featured Playlists</h2>
-          <div className="flex flex-wrap gap-4">
+        <section className="mb-10 animate-fade-in-up stagger-3">
+          <h2 className="text-[20px] font-semibold tracking-tight mb-4">Featured Playlists</h2>
+          <div className="flex flex-wrap gap-5">
             {playlists.map((playlist: any) => (
               <MediaCard
                 key={playlist.id}

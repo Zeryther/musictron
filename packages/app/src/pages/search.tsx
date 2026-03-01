@@ -7,8 +7,7 @@ import { Artwork } from '@/components/ui/artwork'
 import { musicAPI } from '@/lib/musickit'
 import { usePlayerStore } from '@/stores/player-store'
 import { formatArtworkUrl } from '@/lib/utils'
-import { Search as SearchIcon, Loader2, X, TrendingUp } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Search as SearchIcon, Loader2, X } from 'lucide-react'
 
 export function SearchPage() {
   const navigate = useNavigate()
@@ -33,7 +32,6 @@ export function SearchPage() {
 
     setLoading(true)
     try {
-      // Fetch search hints and results in parallel
       const [searchResults, searchHints] = await Promise.all([
         musicAPI('/v1/catalog/us/search', {
           term,
@@ -77,82 +75,80 @@ export function SearchPage() {
   const hasResults = songs.length > 0 || albums.length > 0 || artists.length > 0 || playlists.length > 0
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="pt-2">
-        <h1 className="text-3xl font-bold mb-4">Search</h1>
+    <div className="animate-fade-in">
+      <h1 className="text-[28px] font-bold tracking-tight mb-5">Search</h1>
 
-        {/* Search input */}
-        <div className="relative max-w-lg">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            ref={inputRef}
-            value={query}
-            onChange={handleInputChange}
-            placeholder="Artists, songs, albums, playlists..."
-            className="pl-9 pr-9 h-10 bg-secondary border-none"
-          />
-          {query && (
-            <button
-              onClick={handleClear}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-            </button>
-          )}
-        </div>
-
-        {/* Search hints */}
-        {hints.length > 0 && (
-          <div className="flex gap-2 mt-3">
-            {hints.map((hint) => (
-              <button
-                key={hint}
-                onClick={() => {
-                  setQuery(hint)
-                  search(hint)
-                }}
-                className="px-3 py-1 rounded-full text-xs bg-secondary hover:bg-secondary/80 text-muted-foreground transition-colors"
-              >
-                {hint}
-              </button>
-            ))}
-          </div>
+      {/* Search input */}
+      <div className="relative max-w-lg mb-2">
+        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+        <Input
+          ref={inputRef}
+          value={query}
+          onChange={handleInputChange}
+          placeholder="Artists, songs, albums, playlists..."
+          className="pl-9 pr-9 h-10 bg-white/[0.06] border-white/[0.06] rounded-xl text-[13px] placeholder:text-muted-foreground/40 focus-visible:ring-primary/30"
+        />
+        {query && (
+          <button
+            onClick={handleClear}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         )}
       </div>
 
+      {/* Search hints */}
+      {hints.length > 0 && (
+        <div className="flex gap-1.5 mb-6">
+          {hints.map((hint) => (
+            <button
+              key={hint}
+              onClick={() => {
+                setQuery(hint)
+                search(hint)
+              }}
+              className="px-3 py-1 rounded-full text-[12px] bg-white/[0.06] hover:bg-white/[0.1] text-muted-foreground transition-colors duration-100"
+            >
+              {hint}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
         </div>
       )}
 
       {!loading && !hasResults && query && (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-          <SearchIcon className="w-12 h-12 mb-4 opacity-30" />
-          <p className="text-lg font-medium">No results found</p>
-          <p className="text-sm">Try a different search term</p>
+        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/40">
+          <SearchIcon className="w-10 h-10 mb-3" />
+          <p className="text-[15px] font-medium text-muted-foreground">No results found</p>
+          <p className="text-[13px] mt-0.5">Try a different search term</p>
         </div>
       )}
 
       {!loading && !query && (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-          <SearchIcon className="w-12 h-12 mb-4 opacity-20" />
-          <p className="text-lg">Search Apple Music</p>
-          <p className="text-sm mt-1">Find your favorite music</p>
+        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
+          <SearchIcon className="w-10 h-10 mb-3" />
+          <p className="text-[15px] text-muted-foreground/50">Search Apple Music</p>
         </div>
       )}
 
       {!loading && hasResults && (
-        <div className="space-y-8">
-          {/* Top Result + Songs side by side */}
+        <div className="space-y-8 mt-6">
+          {/* Top Result + Songs */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Top Result */}
             {(artists.length > 0 || albums.length > 0) && (
-              <section>
-                <h2 className="text-xl font-semibold mb-3">Top Result</h2>
+              <section className="animate-fade-in-up">
+                <h2 className="text-[17px] font-semibold tracking-tight mb-3">
+                  Top Result
+                </h2>
                 {artists.length > 0 ? (
                   <div
-                    className="p-5 rounded-xl bg-secondary/50 hover:bg-secondary/70 transition-colors cursor-pointer"
+                    className="p-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.06] transition-colors duration-150 cursor-pointer"
                     onClick={() => navigate(`/artist/${artists[0].id}`)}
                   >
                     <Artwork
@@ -161,18 +157,18 @@ export function SearchPage() {
                         200,
                       )}
                       alt={artists[0].attributes?.name}
-                      size={100}
+                      size={88}
                       rounded="full"
                       className="mb-3"
                     />
-                    <h3 className="text-2xl font-bold">
+                    <h3 className="text-[22px] font-bold leading-tight">
                       {artists[0].attributes?.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground">Artist</p>
+                    <p className="text-[13px] text-muted-foreground/60 mt-0.5">Artist</p>
                   </div>
                 ) : (
                   <div
-                    className="p-5 rounded-xl bg-secondary/50 hover:bg-secondary/70 transition-colors cursor-pointer"
+                    className="p-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.06] transition-colors duration-150 cursor-pointer"
                     onClick={() => navigate(`/album/${albums[0].id}`)}
                   >
                     <Artwork
@@ -181,14 +177,14 @@ export function SearchPage() {
                         200,
                       )}
                       alt={albums[0].attributes?.name}
-                      size={100}
+                      size={88}
                       rounded="md"
                       className="mb-3"
                     />
-                    <h3 className="text-2xl font-bold">
+                    <h3 className="text-[22px] font-bold leading-tight">
                       {albums[0].attributes?.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-[13px] text-muted-foreground/60 mt-0.5">
                       {albums[0].attributes?.artistName}
                     </p>
                   </div>
@@ -196,11 +192,10 @@ export function SearchPage() {
               </section>
             )}
 
-            {/* Songs */}
             {songs.length > 0 && (
-              <section>
-                <h2 className="text-xl font-semibold mb-3">Songs</h2>
-                <div className="space-y-0.5">
+              <section className="animate-fade-in-up stagger-1">
+                <h2 className="text-[17px] font-semibold tracking-tight mb-3">Songs</h2>
+                <div className="space-y-px">
                   {songs.slice(0, 5).map((song: any, idx: number) => (
                     <SongRow
                       key={song.id}
@@ -223,13 +218,13 @@ export function SearchPage() {
 
           {/* Artists */}
           {artists.length > 1 && (
-            <section>
-              <h2 className="text-xl font-semibold mb-3">Artists</h2>
-              <div className="flex gap-4 overflow-x-auto pb-2">
+            <section className="animate-fade-in-up stagger-2">
+              <h2 className="text-[17px] font-semibold tracking-tight mb-3">Artists</h2>
+              <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
                 {artists.slice(0, 8).map((artist: any) => (
                   <div
                     key={artist.id}
-                    className="flex flex-col items-center gap-2 cursor-pointer group"
+                    className="flex flex-col items-center gap-2 cursor-pointer"
                     onClick={() => navigate(`/artist/${artist.id}`)}
                   >
                     <Artwork
@@ -238,10 +233,10 @@ export function SearchPage() {
                         200,
                       )}
                       alt={artist.attributes?.name}
-                      size={140}
+                      size={128}
                       rounded="full"
                     />
-                    <p className="text-sm font-medium text-center line-clamp-1 w-[140px]">
+                    <p className="text-[13px] font-medium text-center line-clamp-1 w-[128px]">
                       {artist.attributes?.name}
                     </p>
                   </div>
@@ -252,9 +247,9 @@ export function SearchPage() {
 
           {/* Albums */}
           {albums.length > 0 && (
-            <section>
-              <h2 className="text-xl font-semibold mb-3">Albums</h2>
-              <div className="flex flex-wrap gap-4">
+            <section className="animate-fade-in-up stagger-3">
+              <h2 className="text-[17px] font-semibold tracking-tight mb-3">Albums</h2>
+              <div className="flex flex-wrap gap-5">
                 {albums.map((album: any) => (
                   <MediaCard
                     key={album.id}
@@ -272,9 +267,9 @@ export function SearchPage() {
 
           {/* Playlists */}
           {playlists.length > 0 && (
-            <section>
-              <h2 className="text-xl font-semibold mb-3">Playlists</h2>
-              <div className="flex flex-wrap gap-4">
+            <section className="animate-fade-in-up stagger-4">
+              <h2 className="text-[17px] font-semibold tracking-tight mb-3">Playlists</h2>
+              <div className="flex flex-wrap gap-5">
                 {playlists.map((playlist: any) => (
                   <MediaCard
                     key={playlist.id}

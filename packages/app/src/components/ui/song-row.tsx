@@ -66,44 +66,51 @@ export function SongRow({
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent/50 transition-colors cursor-pointer',
-        isActive && 'bg-accent/30',
+        'group flex items-center gap-3 px-3 py-[7px] rounded-lg transition-colors duration-100 cursor-pointer',
+        isActive
+          ? 'bg-primary/[0.08]'
+          : 'hover:bg-white/[0.04]',
         className,
       )}
       onDoubleClick={handlePlay}
     >
-      {/* Track number or play icon */}
-      <div className="w-8 flex items-center justify-center flex-shrink-0">
+      {/* Track number / play icon / equalizer */}
+      <div className="w-7 flex items-center justify-center flex-shrink-0">
         {showTrackNumber ? (
           <>
-            <span className={cn('text-sm text-muted-foreground group-hover:hidden', isActive && 'text-primary')}>
+            <span
+              className={cn(
+                'text-[13px] tabular-nums text-muted-foreground group-hover:hidden',
+                isActive && 'text-primary',
+              )}
+            >
               {trackNumber}
             </span>
             <button
               onClick={handlePlay}
-              className="hidden group-hover:block"
+              className="hidden group-hover:flex items-center justify-center"
             >
               {isPlaying ? (
-                <Pause className="w-4 h-4 text-primary" fill="currentColor" />
+                <Pause className="w-3.5 h-3.5 text-primary" fill="currentColor" />
               ) : (
-                <Play className="w-4 h-4 text-foreground" fill="currentColor" />
+                <Play className="w-3.5 h-3.5 text-foreground" fill="currentColor" />
               )}
             </button>
           </>
         ) : (
           <>
             {isActive && isPlaying ? (
-              <div className="flex items-center gap-[2px]">
-                <div className="w-[3px] h-3 bg-primary rounded-full animate-pulse" />
-                <div className="w-[3px] h-4 bg-primary rounded-full animate-pulse [animation-delay:0.15s]" />
-                <div className="w-[3px] h-2 bg-primary rounded-full animate-pulse [animation-delay:0.3s]" />
+              <div className="flex items-end gap-[2px] h-[14px]">
+                <div className="eq-bar eq-bar-1" />
+                <div className="eq-bar eq-bar-2" />
+                <div className="eq-bar eq-bar-3" />
               </div>
             ) : (
               <button
                 onClick={handlePlay}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                className="opacity-0 group-hover:opacity-100 transition-opacity duration-100"
               >
-                <Play className="w-4 h-4" fill="currentColor" />
+                <Play className="w-3.5 h-3.5" fill="currentColor" />
               </button>
             )}
           </>
@@ -115,17 +122,22 @@ export function SongRow({
         <Artwork
           src={formatArtworkUrl(artworkUrl, 80)}
           alt={name}
-          size={40}
+          size={36}
           rounded="sm"
         />
       )}
 
       {/* Song info */}
       <div className="flex-1 min-w-0">
-        <p className={cn('text-sm font-medium line-clamp-1', isActive && 'text-primary')}>
+        <p
+          className={cn(
+            'text-[13px] font-medium line-clamp-1 leading-tight',
+            isActive && 'text-primary',
+          )}
+        >
           {name}
         </p>
-        <p className="text-xs text-muted-foreground line-clamp-1">
+        <p className="text-[12px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
           {artistName}
         </p>
       </div>
@@ -133,25 +145,25 @@ export function SongRow({
       {/* Album name */}
       {showAlbum && albumName && (
         <div className="hidden md:block flex-1 min-w-0 max-w-[200px]">
-          <p className="text-xs text-muted-foreground line-clamp-1">
+          <p className="text-[12px] text-muted-foreground/70 line-clamp-1">
             {albumName}
           </p>
         </div>
       )}
 
       {/* Duration */}
-      <div className="w-12 text-right flex-shrink-0">
-        <span className="text-xs text-muted-foreground">
+      <div className="w-11 text-right flex-shrink-0">
+        <span className="text-[12px] tabular-nums text-muted-foreground/70">
           {formatDuration(duration)}
         </span>
       </div>
 
       {/* More actions */}
-      <div className="w-8 flex-shrink-0">
+      <div className="w-7 flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent">
-              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+            <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-100 p-1 rounded-md hover:bg-accent/60">
+              <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">

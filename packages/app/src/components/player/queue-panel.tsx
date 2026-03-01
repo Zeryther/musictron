@@ -12,11 +12,16 @@ export function QueuePanel() {
   const upNext = queue.slice(queuePosition + 1)
 
   return (
-    <div className="w-[320px] border-l border-border/50 flex flex-col bg-background/50">
+    <div className="w-[300px] border-l border-white/[0.06] flex flex-col surface-glass-heavy animate-slide-in-right">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-        <h3 className="font-semibold text-sm">Queue</h3>
-        <Button variant="ghost" size="icon-sm" onClick={toggleQueue}>
+      <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
+        <h3 className="font-semibold text-[13px]">Queue</h3>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="text-muted-foreground/50 hover:text-foreground"
+          onClick={toggleQueue}
+        >
           <X className="w-4 h-4" />
         </Button>
       </div>
@@ -25,11 +30,11 @@ export function QueuePanel() {
         <div className="p-3">
           {/* Now Playing */}
           {nowPlaying && (
-            <div className="mb-4">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+            <div className="mb-5">
+              <h4 className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-widest px-2 mb-2">
                 Now Playing
               </h4>
-              <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-accent/30">
+              <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-primary/[0.06]">
                 <Artwork
                   src={nowPlaying.artworkUrl}
                   alt={nowPlaying.name}
@@ -37,14 +42,14 @@ export function QueuePanel() {
                   rounded="sm"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium line-clamp-1 text-primary">
+                  <p className="text-[13px] font-medium line-clamp-1 text-primary leading-tight">
                     {nowPlaying.name}
                   </p>
-                  <p className="text-xs text-muted-foreground line-clamp-1">
+                  <p className="text-[11px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
                     {nowPlaying.artistName}
                   </p>
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-[11px] tabular-nums text-muted-foreground/50">
                   {formatTime(nowPlaying.duration)}
                 </span>
               </div>
@@ -53,22 +58,22 @@ export function QueuePanel() {
 
           {/* Up Next */}
           <div>
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
-              Up Next ({upNext.length})
+            <h4 className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-widest px-2 mb-2">
+              Up Next{upNext.length > 0 && ` (${upNext.length})`}
             </h4>
             {upNext.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                <Music className="w-8 h-8 mb-2 opacity-50" />
-                <p className="text-sm">Queue is empty</p>
+              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/40">
+                <Music className="w-7 h-7 mb-2" />
+                <p className="text-[13px]">Queue is empty</p>
               </div>
             ) : (
-              <div className="space-y-0.5">
+              <div className="space-y-px">
                 {upNext.map((item, index) => (
                   <div
                     key={`${item.id}-${index}`}
-                    className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer group"
+                    className="flex items-center gap-3 px-2 py-[6px] rounded-lg hover:bg-white/[0.04] transition-colors duration-100 cursor-pointer"
                   >
-                    <span className="text-xs text-muted-foreground w-5 text-right">
+                    <span className="text-[11px] tabular-nums text-muted-foreground/40 w-4 text-right">
                       {index + 1}
                     </span>
                     <Artwork
@@ -78,12 +83,12 @@ export function QueuePanel() {
                       rounded="sm"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm line-clamp-1">{item.name}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-1">
+                      <p className="text-[13px] line-clamp-1 leading-tight">{item.name}</p>
+                      <p className="text-[11px] text-muted-foreground/60 line-clamp-1 leading-tight mt-0.5">
                         {item.artistName}
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[11px] tabular-nums text-muted-foreground/40">
                       {formatTime(item.duration)}
                     </span>
                   </div>

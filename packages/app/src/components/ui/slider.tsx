@@ -13,24 +13,27 @@ const Slider = React.forwardRef<
   <SliderPrimitive.Root
     ref={ref}
     className={cn(
-      'relative flex w-full touch-none select-none items-center group',
+      'relative flex w-full touch-none select-none items-center group/slider',
       className,
     )}
     {...props}
   >
     <SliderPrimitive.Track
       className={cn(
-        'relative h-1 w-full grow overflow-hidden rounded-full bg-white/10',
+        'relative h-[3px] w-full grow overflow-hidden rounded-full bg-white/[0.08] transition-[height] duration-150 group-hover/slider:h-1',
         trackClassName,
       )}
     >
       <SliderPrimitive.Range
-        className={cn('absolute h-full bg-white/70 group-hover:bg-primary', rangeClassName)}
+        className={cn(
+          'absolute h-full bg-white/60 transition-colors duration-150 group-hover/slider:bg-foreground',
+          rangeClassName,
+        )}
       />
     </SliderPrimitive.Track>
     <SliderPrimitive.Thumb
       className={cn(
-        'block h-3 w-3 rounded-full bg-white shadow transition-all focus-visible:outline-none opacity-0 group-hover:opacity-100',
+        'block h-3 w-3 rounded-full bg-foreground shadow-md transition-all duration-150 focus-visible:outline-none scale-0 group-hover/slider:scale-100',
         thumbClassName,
       )}
     />

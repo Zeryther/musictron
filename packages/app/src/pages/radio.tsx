@@ -16,7 +16,6 @@ export function RadioPage() {
     async function fetchRadio() {
       setLoading(true)
       try {
-        // Fetch Apple Music 1 and featured radio content
         const [stationsData, chartsData] = await Promise.all([
           musicAPI('/v1/catalog/us/stations', {
             limit: 20,
@@ -43,30 +42,30 @@ export function RadioPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-10 animate-fade-in">
-      <div className="pt-2">
-        <h1 className="text-3xl font-bold">Radio</h1>
-        <p className="text-muted-foreground mt-1">
+    <div className="animate-fade-in">
+      <div className="mb-8">
+        <h1 className="text-[28px] font-bold tracking-tight">Radio</h1>
+        <p className="text-[13px] text-muted-foreground/60 mt-1">
           Live and on-demand radio stations
         </p>
       </div>
 
-      {/* Featured Stations */}
+      {/* Stations */}
       {stations.length > 0 && (
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Stations</h2>
+        <section className="mb-10 animate-fade-in-up stagger-1">
+          <h2 className="text-[20px] font-semibold tracking-tight mb-4">Stations</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {stations.map((station: any) => (
               <div
                 key={station.id}
-                className="group relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform"
+                className="group relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.99] transition-transform duration-150"
               >
                 <Artwork
                   src={formatArtworkUrl(
@@ -78,12 +77,12 @@ export function RadioPage() {
                   rounded="none"
                   className="w-full !h-auto aspect-square"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 <div className="absolute bottom-0 left-0 p-4">
-                  <p className="text-white font-semibold text-sm">
+                  <p className="text-white font-semibold text-[13px] leading-tight">
                     {station.attributes?.name}
                   </p>
-                  <p className="text-white/70 text-xs">
+                  <p className="text-white/50 text-[12px] mt-0.5 line-clamp-1">
                     {station.attributes?.editorialNotes?.short || 'Radio Station'}
                   </p>
                 </div>
@@ -93,11 +92,11 @@ export function RadioPage() {
         </section>
       )}
 
-      {/* If no stations, show featured playlists as radio-like content */}
+      {/* Featured Mixes fallback */}
       {stations.length === 0 && featuredPlaylists.length > 0 && (
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Featured Mixes</h2>
-          <div className="flex flex-wrap gap-4">
+        <section className="animate-fade-in-up stagger-1">
+          <h2 className="text-[20px] font-semibold tracking-tight mb-4">Featured Mixes</h2>
+          <div className="flex flex-wrap gap-5">
             {featuredPlaylists.map((playlist: any) => (
               <MediaCard
                 key={playlist.id}
@@ -115,10 +114,10 @@ export function RadioPage() {
 
       {/* Empty state */}
       {stations.length === 0 && featuredPlaylists.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-          <RadioIcon className="w-16 h-16 mb-4 opacity-20" />
-          <p className="text-lg">No radio stations available</p>
-          <p className="text-sm mt-1">Browse for music instead</p>
+        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
+          <RadioIcon className="w-12 h-12 mb-3" />
+          <p className="text-[15px] text-muted-foreground/50">No radio stations available</p>
+          <p className="text-[13px] mt-0.5">Browse for music instead</p>
         </div>
       )}
     </div>

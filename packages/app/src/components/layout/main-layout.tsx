@@ -23,12 +23,12 @@ export function MainLayout() {
   const showTitleBar = isDesktop && !isMac
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden">
-      {/* Windows/Linux desktop: custom title bar with drag region and window controls */}
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
+      {/* Windows/Linux: custom title bar */}
       {showTitleBar && (
-        <div className="flex items-center justify-between h-8 bg-background/50 border-b border-border/30 drag-region shrink-0">
+        <div className="flex items-center justify-between h-8 surface-glass border-b border-white/[0.06] drag-region shrink-0">
           <div className="flex items-center gap-2 px-4 no-drag">
-            <span className="text-xs font-medium text-muted-foreground">Musictron</span>
+            <span className="text-[11px] font-medium text-muted-foreground/60">Musictron</span>
           </div>
           <WindowControls />
         </div>
@@ -36,26 +36,22 @@ export function MainLayout() {
 
       {/* Main content area */}
       <div className="flex-1 flex min-h-0">
-        {/* Sidebar */}
         <Sidebar platform={platform} />
 
-        {/* Content */}
+        {/* Content + Queue */}
         <main className="flex-1 min-w-0 flex">
           <ScrollArea className="flex-1">
-            <div className="p-6 pb-8">
+            <div className="px-8 py-6 pb-10">
               <Outlet />
             </div>
           </ScrollArea>
 
-          {/* Queue Panel */}
           {isQueueOpen && <QueuePanel />}
         </main>
       </div>
 
-      {/* Player Bar */}
       <PlayerBar />
 
-      {/* Fullscreen Player */}
       {isFullscreen && <FullscreenPlayer />}
     </div>
   )

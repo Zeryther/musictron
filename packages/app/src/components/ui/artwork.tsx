@@ -26,7 +26,7 @@ export function Artwork({
 
   const roundedClasses = {
     none: '',
-    sm: 'rounded-sm',
+    sm: 'rounded',
     md: 'rounded-lg',
     lg: 'rounded-xl',
     full: 'rounded-full',
@@ -35,10 +35,10 @@ export function Artwork({
   return (
     <div
       className={cn(
-        'relative overflow-hidden bg-muted flex-shrink-0',
+        'relative overflow-hidden bg-muted/80 flex-shrink-0',
         roundedClasses[rounded],
-        shadow && 'shadow-lg shadow-black/30',
-        onClick && 'cursor-pointer group',
+        shadow && 'shadow-xl shadow-black/40',
+        onClick && 'cursor-pointer group/artwork',
         className,
       )}
       style={{ width: size, height: size }}
@@ -53,7 +53,7 @@ export function Artwork({
             src={src}
             alt={alt}
             className={cn(
-              'w-full h-full object-cover transition-opacity duration-300',
+              'w-full h-full object-cover transition-opacity duration-500',
               loaded ? 'opacity-100' : 'opacity-0',
             )}
             onLoad={() => setLoaded(true)}
@@ -63,12 +63,12 @@ export function Artwork({
         </>
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-muted">
-          <Music className="w-1/3 h-1/3 text-muted-foreground/50" />
+          <Music className="w-1/3 h-1/3 text-muted-foreground/40" />
         </div>
       )}
 
       {onClick && (
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+        <div className="absolute inset-0 bg-black/0 group-hover/artwork:bg-black/10 transition-colors duration-200" />
       )}
     </div>
   )

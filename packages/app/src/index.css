@@ -10,7 +10,7 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 346 77% 50%;
+    --primary: 358 90% 56%;
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
@@ -22,30 +22,30 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 346 77% 50%;
-    --radius: 0.75rem;
+    --ring: 358 90% 56%;
+    --radius: 0.625rem;
   }
 
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 95%;
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 346 77% 50%;
+    --background: 0 0% 3.5%;
+    --foreground: 0 0% 97%;
+    --card: 0 0% 6.5%;
+    --card-foreground: 0 0% 97%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 97%;
+    --primary: 358 90% 56%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 55%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 95%;
+    --secondary: 0 0% 11%;
+    --secondary-foreground: 0 0% 97%;
+    --muted: 0 0% 11%;
+    --muted-foreground: 0 0% 48%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 97%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
-    --ring: 346 77% 50%;
+    --border: 0 0% 13%;
+    --input: 0 0% 13%;
+    --ring: 358 90% 56%;
   }
 }
 
@@ -57,17 +57,18 @@
   body {
     @apply bg-background text-foreground;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
-      'Helvetica Neue', Arial, sans-serif;
+      'Helvetica Neue', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
     user-select: none;
+    letter-spacing: -0.011em;
   }
 
-  /* Custom scrollbar */
+  /* Custom scrollbar — thin and invisible until hovered */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
@@ -75,12 +76,18 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 4px;
+    background: transparent;
+    border-radius: 3px;
+    transition: background 0.2s;
   }
 
+  *:hover > ::-webkit-scrollbar-thumb,
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
+    background: hsl(var(--muted-foreground) / 0.25);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--muted-foreground) / 0.4);
   }
 }
 
@@ -106,9 +113,31 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* Vibrancy surface — translucent glass material */
+  .surface-glass {
+    background: hsl(var(--background) / 0.7);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  .surface-glass-heavy {
+    background: hsl(var(--background) / 0.82);
+    backdrop-filter: saturate(200%) blur(40px);
+    -webkit-backdrop-filter: saturate(200%) blur(40px);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-/* Artwork image shimmer */
+/* ── Artwork shimmer ── */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -122,38 +151,112 @@
   background: linear-gradient(
     90deg,
     hsl(var(--muted)) 25%,
-    hsl(var(--muted-foreground) / 0.1) 50%,
+    hsl(var(--muted-foreground) / 0.08) 50%,
     hsl(var(--muted)) 75%
   );
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.8s ease-in-out infinite;
 }
 
-/* Player progress bar */
+/* ── Equalizer bars (now-playing indicator) ── */
+@keyframes eq-bar-1 {
+  0%, 100% { height: 3px; }
+  50% { height: 12px; }
+}
+@keyframes eq-bar-2 {
+  0%, 100% { height: 8px; }
+  50% { height: 4px; }
+}
+@keyframes eq-bar-3 {
+  0%, 100% { height: 5px; }
+  50% { height: 14px; }
+}
+
+.eq-bar {
+  width: 2.5px;
+  border-radius: 1px;
+  background: hsl(var(--primary));
+  transform-origin: bottom;
+}
+.eq-bar-1 { animation: eq-bar-1 0.45s ease-in-out infinite; }
+.eq-bar-2 { animation: eq-bar-2 0.55s ease-in-out infinite 0.1s; }
+.eq-bar-3 { animation: eq-bar-3 0.5s ease-in-out infinite 0.2s; }
+
+/* ── Content animations ── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out both;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stagger delays for section content */
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+
+/* ── Player progress bar (native range input) ── */
 .progress-bar::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 0;
+  height: 0;
   border-radius: 50%;
-  background: hsl(var(--primary));
+  background: hsl(var(--foreground));
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s;
+  transition: all 0.15s ease;
 }
 
 .progress-bar:hover::-webkit-slider-thumb {
-  opacity: 1;
-}
-
-/* Fade animation for page transitions */
-.page-transition-enter {
-  opacity: 0;
-  transform: translateY(8px);
-}
-
-.page-transition-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  width: 10px;
+  height: 10px;
 }

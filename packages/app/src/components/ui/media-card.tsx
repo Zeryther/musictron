@@ -28,7 +28,7 @@ export function MediaCard({
   const { playAlbum, playPlaylist } = usePlayerStore()
 
   const sizeMap = {
-    sm: 140,
+    sm: 148,
     md: 180,
     lg: 220,
   }
@@ -51,25 +51,29 @@ export function MediaCard({
       style={{ width: sizeMap[size] }}
       onClick={onClick}
     >
-      <div className="relative">
+      <div className="relative rounded-xl overflow-hidden">
         <Artwork
           src={formatArtworkUrl(artworkUrl, sizeMap[size] * 2)}
           alt={name}
           size={sizeMap[size]}
-          rounded={type === 'playlist' ? 'md' : 'md'}
+          rounded="none"
           shadow
         />
+        {/* Hover overlay with play button */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200" />
         <button
           onClick={handlePlay}
-          className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0 shadow-lg hover:bg-primary hover:scale-105"
+          className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-white/90 text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 shadow-lg shadow-black/30 hover:bg-white hover:scale-105 active:scale-95"
         >
-          <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
+          <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
         </button>
       </div>
       <div className="min-w-0 px-0.5">
-        <p className="text-sm font-medium line-clamp-1">{name}</p>
+        <p className="text-[13px] font-medium line-clamp-1 leading-tight">
+          {name}
+        </p>
         {subtitle && (
-          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+          <p className="text-[12px] text-muted-foreground line-clamp-1 mt-0.5 leading-tight">
             {subtitle}
           </p>
         )}

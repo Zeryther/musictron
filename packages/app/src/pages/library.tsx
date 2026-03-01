@@ -74,12 +74,12 @@ export function LibraryPage() {
 
   if (!isAuthorized) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-        <Music className="w-16 h-16 mb-4 opacity-20" />
-        <h2 className="text-xl font-semibold mb-2 text-foreground">
+      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/40">
+        <Music className="w-12 h-12 mb-3" />
+        <h2 className="text-[17px] font-semibold text-foreground mb-1">
           Sign in to Apple Music
         </h2>
-        <p className="text-sm mb-4">
+        <p className="text-[13px] text-muted-foreground/60 mb-5">
           Access your library by signing in with your Apple Music account.
         </p>
         <Button onClick={() => navigate('/settings')}>Set Up</Button>
@@ -97,57 +97,61 @@ export function LibraryPage() {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center justify-between pt-2 mb-6">
-        <h1 className="text-3xl font-bold">{sectionTitles[section as LibrarySection]}</h1>
-        {section === 'songs' && items.length > 0 && (
-          <div className="flex gap-2">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-[28px] font-bold tracking-tight">
+          {sectionTitles[section as LibrarySection]}
+        </h1>
+        <div className="flex gap-2">
+          {section === 'songs' && items.length > 0 && (
+            <>
+              <Button
+                size="sm"
+                onClick={() =>
+                  playSongs(items.map((s: any) => s.id))
+                }
+                className="gap-1.5"
+              >
+                <Play className="w-3 h-3" fill="currentColor" />
+                Play All
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const ids = items.map((s: any) => s.id)
+                  const shuffled = [...ids].sort(() => Math.random() - 0.5)
+                  playSongs(shuffled)
+                }}
+                className="gap-1.5"
+              >
+                <Shuffle className="w-3 h-3" />
+                Shuffle
+              </Button>
+            </>
+          )}
+          {section === 'playlists' && (
             <Button
               size="sm"
-              onClick={() =>
-                playSongs(items.map((s: any) => s.id))
-              }
-              className="gap-1"
-            >
-              <Play className="w-3 h-3" fill="currentColor" />
-              Play All
-            </Button>
-            <Button
               variant="outline"
-              size="sm"
-              onClick={() => {
-                const ids = items.map((s: any) => s.id)
-                const shuffled = [...ids].sort(() => Math.random() - 0.5)
-                playSongs(shuffled)
-              }}
-              className="gap-1"
+              onClick={() => createPlaylist(`New Playlist ${playlists.length + 1}`)}
+              className="gap-1.5"
             >
-              <Shuffle className="w-3 h-3" />
-              Shuffle
+              <Plus className="w-3 h-3" />
+              New Playlist
             </Button>
-          </div>
-        )}
-        {section === 'playlists' && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => createPlaylist(`New Playlist ${playlists.length + 1}`)}
-            className="gap-1"
-          >
-            <Plus className="w-3 h-3" />
-            New Playlist
-          </Button>
-        )}
+          )}
+        </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
         </div>
       ) : (
         <>
-          {/* Songs view */}
+          {/* Songs */}
           {section === 'songs' && (
-            <div className="space-y-0.5">
+            <div className="space-y-px">
               {items.map((song: any, idx: number) => (
                 <SongRow
                   key={song.id}
@@ -168,9 +172,9 @@ export function LibraryPage() {
             </div>
           )}
 
-          {/* Albums / Recently Added (grid) */}
+          {/* Albums / Recently Added */}
           {(section === 'albums' || section === 'recently-added') && (
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-5">
               {items.map((item: any) => (
                 <MediaCard
                   key={item.id}
@@ -199,7 +203,7 @@ export function LibraryPage() {
               {items.map((artist: any) => (
                 <div
                   key={artist.id}
-                  className="flex flex-col items-center gap-2 cursor-pointer group"
+                  className="flex flex-col items-center gap-2 cursor-pointer"
                   onClick={() => navigate(`/artist/${artist.id}`)}
                 >
                   <Artwork
@@ -208,10 +212,10 @@ export function LibraryPage() {
                       200,
                     )}
                     alt={artist.attributes?.name}
-                    size={160}
+                    size={148}
                     rounded="full"
                   />
-                  <p className="text-sm font-medium text-center w-[160px] line-clamp-1">
+                  <p className="text-[13px] font-medium text-center w-[148px] line-clamp-1">
                     {artist.attributes?.name}
                   </p>
                 </div>
@@ -221,7 +225,7 @@ export function LibraryPage() {
 
           {/* Playlists */}
           {section === 'playlists' && (
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-5">
               {playlists.map((playlist) => (
                 <MediaCard
                   key={playlist.id}
@@ -237,17 +241,17 @@ export function LibraryPage() {
           )}
 
           {items.length === 0 && section !== 'playlists' && (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <Music className="w-12 h-12 mb-4 opacity-20" />
-              <p className="text-lg">No items in your library</p>
+            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
+              <Music className="w-10 h-10 mb-3" />
+              <p className="text-[15px] text-muted-foreground/50">No items in your library</p>
             </div>
           )}
 
           {section === 'playlists' && playlists.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <Music className="w-12 h-12 mb-4 opacity-20" />
-              <p className="text-lg">No playlists yet</p>
-              <p className="text-sm mt-1">Create one to get started</p>
+            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
+              <Music className="w-10 h-10 mb-3" />
+              <p className="text-[15px] text-muted-foreground/50">No playlists yet</p>
+              <p className="text-[13px] mt-0.5">Create one to get started</p>
             </div>
           )}
         </>
