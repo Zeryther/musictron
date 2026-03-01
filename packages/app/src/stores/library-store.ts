@@ -31,7 +31,6 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
       set({ isLoadingPlaylists: true })
       const data = await musicAPI('/v1/me/library/playlists', {
         limit: 100,
-        sort: '-lastModifiedDate',
       })
 
       const playlists: PlaylistItem[] = (data.data || []).map((item: any) => ({
