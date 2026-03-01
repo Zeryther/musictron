@@ -4,9 +4,18 @@ import { Artwork } from '@/components/ui/artwork'
 import { SongRow } from '@/components/ui/song-row'
 import { Button } from '@/components/ui/button'
 import { useAlbumDetail } from '@/hooks/use-albums'
+import { useLastfmAlbum } from '@/hooks/use-lastfm'
 import { usePlayerStore } from '@/stores/player-store'
-import { formatArtworkUrl, formatDuration } from '@/lib/utils'
-import { Play, Shuffle, Loader2, ArrowLeft } from 'lucide-react'
+import { formatArtworkUrl, formatDuration, formatPlayCount } from '@/lib/utils'
+import {
+  Play,
+  Shuffle,
+  Loader2,
+  ArrowLeft,
+  Users,
+  Headphones,
+  ExternalLink,
+} from 'lucide-react'
 
 export function AlbumDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -18,6 +27,13 @@ export function AlbumDetailPage() {
   const tracks = data?.tracks ?? []
   const artists = data?.artists ?? []
   const primaryArtistId = artists[0]?.id
+
+  // Last.fm extended metadata
+  const albumAttrs = album?.attributes
+  const { data: lastfmAlbum } = useLastfmAlbum(
+    albumAttrs?.artistName,
+    albumAttrs?.name,
+  )
 
   if (loading) {
     return (
@@ -82,7 +98,7 @@ export function AlbumDetailPage() {
               attrs?.artistName
             )}
           </p>
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground/50 mb-5">
+          <div className="flex items-center gap-2 text-[12px] text-muted-foreground/50 mb-2">
             {attrs?.genreNames?.[0] && <span>{attrs.genreNames[0]}</span>}
             {attrs?.releaseDate && (
               <>
@@ -95,6 +111,49 @@ export function AlbumDetailPage() {
               {tracks.length} songs, {formatDuration(totalDuration)}
             </span>
           </div>
+
+          {/* Last.fm tags */}
+          {(lastfmAlbum?.tags?.length ?? 0) > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {lastfmAlbum!.tags.slice(0, 5).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.04] text-muted-foreground/50"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Last.fm stats */}
+          {lastfmAlbum && (
+            <div className="flex items-center gap-3 text-[12px] text-muted-foreground/40 mb-5">
+              {lastfmAlbum.listeners != null && (
+                <span className="flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  {formatPlayCount(lastfmAlbum.listeners)} listeners
+                </span>
+              )}
+              {lastfmAlbum.playcount != null && (
+                <span className="flex items-center gap-1">
+                  <Headphones className="w-3 h-3" />
+                  {formatPlayCount(lastfmAlbum.playcount)} plays
+                </span>
+              )}
+              <a
+                href={lastfmAlbum.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1 hover:text-muted-foreground/60 transition-colors"
+              >
+                Last.fm <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            </div>
+          )}
+
+          {/* Gap if no Last.fm data */}
+          {!lastfmAlbum && <div className="mb-3" />}
 
           {attrs?.editorialNotes?.short && (
             <p className="text-[13px] text-muted-foreground/60 line-clamp-2 mb-5 max-w-md leading-relaxed">
@@ -150,6 +209,24 @@ export function AlbumDetailPage() {
           />
         ))}
       </div>
+
+      {/* Last.fm wiki (shown if no Apple editorial notes) */}
+      {!attrs?.editorialNotes?.short && lastfmAlbum?.wiki && (
+        <div className="mt-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
+          <p className="text-[13px] text-muted-foreground/70 leading-relaxed line-clamp-4">
+            {lastfmAlbum.wiki.summary}
+          </p>
+          <a
+            href={lastfmAlbum.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/40 hover:text-muted-foreground/60 mt-3 transition-colors"
+          >
+            Source: Last.fm
+            <ExternalLink className="w-2.5 h-2.5" />
+          </a>
+        </div>
+      )}
     </div>
   )
 }
