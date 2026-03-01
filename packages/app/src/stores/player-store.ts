@@ -263,6 +263,13 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
     timeUpdateInterval = setInterval(() => {
       const mk = getMusicKitInstance()
       if (mk) {
+        // Detect track changes that event listeners may have missed
+        const currentId = get().nowPlaying?.id
+        const mkItemId = mk.nowPlayingItem?.id
+        if (mkItemId && mkItemId !== currentId) {
+          get()._syncFromMusicKit()
+        }
+
         set({
           currentTime: mk.currentPlaybackTime || 0,
           duration: mk.currentPlaybackDuration || 0,
@@ -285,10 +292,12 @@ export function initializePlayerEvents() {
   const mk = getMusicKitInstance()
   if (!mk) return
 
-  const store = usePlayerStore.getState()
-
   mk.addEventListener('nowPlayingItemDidChange', () => {
-    store._syncFromMusicKit()
+    // Defer sync slightly — MusicKit may not have updated nowPlayingItem yet
+    // when this event fires, causing stale reads
+    setTimeout(() => {
+      usePlayerStore.getState()._syncFromMusicKit()
+    }, 50)
   })
 
   mk.addEventListener('playbackStateDidChange', (event: any) => {
@@ -298,20 +307,20 @@ export function initializePlayerEvents() {
     })
 
     if (state === 2) {
-      store._startTimeUpdater()
+      usePlayerStore.getState()._startTimeUpdater()
     } else {
-      store._stopTimeUpdater()
+      usePlayerStore.getState()._stopTimeUpdater()
     }
   })
 
   mk.addEventListener('queueItemsDidChange', () => {
-    store._syncFromMusicKit()
+    usePlayerStore.getState()._syncFromMusicKit()
   })
 
   mk.addEventListener('queuePositionDidChange', () => {
-    store._syncFromMusicKit()
+    usePlayerStore.getState()._syncFromMusicKit()
   })
 
   // Set initial volume
-  mk.volume = store.volume
+  mk.volume = usePlayerStore.getState().volume
 }
