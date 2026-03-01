@@ -64,12 +64,18 @@ export function useLibraryArtists(enabled: boolean = true) {
   return useInfiniteQuery<LibraryArtistsPage>({
     queryKey: queryKeys.library.artists(),
     queryFn: async ({ pageParam }) => {
-      const data = pageParam
-        ? await musicAPI(pageParam as string)
-        : await musicAPI('/v1/me/library/artists', {
-            limit: 25,
-            include: 'catalog',
-          })
+      let data: MusicKit.APIResponseData
+      if (pageParam) {
+        // The `next` URL from the API doesn't carry `include=catalog`,
+        // so we append it to ensure every page resolves artwork.
+        const sep = (pageParam as string).includes('?') ? '&' : '?'
+        data = await musicAPI(`${pageParam as string}${sep}include=catalog`)
+      } else {
+        data = await musicAPI('/v1/me/library/artists', {
+          limit: 25,
+          include: 'catalog',
+        })
+      }
 
       const artists: LibraryArtist[] = (data.data ?? []).map(
         (item: MusicKit.Resource) => {
