@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import { QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { createQueryClient } from '@/lib/query-client'
 import { MainLayout } from '@/components/layout/main-layout'
 import { HomePage } from '@/pages/home'
@@ -18,9 +18,10 @@ import { initializePlayerEvents } from '@/stores/player-store'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 import { getPlatformAdapter } from '@/lib/platform'
 
-export default function App() {
-  const [queryClient] = useState(() => createQueryClient())
-  const { initialize, developerToken } = useAuthStore()
+function AppInner() {
+  const queryClient = useQueryClient()
+  const { initialize, developerToken, isAuthorized } = useAuthStore()
+  const prevAuthorized = useRef(isAuthorized)
 
   // Set up keyboard shortcuts
   useKeyboardShortcuts()
@@ -33,6 +34,15 @@ export default function App() {
       initializePlayerEvents()
     })
   }, [developerToken, initialize])
+
+  // Invalidate all queries when auth state changes so data reloads
+  // (e.g. playlists in the sidebar, recommendations on the home page).
+  useEffect(() => {
+    if (prevAuthorized.current !== isAuthorized) {
+      prevAuthorized.current = isAuthorized
+      queryClient.invalidateQueries()
+    }
+  }, [isAuthorized, queryClient])
 
   // Listen for media keys from the platform adapter (Electron only)
   useEffect(() => {
@@ -70,20 +80,28 @@ export default function App() {
   }, [])
 
   return (
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/browse" element={<BrowsePage />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="/radio" element={<RadioPage />} />
+        <Route path="/library/:section" element={<LibraryPage />} />
+        <Route path="/album/:id" element={<AlbumDetailPage />} />
+        <Route path="/playlist/:id" element={<PlaylistDetailPage />} />
+        <Route path="/artist/:id" element={<ArtistDetailPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Route>
+    </Routes>
+  )
+}
+
+export default function App() {
+  const [queryClient] = useState(() => createQueryClient())
+
+  return (
     <QueryClientProvider client={queryClient}>
-      <Routes>
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/browse" element={<BrowsePage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/radio" element={<RadioPage />} />
-          <Route path="/library/:section" element={<LibraryPage />} />
-          <Route path="/album/:id" element={<AlbumDetailPage />} />
-          <Route path="/playlist/:id" element={<PlaylistDetailPage />} />
-          <Route path="/artist/:id" element={<ArtistDetailPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Route>
-      </Routes>
+      <AppInner />
     </QueryClientProvider>
   )
 }
