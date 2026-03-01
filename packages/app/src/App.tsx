@@ -24,13 +24,13 @@ export default function App() {
   // Set up keyboard shortcuts
   useKeyboardShortcuts()
 
-  // Initialize MusicKit on load
+  // Initialize MusicKit on load.
+  // Runs unconditionally — initialize() handles the no-token case by
+  // attempting to fetch one from the server, then bailing if unavailable.
   useEffect(() => {
-    if (developerToken) {
-      initialize().then(() => {
-        initializePlayerEvents()
-      })
-    }
+    initialize().then(() => {
+      initializePlayerEvents()
+    })
   }, [developerToken])
 
   // Fetch playlists when authorized

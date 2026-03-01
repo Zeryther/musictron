@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       isAuthorized: false,
-      isLoading: true,
+      isLoading: false,
       developerToken: '',
       musicUserToken: null,
       error: null,
