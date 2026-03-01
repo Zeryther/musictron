@@ -45,7 +45,7 @@ export const queryKeys = {
     all: ['library'] as const,
     songs: (offset: number) => ['library', 'songs', offset] as const,
     albums: (offset: number) => ['library', 'albums', offset] as const,
-    artists: (offset: number) => ['library', 'artists', offset] as const,
+    artists: () => ['library', 'artists'] as const,
     recentlyAdded: () => ['library', 'recentlyAdded'] as const,
     playlists: () => ['library', 'playlists'] as const,
   },

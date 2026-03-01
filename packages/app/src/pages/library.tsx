@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { SongRow } from '@/components/ui/song-row'
 import { MediaCard } from '@/components/ui/media-card'
@@ -10,6 +10,7 @@ import {
   useLibraryArtists,
   useLibraryRecentlyAdded,
 } from '@/hooks/use-library'
+import type { LibraryArtist } from '@/hooks/use-library'
 import { useLibraryPlaylists, useCreatePlaylist } from '@/hooks/use-playlists'
 import { usePlayerStore } from '@/stores/player-store'
 import { useAuthStore } from '@/stores/auth-store'
@@ -42,14 +43,43 @@ export function LibraryPage() {
     0,
     isAuthorized && section === 'albums',
   )
-  const { data: artists = [], isLoading: loadingArtists } = useLibraryArtists(
-    0,
-    isAuthorized && section === 'artists',
-  )
+  const {
+    data: artistsData,
+    isLoading: loadingArtists,
+    hasNextPage: hasMoreArtists,
+    fetchNextPage: fetchMoreArtists,
+    isFetchingNextPage: fetchingMoreArtists,
+  } = useLibraryArtists(isAuthorized && section === 'artists')
   const { data: recentlyAdded = [], isLoading: loadingRecent } =
     useLibraryRecentlyAdded(isAuthorized && section === 'recently-added')
   const { data: playlists = [], isLoading: loadingPlaylists } =
     useLibraryPlaylists(isAuthorized && section === 'playlists')
+
+  const artists = useMemo(
+    () => artistsData?.pages.flatMap((page) => page.artists) ?? [],
+    [artistsData],
+  )
+
+  // Infinite scroll sentinel for artists
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (section !== 'artists') return
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMoreArtists && !fetchingMoreArtists) {
+          fetchMoreArtists()
+        }
+      },
+      { rootMargin: '200px' },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [section, hasMoreArtists, fetchingMoreArtists, fetchMoreArtists])
 
   if (!isAuthorized) {
     return (
@@ -84,7 +114,6 @@ export function LibraryPage() {
       loading = loadingAlbums
       break
     case 'artists':
-      items = artists
       loading = loadingArtists
       break
     case 'playlists':
@@ -207,33 +236,48 @@ export function LibraryPage() {
 
           {/* Artists */}
           {section === 'artists' && (
-            <div className="flex flex-wrap gap-6">
-              {items.map((artist: MusicKit.Resource) => (
-                <div
-                  key={artist.id}
-                  className="flex flex-col items-center gap-2 cursor-pointer"
-                  onClick={() => navigate(`/artist/${artist.id}`)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e: React.KeyboardEvent) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      navigate(`/artist/${artist.id}`)
-                    }
-                  }}
-                >
-                  <Artwork
-                    src={formatArtworkUrl(artist.attributes?.artwork?.url, 200)}
-                    alt={artist.attributes?.name}
-                    size={148}
-                    rounded="full"
-                  />
-                  <p className="text-[13px] font-medium text-center w-[148px] line-clamp-1">
-                    {artist.attributes?.name}
-                  </p>
+            <>
+              <div className="flex flex-wrap gap-6">
+                {artists.map((artist: LibraryArtist) => (
+                  <div
+                    key={artist.id}
+                    className="flex flex-col items-center gap-2 cursor-pointer"
+                    onClick={() => {
+                      const targetId = artist.catalogId ?? artist.id
+                      navigate(`/artist/${targetId}`)
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        const targetId = artist.catalogId ?? artist.id
+                        navigate(`/artist/${targetId}`)
+                      }
+                    }}
+                  >
+                    <Artwork
+                      src={formatArtworkUrl(artist.artworkUrl, 200)}
+                      alt={artist.name}
+                      size={148}
+                      rounded="full"
+                    />
+                    <p className="text-[13px] font-medium text-center w-[148px] line-clamp-1">
+                      {artist.name}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Infinite scroll sentinel */}
+              <div ref={sentinelRef} className="h-px" />
+
+              {fetchingMoreArtists && (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
 
           {/* Playlists */}
@@ -253,11 +297,22 @@ export function LibraryPage() {
             </div>
           )}
 
-          {items.length === 0 && section !== 'playlists' && (
+          {section !== 'artists' &&
+            section !== 'playlists' &&
+            items.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
+                <Music className="w-10 h-10 mb-3" />
+                <p className="text-[15px] text-muted-foreground/50">
+                  No items in your library
+                </p>
+              </div>
+            )}
+
+          {section === 'artists' && artists.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
               <Music className="w-10 h-10 mb-3" />
               <p className="text-[15px] text-muted-foreground/50">
-                No items in your library
+                No artists in your library
               </p>
             </div>
           )}
