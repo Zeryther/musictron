@@ -1,0 +1,18 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
+  "changelog": [
+    "@svitejs/changesets-changelog-github-compact",
+    { "repo": "Zeryther/musictron" }
+  ],
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["@musictron/tsconfig"],
+  "privatePackages": {
+    "version": true,
+    "tag": true
+  }
+}

@@ -2,19 +2,60 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
-
-permissions:
-  contents: write
+    branches:
+      - main
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
-  build:
-    name: Build ${{ matrix.platform }}
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Create Release Pull Request or Tag
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm ci:version
+          publish: pnpm changeset tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-desktop:
+    name: Build Desktop (${{ matrix.platform }})
+    needs: release
+    if: needs.release.outputs.published == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     strategy:
@@ -55,6 +96,8 @@ jobs:
       - name: Build desktop for ${{ matrix.platform }}
         run: pnpm --filter @musictron/desktop run ${{ matrix.command }}
         env:
+          # App config
+          VITE_MUSICTRON_SERVER_URL: ${{ vars.MUSICTRON_SERVER_URL }}
           # macOS code signing (optional — set these secrets in repo settings)
           CSC_LINK: ${{ matrix.platform == 'macOS' && secrets.MAC_CERTIFICATE_P12_BASE64 || matrix.platform == 'Windows' && secrets.WIN_CERTIFICATE_P12_BASE64 || '' }}
           CSC_KEY_PASSWORD: ${{ matrix.platform == 'macOS' && secrets.MAC_CERTIFICATE_PASSWORD || matrix.platform == 'Windows' && secrets.WIN_CERTIFICATE_PASSWORD || '' }}
@@ -75,8 +118,13 @@ jobs:
   publish-release:
     name: Publish GitHub Release
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [release, build-desktop]
+    if: needs.release.outputs.published == 'true'
     timeout-minutes: 10
+
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -89,9 +137,15 @@ jobs:
       - name: List artifacts
         run: find artifacts -type f | sort
 
+      - name: Get desktop version
+        id: version
+        run: echo "version=$(node -p "require('./apps/desktop/package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: "@musictron/desktop@${{ steps.version.outputs.version }}"
+          name: "Musictron v${{ steps.version.outputs.version }}"
           draft: true
           generate_release_notes: true
           files: artifacts/*

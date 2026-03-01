@@ -6,9 +6,12 @@
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "ci:version": "changeset version && pnpm install --no-frozen-lockfile"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
+    "@svitejs/changesets-changelog-github-compact": "^1.2.0",
     "turbo": "^2.5.0"
   },
   "packageManager": "pnpm@10.28.0",
