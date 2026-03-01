@@ -17,7 +17,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
-import { useLibraryStore } from '@/stores/library-store'
+import { useLibraryPlaylists, useCreatePlaylist } from '@/hooks/use-playlists'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -44,11 +44,13 @@ const libraryNavItems = [
 export function Sidebar({ platform }: { platform: string }) {
   const navigate = useNavigate()
   const { isAuthorized, signOut } = useAuthStore()
-  const { playlists, createPlaylist } = useLibraryStore()
+  const { data: playlists = [] } = useLibraryPlaylists(isAuthorized)
+  const createPlaylistMutation = useCreatePlaylist()
 
-  const handleCreatePlaylist = async () => {
-    const name = `New Playlist ${playlists.length + 1}`
-    await createPlaylist(name)
+  const handleCreatePlaylist = () => {
+    createPlaylistMutation.mutate({
+      name: `New Playlist ${playlists.length + 1}`,
+    })
   }
 
   return (

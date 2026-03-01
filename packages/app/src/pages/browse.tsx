@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MediaCard } from '@/components/ui/media-card'
 import { SongRow } from '@/components/ui/song-row'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { musicAPI, getChartData } from '@/lib/musickit'
+import { useCharts, useGenreCharts, getChartData } from '@/hooks/use-charts'
 import { usePlayerStore } from '@/stores/player-store'
 import { Loader2 } from 'lucide-react'
 
@@ -31,52 +31,11 @@ const genres = [
 export function BrowsePage() {
   const navigate = useNavigate()
   const { playSongs } = usePlayerStore()
-  const [charts, setCharts] = useState<MusicKit.APIResponseData | null>(null)
-  const [loading, setLoading] = useState(true)
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null)
-  const [genreData, setGenreData] = useState<MusicKit.APIResponseData | null>(
-    null,
-  )
-  const [loadingGenre, setLoadingGenre] = useState(false)
 
-  useEffect(() => {
-    async function fetchCharts() {
-      setLoading(true)
-      try {
-        const data = await musicAPI('/v1/catalog/us/charts', {
-          types: 'songs,albums,playlists',
-          limit: 30,
-        })
-        setCharts(data)
-      } catch (error) {
-        console.error('Failed to fetch charts:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchCharts()
-  }, [])
-
-  useEffect(() => {
-    if (!selectedGenre) return
-
-    async function fetchGenre() {
-      setLoadingGenre(true)
-      try {
-        const data = await musicAPI('/v1/catalog/us/charts', {
-          types: 'songs,albums,playlists',
-          genre: selectedGenre ?? '',
-          limit: 20,
-        })
-        setGenreData(data)
-      } catch (error) {
-        console.error('Failed to fetch genre charts:', error)
-      } finally {
-        setLoadingGenre(false)
-      }
-    }
-    fetchGenre()
-  }, [selectedGenre])
+  const { data: charts, isLoading: loading } = useCharts(30)
+  const { data: genreData, isLoading: loadingGenre } =
+    useGenreCharts(selectedGenre)
 
   const topSongs = getChartData(charts?.results?.songs)
   const topAlbums = getChartData(charts?.results?.albums)

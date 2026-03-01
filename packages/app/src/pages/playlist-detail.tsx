@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Artwork } from '@/components/ui/artwork'
 import { SongRow } from '@/components/ui/song-row'
@@ -11,9 +11,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { musicAPI } from '@/lib/musickit'
+import {
+  usePlaylistDetail,
+  useDeletePlaylist,
+  useRenamePlaylist,
+} from '@/hooks/use-playlists'
 import { usePlayerStore } from '@/stores/player-store'
-import { useLibraryStore } from '@/stores/library-store'
 import { formatArtworkUrl, formatDuration } from '@/lib/utils'
 import {
   Play,
@@ -36,55 +39,28 @@ export function PlaylistDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { playPlaylist, playSongs, nowPlaying, isPlaying } = usePlayerStore()
-  const { deletePlaylist, renamePlaylist } = useLibraryStore()
-  const [playlist, setPlaylist] = useState<MusicKit.Resource | null>(null)
-  const [tracks, setTracks] = useState<MusicKit.Resource[]>([])
-  const [loading, setLoading] = useState(true)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editName, setEditName] = useState('')
 
-  useEffect(() => {
-    if (!id) return
+  const { data, isLoading: loading } = usePlaylistDetail(id)
+  const deletePlaylistMutation = useDeletePlaylist()
+  const renamePlaylistMutation = useRenamePlaylist()
 
-    async function fetchPlaylist() {
-      setLoading(true)
-      try {
-        const isLibrary = id?.startsWith('p.')
-        const path = isLibrary
-          ? `/v1/me/library/playlists/${id}`
-          : `/v1/catalog/us/playlists/${id}`
-
-        const data = await musicAPI(path, {
-          include: 'tracks',
-          'include[library-playlists]': 'tracks',
-        })
-        const playlistData = data.data?.[0] ?? null
-        setPlaylist(playlistData)
-        setTracks(playlistData?.relationships?.tracks?.data || [])
-      } catch (error) {
-        console.error('Failed to fetch playlist:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchPlaylist()
-  }, [id])
+  const playlist = data?.playlist ?? null
+  const tracks = data?.tracks ?? []
 
   const handleRename = async () => {
     if (!id || !editName.trim()) return
-    await renamePlaylist(id, editName.trim())
-    setPlaylist((prev: MusicKit.Resource | null) =>
-      prev
-        ? { ...prev, attributes: { ...prev.attributes, name: editName.trim() } }
-        : prev,
-    )
+    await renamePlaylistMutation.mutateAsync({
+      playlistId: id,
+      name: editName.trim(),
+    })
     setEditDialogOpen(false)
   }
 
   const handleDelete = async () => {
     if (!id) return
-    await deletePlaylist(id)
+    await deletePlaylistMutation.mutateAsync(id)
     navigate('/library/playlists')
   }
 

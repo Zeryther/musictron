@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MediaCard } from '@/components/ui/media-card'
 import { SongRow } from '@/components/ui/song-row'
 import { useAuthStore } from '@/stores/auth-store'
 import { usePlayerStore } from '@/stores/player-store'
-import { musicAPI, getChartData } from '@/lib/musickit'
+import { useCharts, getChartData } from '@/hooks/use-charts'
+import { useRecommendations, useRecentlyPlayed } from '@/hooks/use-recommendations'
 import { getGreeting } from '@/lib/utils'
 import { ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,55 +14,14 @@ export function HomePage() {
   const navigate = useNavigate()
   const { isAuthorized } = useAuthStore()
   const { playSongs } = usePlayerStore()
-  const [recommendations, setRecommendations] = useState<MusicKit.Resource[]>(
-    [],
-  )
-  const [recentlyPlayed, setRecentlyPlayed] = useState<MusicKit.Resource[]>([])
-  const [topCharts, setTopCharts] = useState<MusicKit.APIResponseData | null>(
-    null,
-  )
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function fetchHomeData() {
-      setLoading(true)
-      try {
-        const promises: Promise<MusicKit.APIResponseData | null>[] = []
+  const { data: recommendations = [] } = useRecommendations(isAuthorized)
+  const { data: recentlyPlayed = [] } = useRecentlyPlayed(isAuthorized)
+  const { data: chartsData, isLoading: loading } = useCharts(15)
 
-        if (isAuthorized) {
-          promises.push(
-            musicAPI('/v1/me/recommendations', { limit: 10 }).catch(() => null),
-            musicAPI('/v1/me/recent/played', { limit: 10 }).catch(() => null),
-          )
-        } else {
-          promises.push(Promise.resolve(null), Promise.resolve(null))
-        }
-
-        promises.push(
-          musicAPI('/v1/catalog/us/charts', {
-            types: 'songs,albums,playlists',
-            limit: 15,
-          }).catch(() => null),
-        )
-
-        const [recs, recent, charts] = await Promise.all(promises)
-
-        if (recs?.data) setRecommendations(recs.data)
-        if (recent?.data) setRecentlyPlayed(recent.data)
-        if (charts) setTopCharts(charts)
-      } catch (error) {
-        console.error('Failed to load home:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchHomeData()
-  }, [isAuthorized])
-
-  const topSongs = getChartData(topCharts?.results?.songs)
-  const topAlbums = getChartData(topCharts?.results?.albums)
-  const topPlaylists = getChartData(topCharts?.results?.playlists)
+  const topSongs = getChartData(chartsData?.results?.songs)
+  const topAlbums = getChartData(chartsData?.results?.albums)
+  const topPlaylists = getChartData(chartsData?.results?.playlists)
 
   if (loading) {
     return (

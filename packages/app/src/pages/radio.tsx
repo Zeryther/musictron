@@ -1,44 +1,19 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MediaCard } from '@/components/ui/media-card'
 import { Artwork } from '@/components/ui/artwork'
-import { musicAPI, getChartData } from '@/lib/musickit'
+import { useStations, useFeaturedPlaylists } from '@/hooks/use-radio'
 import { formatArtworkUrl } from '@/lib/utils'
 import { Loader2, Radio as RadioIcon } from 'lucide-react'
 
 export function RadioPage() {
   const navigate = useNavigate()
-  const [stations, setStations] = useState<MusicKit.Resource[]>([])
-  const [featuredPlaylists, setFeaturedPlaylists] = useState<
-    MusicKit.Resource[]
-  >([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function fetchRadio() {
-      setLoading(true)
-      try {
-        const [stationsData, chartsData] = await Promise.all([
-          musicAPI('/v1/catalog/us/stations', {
-            limit: 20,
-            'filter[featured]': 'apple-music-live-radio',
-          }).catch(() => null),
-          musicAPI('/v1/catalog/us/charts', {
-            types: 'playlists',
-            limit: 20,
-          }).catch(() => null),
-        ])
+  const { data: stations = [], isLoading: loadingStations } = useStations()
+  const { data: featuredPlaylists = [], isLoading: loadingFeatured } =
+    useFeaturedPlaylists()
 
-        setStations(stationsData?.data || [])
-        setFeaturedPlaylists(getChartData(chartsData?.results?.playlists))
-      } catch (error) {
-        console.error('Failed to fetch radio:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchRadio()
-  }, [])
+  const loading = loadingStations || loadingFeatured
 
   if (loading) {
     return (

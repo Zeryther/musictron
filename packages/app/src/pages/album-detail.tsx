@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Artwork } from '@/components/ui/artwork'
 import { SongRow } from '@/components/ui/song-row'
 import { Button } from '@/components/ui/button'
-import { musicAPI } from '@/lib/musickit'
+import { useAlbumDetail } from '@/hooks/use-albums'
 import { usePlayerStore } from '@/stores/player-store'
 import { formatArtworkUrl, formatDuration } from '@/lib/utils'
 import { Play, Shuffle, Loader2, ArrowLeft } from 'lucide-react'
@@ -12,34 +12,10 @@ export function AlbumDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { playAlbum, playSongs, nowPlaying, isPlaying } = usePlayerStore()
-  const [album, setAlbum] = useState<MusicKit.Resource | null>(null)
-  const [tracks, setTracks] = useState<MusicKit.Resource[]>([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!id) return
-
-    async function fetchAlbum() {
-      setLoading(true)
-      try {
-        const isLibrary = id?.startsWith('l.')
-        const path = isLibrary
-          ? `/v1/me/library/albums/${id}`
-          : `/v1/catalog/us/albums/${id}`
-
-        const data = await musicAPI(path, { include: 'tracks' })
-        const albumData = data.data?.[0] ?? null
-        setAlbum(albumData)
-        setTracks(albumData?.relationships?.tracks?.data || [])
-      } catch (error) {
-        console.error('Failed to fetch album:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchAlbum()
-  }, [id])
+  const { data, isLoading: loading } = useAlbumDetail(id)
+  const album = data?.album ?? null
+  const tracks = data?.tracks ?? []
 
   if (loading) {
     return (

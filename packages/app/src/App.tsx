@@ -1,5 +1,7 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { createQueryClient } from '@/lib/query-client'
 import { MainLayout } from '@/components/layout/main-layout'
 import { HomePage } from '@/pages/home'
 import { BrowsePage } from '@/pages/browse'
@@ -12,14 +14,13 @@ import { ArtistDetailPage } from '@/pages/artist-detail'
 import { SettingsPage } from '@/pages/settings'
 import { useAuthStore } from '@/stores/auth-store'
 import { usePlayerStore } from '@/stores/player-store'
-import { useLibraryStore } from '@/stores/library-store'
 import { initializePlayerEvents } from '@/stores/player-store'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 import { getPlatformAdapter } from '@/lib/platform'
 
 export default function App() {
-  const { initialize, isAuthorized, developerToken } = useAuthStore()
-  const { fetchPlaylists } = useLibraryStore()
+  const [queryClient] = useState(() => createQueryClient())
+  const { initialize, developerToken } = useAuthStore()
 
   // Set up keyboard shortcuts
   useKeyboardShortcuts()
@@ -32,13 +33,6 @@ export default function App() {
       initializePlayerEvents()
     })
   }, [developerToken, initialize])
-
-  // Fetch playlists when authorized
-  useEffect(() => {
-    if (isAuthorized) {
-      fetchPlaylists()
-    }
-  }, [isAuthorized, fetchPlaylists])
 
   // Listen for media keys from the platform adapter (Electron only)
   useEffect(() => {
@@ -76,18 +70,20 @@ export default function App() {
   }, [])
 
   return (
-    <Routes>
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/browse" element={<BrowsePage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/radio" element={<RadioPage />} />
-        <Route path="/library/:section" element={<LibraryPage />} />
-        <Route path="/album/:id" element={<AlbumDetailPage />} />
-        <Route path="/playlist/:id" element={<PlaylistDetailPage />} />
-        <Route path="/artist/:id" element={<ArtistDetailPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Route>
-    </Routes>
+    <QueryClientProvider client={queryClient}>
+      <Routes>
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/browse" element={<BrowsePage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/radio" element={<RadioPage />} />
+          <Route path="/library/:section" element={<LibraryPage />} />
+          <Route path="/album/:id" element={<AlbumDetailPage />} />
+          <Route path="/playlist/:id" element={<PlaylistDetailPage />} />
+          <Route path="/artist/:id" element={<ArtistDetailPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </QueryClientProvider>
   )
 }

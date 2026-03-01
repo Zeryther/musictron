@@ -1,12 +1,17 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { SongRow } from '@/components/ui/song-row'
 import { MediaCard } from '@/components/ui/media-card'
 import { Artwork } from '@/components/ui/artwork'
 import { Button } from '@/components/ui/button'
-import { musicAPI } from '@/lib/musickit'
+import {
+  useLibrarySongs,
+  useLibraryAlbums,
+  useLibraryArtists,
+  useLibraryRecentlyAdded,
+} from '@/hooks/use-library'
+import { useLibraryPlaylists, useCreatePlaylist } from '@/hooks/use-playlists'
 import { usePlayerStore } from '@/stores/player-store'
-import { useLibraryStore } from '@/stores/library-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { formatArtworkUrl } from '@/lib/utils'
 import { Loader2, Music, Plus, Play, Shuffle } from 'lucide-react'
@@ -25,54 +30,26 @@ export function LibraryPage() {
   }>()
   const { isAuthorized } = useAuthStore()
   const { playSongs, nowPlaying, isPlaying } = usePlayerStore()
-  const { playlists, fetchPlaylists, createPlaylist } = useLibraryStore()
-  const [items, setItems] = useState<MusicKit.Resource[]>([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!isAuthorized) return
+  const createPlaylistMutation = useCreatePlaylist()
 
-    async function fetchLibrary() {
-      setLoading(true)
-      try {
-        let path = ''
-        const params: Record<string, string | number | boolean> = {
-          limit: 100,
-        }
-
-        switch (section) {
-          case 'recently-added':
-            path = '/v1/me/library/recently-added'
-            params.limit = 30
-            break
-          case 'songs':
-            path = '/v1/me/library/songs'
-            params.sort = '-dateAdded'
-            break
-          case 'albums':
-            path = '/v1/me/library/albums'
-            params.sort = '-dateAdded'
-            break
-          case 'artists':
-            path = '/v1/me/library/artists'
-            break
-          case 'playlists':
-            await fetchPlaylists()
-            setLoading(false)
-            return
-        }
-
-        const data = await musicAPI(path, params)
-        setItems(data.data || [])
-      } catch (error) {
-        console.error('Failed to fetch library:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchLibrary()
-  }, [section, isAuthorized, fetchPlaylists])
+  // Each hook is enabled only for the active section (+ auth check)
+  const { data: songs = [], isLoading: loadingSongs } = useLibrarySongs(
+    0,
+    isAuthorized && section === 'songs',
+  )
+  const { data: albums = [], isLoading: loadingAlbums } = useLibraryAlbums(
+    0,
+    isAuthorized && section === 'albums',
+  )
+  const { data: artists = [], isLoading: loadingArtists } = useLibraryArtists(
+    0,
+    isAuthorized && section === 'artists',
+  )
+  const { data: recentlyAdded = [], isLoading: loadingRecent } =
+    useLibraryRecentlyAdded(isAuthorized && section === 'recently-added')
+  const { data: playlists = [], isLoading: loadingPlaylists } =
+    useLibraryPlaylists(isAuthorized && section === 'playlists')
 
   if (!isAuthorized) {
     return (
@@ -87,6 +64,32 @@ export function LibraryPage() {
         <Button onClick={() => navigate('/settings')}>Set Up</Button>
       </div>
     )
+  }
+
+  // Determine which items to show and whether we're loading
+  let items: MusicKit.Resource[] = []
+  let loading = false
+
+  switch (section) {
+    case 'recently-added':
+      items = recentlyAdded
+      loading = loadingRecent
+      break
+    case 'songs':
+      items = songs
+      loading = loadingSongs
+      break
+    case 'albums':
+      items = albums
+      loading = loadingAlbums
+      break
+    case 'artists':
+      items = artists
+      loading = loadingArtists
+      break
+    case 'playlists':
+      loading = loadingPlaylists
+      break
   }
 
   const sectionTitles: Record<LibrarySection, string> = {
@@ -136,7 +139,9 @@ export function LibraryPage() {
               size="sm"
               variant="outline"
               onClick={() =>
-                createPlaylist(`New Playlist ${playlists.length + 1}`)
+                createPlaylistMutation.mutate({
+                  name: `New Playlist ${playlists.length + 1}`,
+                })
               }
               className="gap-1.5"
             >

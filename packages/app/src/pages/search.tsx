@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
 import { MediaCard } from '@/components/ui/media-card'
 import { SongRow } from '@/components/ui/song-row'
 import { Artwork } from '@/components/ui/artwork'
-import { musicAPI } from '@/lib/musickit'
+import { useSearch, useSearchHints } from '@/hooks/use-search'
 import { usePlayerStore } from '@/stores/player-store'
 import { formatArtworkUrl } from '@/lib/utils'
 import { Search as SearchIcon, Loader2, X } from 'lucide-react'
@@ -13,12 +13,7 @@ export function SearchPage() {
   const navigate = useNavigate()
   const { playSongs } = usePlayerStore()
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<Record<
-    string,
-    MusicKit.SearchResultList
-  > | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [hints, setHints] = useState<string[]>([])
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -26,53 +21,31 @@ export function SearchPage() {
     inputRef.current?.focus()
   }, [])
 
-  const search = useCallback(async (term: string) => {
-    if (!term.trim()) {
-      setResults(null)
-      setHints([])
-      return
-    }
+  const { data: searchData, isLoading: loading } = useSearch(debouncedQuery)
+  const { data: hintsData } = useSearchHints(debouncedQuery)
 
-    setLoading(true)
-    try {
-      const [searchResults, searchHints] = await Promise.all([
-        musicAPI('/v1/catalog/us/search', {
-          term,
-          types: 'songs,albums,artists,playlists',
-          limit: 10,
-        }).catch(() => null),
-        musicAPI('/v1/catalog/us/search/hints', {
-          term,
-          limit: 5,
-        }).catch(() => null),
-      ])
-
-      setResults(
-        (searchResults?.results as
-          | Record<string, MusicKit.SearchResultList>
-          | undefined) ?? null,
-      )
-      setHints((searchHints?.results?.terms as string[] | undefined) ?? [])
-    } catch (error) {
-      console.error('Search failed:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const results = (searchData?.results as
+    | Record<string, MusicKit.SearchResultList>
+    | undefined) ?? null
+  const hints = (hintsData?.results?.terms as string[] | undefined) ?? []
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setQuery(value)
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => search(value), 300)
+    debounceRef.current = setTimeout(() => setDebouncedQuery(value), 300)
   }
 
   const handleClear = () => {
     setQuery('')
-    setResults(null)
-    setHints([])
+    setDebouncedQuery('')
     inputRef.current?.focus()
+  }
+
+  const handleHintClick = (hint: string) => {
+    setQuery(hint)
+    setDebouncedQuery(hint)
   }
 
   const songs = results?.songs?.data || []
@@ -115,10 +88,7 @@ export function SearchPage() {
           {hints.map((hint) => (
             <button
               key={hint}
-              onClick={() => {
-                setQuery(hint)
-                search(hint)
-              }}
+              onClick={() => handleHintClick(hint)}
               className="px-3 py-1 rounded-full text-[12px] bg-white/[0.06] hover:bg-white/[0.1] text-muted-foreground transition-colors duration-100"
             >
               {hint}
@@ -133,7 +103,7 @@ export function SearchPage() {
         </div>
       )}
 
-      {!loading && !hasResults && query && (
+      {!loading && !hasResults && debouncedQuery && (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/40">
           <SearchIcon className="w-10 h-10 mb-3" />
           <p className="text-[15px] font-medium text-muted-foreground">
@@ -143,7 +113,7 @@ export function SearchPage() {
         </div>
       )}
 
-      {!loading && !query && (
+      {!loading && !debouncedQuery && (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
           <SearchIcon className="w-10 h-10 mb-3" />
           <p className="text-[15px] text-muted-foreground/50">

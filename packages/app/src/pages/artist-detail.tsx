@@ -1,10 +1,14 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Artwork } from '@/components/ui/artwork'
 import { SongRow } from '@/components/ui/song-row'
 import { MediaCard } from '@/components/ui/media-card'
 import { Button } from '@/components/ui/button'
-import { musicAPI } from '@/lib/musickit'
+import {
+  useArtistDetail,
+  useArtistTopSongs,
+  useArtistPlaylists,
+} from '@/hooks/use-artists'
 import { usePlayerStore } from '@/stores/player-store'
 import { formatArtworkUrl } from '@/lib/utils'
 import { Play, Shuffle, Loader2, ArrowLeft } from 'lucide-react'
@@ -13,46 +17,13 @@ export function ArtistDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { playSongs } = usePlayerStore()
-  const [artist, setArtist] = useState<MusicKit.Resource | null>(null)
-  const [topSongs, setTopSongs] = useState<MusicKit.Resource[]>([])
-  const [albums, setAlbums] = useState<MusicKit.Resource[]>([])
-  const [playlists, setPlaylists] = useState<MusicKit.Resource[]>([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!id) return
+  const { data: artistData, isLoading: loading } = useArtistDetail(id)
+  const { data: topSongs = [] } = useArtistTopSongs(id)
+  const { data: playlists = [] } = useArtistPlaylists(id)
 
-    async function fetchArtist() {
-      setLoading(true)
-      try {
-        const [artistData, songsData] = await Promise.all([
-          musicAPI(`/v1/catalog/us/artists/${id}`, {
-            include: 'albums',
-          }),
-          musicAPI(`/v1/catalog/us/artists/${id}/view/top-songs`, {
-            limit: 20,
-          }).catch(() => null),
-        ])
-
-        const a = artistData.data?.[0] ?? null
-        setArtist(a)
-        setAlbums(a?.relationships?.albums?.data || [])
-        setTopSongs(songsData?.data || [])
-
-        const playlistData = await musicAPI(
-          `/v1/catalog/us/artists/${id}/view/featured-playlists`,
-          { limit: 10 },
-        ).catch(() => null)
-        setPlaylists(playlistData?.data || [])
-      } catch (error) {
-        console.error('Failed to fetch artist:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchArtist()
-  }, [id])
+  const artist = artistData?.artist ?? null
+  const albums = artistData?.albums ?? []
 
   if (loading) {
     return (
