@@ -31,6 +31,7 @@ export const queryKeys = {
   playlists: {
     all: ['playlists'] as const,
     detail: (id: string) => ['playlists', 'detail', id] as const,
+    tracks: (id: string) => ['playlists', 'tracks', id] as const,
   },
 
   radio: {

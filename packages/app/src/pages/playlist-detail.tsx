@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Artwork } from '@/components/ui/artwork'
 import { SongRow } from '@/components/ui/song-row'
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import {
   usePlaylistDetail,
+  usePlaylistTracks,
   useDeletePlaylist,
   useRenamePlaylist,
 } from '@/hooks/use-playlists'
@@ -42,12 +43,42 @@ export function PlaylistDetailPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editName, setEditName] = useState('')
 
-  const { data, isLoading: loading } = usePlaylistDetail(id)
+  const { data: detailData, isLoading: loadingDetail } = usePlaylistDetail(id)
+  const {
+    data: tracksData,
+    isLoading: loadingTracks,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = usePlaylistTracks(id)
   const deletePlaylistMutation = useDeletePlaylist()
   const renamePlaylistMutation = useRenamePlaylist()
 
-  const playlist = data?.playlist ?? null
-  const tracks = data?.tracks ?? []
+  const playlist = detailData?.playlist ?? null
+  const tracks = useMemo(
+    () => tracksData?.pages.flatMap((page) => page.tracks) ?? [],
+    [tracksData],
+  )
+
+  // Infinite scroll sentinel
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage()
+        }
+      },
+      { rootMargin: '200px' },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const handleRename = async () => {
     if (!id || !editName.trim()) return
@@ -63,6 +94,8 @@ export function PlaylistDetailPage() {
     await deletePlaylistMutation.mutateAsync(id)
     navigate('/library/playlists')
   }
+
+  const loading = loadingDetail || loadingTracks
 
   if (loading) {
     return (
@@ -123,7 +156,8 @@ export function PlaylistDetailPage() {
           )}
           <div className="flex items-center gap-2 text-[12px] text-muted-foreground/50 mb-5">
             <span>
-              {tracks.length} songs
+              {tracks.length}
+              {hasNextPage ? '+' : ''} songs
               {totalDuration > 0 && `, ${formatDuration(totalDuration)}`}
             </span>
           </div>
@@ -206,6 +240,15 @@ export function PlaylistDetailPage() {
           />
         ))}
       </div>
+
+      {/* Infinite scroll sentinel */}
+      <div ref={sentinelRef} className="h-px" />
+
+      {isFetchingNextPage && (
+        <div className="flex items-center justify-center py-6">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
+        </div>
+      )}
 
       {tracks.length === 0 && (
         <div className="text-center py-20 text-muted-foreground/40">

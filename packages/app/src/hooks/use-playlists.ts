@@ -1,11 +1,22 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { musicAPI } from '@/lib/musickit'
 import { queryKeys } from '@/lib/query-keys'
 import type { PlaylistItem } from '@/stores/library-store'
 
+interface PlaylistTracksPage {
+  tracks: MusicKit.Resource[]
+  next: string | undefined
+}
+
 /**
- * Fetch a single playlist by ID (catalog or library).
- * Library playlist IDs start with `p.`.
+ * Fetch playlist metadata (name, artwork, curator, etc.).
+ * The first page of tracks is included via the `include=tracks` param,
+ * but full track pagination is handled by `usePlaylistTracks`.
  */
 export function usePlaylistDetail(playlistId: string | undefined) {
   return useQuery({
@@ -21,10 +32,51 @@ export function usePlaylistDetail(playlistId: string | undefined) {
         'include[library-playlists]': 'tracks',
       })
       const playlist = data.data?.[0] ?? null
-      const tracks: MusicKit.Resource[] =
-        playlist?.relationships?.tracks?.data || []
-      return { playlist, tracks }
+      return { playlist }
     },
+    enabled: !!playlistId,
+  })
+}
+
+/**
+ * Infinitely paginate through all tracks in a playlist.
+ *
+ * The first page comes from the playlist's `relationships.tracks` (included
+ * in the detail response). Subsequent pages follow the `next` cursor URL
+ * returned by the Apple Music API until all tracks are loaded.
+ */
+export function usePlaylistTracks(playlistId: string | undefined) {
+  return useInfiniteQuery<PlaylistTracksPage>({
+    queryKey: queryKeys.playlists.tracks(playlistId ?? ''),
+    queryFn: async ({ pageParam }) => {
+      if (pageParam) {
+        // Follow the `next` cursor URL for subsequent pages
+        const data = await musicAPI(pageParam as string)
+        return {
+          tracks: (data.data ?? []) as MusicKit.Resource[],
+          next: data.next,
+        }
+      }
+
+      // First page: fetch the playlist with included tracks
+      const isLibrary = playlistId!.startsWith('p.')
+      const path = isLibrary
+        ? `/v1/me/library/playlists/${playlistId}`
+        : `/v1/catalog/{{storefrontId}}/playlists/${playlistId}`
+
+      const data = await musicAPI(path, {
+        include: 'tracks',
+        'include[library-playlists]': 'tracks',
+      })
+      const playlist = data.data?.[0] ?? null
+      const tracksRel = playlist?.relationships?.tracks
+      return {
+        tracks: (tracksRel?.data ?? []) as MusicKit.Resource[],
+        next: tracksRel?.next,
+      }
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.next,
     enabled: !!playlistId,
   })
 }
@@ -107,6 +159,9 @@ export function useDeletePlaylist() {
       queryClient.removeQueries({
         queryKey: queryKeys.playlists.detail(playlistId),
       })
+      queryClient.removeQueries({
+        queryKey: queryKeys.playlists.tracks(playlistId),
+      })
       queryClient.invalidateQueries({ queryKey: queryKeys.library.playlists() })
     },
   })
@@ -136,6 +191,9 @@ export function useRenamePlaylist() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.playlists.detail(variables.playlistId),
+      })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.playlists.tracks(variables.playlistId),
       })
       queryClient.invalidateQueries({ queryKey: queryKeys.library.playlists() })
     },
@@ -168,6 +226,9 @@ export function useAddToPlaylist() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.playlists.detail(variables.playlistId),
+      })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.playlists.tracks(variables.playlistId),
       })
       queryClient.invalidateQueries({ queryKey: queryKeys.library.playlists() })
     },
