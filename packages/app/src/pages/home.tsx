@@ -4,7 +4,7 @@ import { MediaCard } from '@/components/ui/media-card'
 import { SongRow } from '@/components/ui/song-row'
 import { useAuthStore } from '@/stores/auth-store'
 import { usePlayerStore } from '@/stores/player-store'
-import { musicAPI } from '@/lib/musickit'
+import { musicAPI, getChartData } from '@/lib/musickit'
 import { getGreeting } from '@/lib/utils'
 import { ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,16 +13,20 @@ export function HomePage() {
   const navigate = useNavigate()
   const { isAuthorized } = useAuthStore()
   const { playSongs } = usePlayerStore()
-  const [recommendations, setRecommendations] = useState<any[]>([])
-  const [recentlyPlayed, setRecentlyPlayed] = useState<any[]>([])
-  const [topCharts, setTopCharts] = useState<any>(null)
+  const [recommendations, setRecommendations] = useState<MusicKit.Resource[]>(
+    [],
+  )
+  const [recentlyPlayed, setRecentlyPlayed] = useState<MusicKit.Resource[]>([])
+  const [topCharts, setTopCharts] = useState<MusicKit.APIResponseData | null>(
+    null,
+  )
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchHomeData() {
       setLoading(true)
       try {
-        const promises: Promise<any>[] = []
+        const promises: Promise<MusicKit.APIResponseData | null>[] = []
 
         if (isAuthorized) {
           promises.push(
@@ -55,9 +59,9 @@ export function HomePage() {
     fetchHomeData()
   }, [isAuthorized])
 
-  const topSongs = topCharts?.results?.songs?.[0]?.data || []
-  const topAlbums = topCharts?.results?.albums?.[0]?.data || []
-  const topPlaylists = topCharts?.results?.playlists?.[0]?.data || []
+  const topSongs = getChartData(topCharts?.results?.songs)
+  const topAlbums = getChartData(topCharts?.results?.albums)
+  const topPlaylists = getChartData(topCharts?.results?.playlists)
 
   if (loading) {
     return (
@@ -91,13 +95,15 @@ export function HomePage() {
               Recently Played
             </h2>
             <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
-              {recentlyPlayed.map((item: any) => (
+              {recentlyPlayed.map((item: MusicKit.Resource) => (
                 <MediaCard
                   key={item.id}
                   id={item.id}
                   type={item.type === 'albums' ? 'album' : 'playlist'}
                   name={item.attributes?.name}
-                  subtitle={item.attributes?.artistName || item.attributes?.curatorName}
+                  subtitle={
+                    item.attributes?.artistName || item.attributes?.curatorName
+                  }
                   artworkUrl={item.attributes?.artwork?.url}
                   onClick={() =>
                     navigate(
@@ -113,12 +119,15 @@ export function HomePage() {
         )}
 
         {/* Recommendations */}
-        {recommendations.map((rec: any, idx: number) => {
+        {recommendations.map((rec: MusicKit.Resource, idx: number) => {
           const items = rec.relationships?.contents?.data || []
           if (items.length === 0) return null
 
           return (
-            <section key={rec.id || idx} className="animate-fade-in-up stagger-2">
+            <section
+              key={rec.id || idx}
+              className="animate-fade-in-up stagger-2"
+            >
               <div className="mb-4">
                 <h2 className="text-[20px] font-semibold tracking-tight">
                   {rec.attributes?.title?.stringForDisplay || 'For You'}
@@ -130,7 +139,7 @@ export function HomePage() {
                 )}
               </div>
               <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
-                {items.slice(0, 8).map((item: any) => (
+                {items.slice(0, 8).map((item: MusicKit.Resource) => (
                   <MediaCard
                     key={item.id}
                     id={item.id}
@@ -172,21 +181,23 @@ export function HomePage() {
               </Button>
             </div>
             <div className="space-y-px">
-              {topSongs.slice(0, 10).map((song: any, idx: number) => (
-                <SongRow
-                  key={song.id}
-                  id={song.id}
-                  name={song.attributes?.name}
-                  artistName={song.attributes?.artistName}
-                  albumName={song.attributes?.albumName}
-                  artworkUrl={song.attributes?.artwork?.url}
-                  duration={song.attributes?.durationInMillis || 0}
-                  onClick={() => {
-                    const ids = topSongs.map((s: any) => s.id)
-                    playSongs(ids, idx)
-                  }}
-                />
-              ))}
+              {topSongs
+                .slice(0, 10)
+                .map((song: MusicKit.Resource, idx: number) => (
+                  <SongRow
+                    key={song.id}
+                    id={song.id}
+                    name={song.attributes?.name}
+                    artistName={song.attributes?.artistName}
+                    albumName={song.attributes?.albumName}
+                    artworkUrl={song.attributes?.artwork?.url}
+                    duration={song.attributes?.durationInMillis || 0}
+                    onClick={() => {
+                      const ids = topSongs.map((s: MusicKit.Resource) => s.id)
+                      playSongs(ids, idx)
+                    }}
+                  />
+                ))}
             </div>
           </section>
         )}
@@ -208,7 +219,7 @@ export function HomePage() {
               </Button>
             </div>
             <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
-              {topAlbums.slice(0, 8).map((album: any) => (
+              {topAlbums.slice(0, 8).map((album: MusicKit.Resource) => (
                 <MediaCard
                   key={album.id}
                   id={album.id}
@@ -230,7 +241,7 @@ export function HomePage() {
               Featured Playlists
             </h2>
             <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
-              {topPlaylists.slice(0, 8).map((playlist: any) => (
+              {topPlaylists.slice(0, 8).map((playlist: MusicKit.Resource) => (
                 <MediaCard
                   key={playlist.id}
                   id={playlist.id}

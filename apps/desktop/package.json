@@ -19,6 +19,7 @@
     "build:win": "tsc -b && vite build && electron-builder --win",
     "build:linux": "tsc -b && vite build && electron-builder --linux",
     "preview": "vite preview",
+    "lint": "eslint .",
     "clean": "rm -rf dist dist-electron release node_modules/.vite"
   },
   "dependencies": {

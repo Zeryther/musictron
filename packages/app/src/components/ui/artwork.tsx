@@ -43,12 +43,22 @@ export function Artwork({
       )}
       style={{ width: size, height: size }}
       onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onClick()
+              }
+            }
+          : undefined
+      }
     >
       {!error && src ? (
         <>
-          {!loaded && (
-            <div className="absolute inset-0 artwork-loading" />
-          )}
+          {!loaded && <div className="absolute inset-0 artwork-loading" />}
           <img
             src={src}
             alt={alt}

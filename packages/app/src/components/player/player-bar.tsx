@@ -80,7 +80,9 @@ export function PlayerBar() {
           ) : (
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded bg-muted/60" />
-              <p className="text-[13px] text-muted-foreground/50">Not Playing</p>
+              <p className="text-[13px] text-muted-foreground/50">
+                Not Playing
+              </p>
             </div>
           )}
         </div>
@@ -108,7 +110,10 @@ export function PlayerBar() {
               {isPlaying ? (
                 <Pause className="w-[16px] h-[16px]" fill="currentColor" />
               ) : (
-                <Play className="w-[16px] h-[16px] ml-[1px]" fill="currentColor" />
+                <Play
+                  className="w-[16px] h-[16px] ml-[1px]"
+                  fill="currentColor"
+                />
               )}
             </button>
 

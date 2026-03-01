@@ -31,14 +31,14 @@ export default function App() {
     initialize().then(() => {
       initializePlayerEvents()
     })
-  }, [developerToken])
+  }, [developerToken, initialize])
 
   // Fetch playlists when authorized
   useEffect(() => {
     if (isAuthorized) {
       fetchPlaylists()
     }
-  }, [isAuthorized])
+  }, [isAuthorized, fetchPlaylists])
 
   // Listen for media keys from the platform adapter (Electron only)
   useEffect(() => {

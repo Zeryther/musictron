@@ -20,8 +20,8 @@ import {
 
 interface SongRowProps {
   id: string
-  name: string
-  artistName: string
+  name?: string
+  artistName?: string
   albumName?: string
   artworkUrl?: string
   duration: number
@@ -67,9 +67,7 @@ export function SongRow({
     <div
       className={cn(
         'group flex items-center gap-3 px-3 py-[7px] rounded-lg transition-colors duration-100 cursor-pointer',
-        isActive
-          ? 'bg-primary/[0.08]'
-          : 'hover:bg-white/[0.04]',
+        isActive ? 'bg-primary/[0.08]' : 'hover:bg-white/[0.04]',
         className,
       )}
       onDoubleClick={handlePlay}
@@ -91,9 +89,15 @@ export function SongRow({
               className="hidden group-hover:flex items-center justify-center"
             >
               {isPlaying ? (
-                <Pause className="w-3.5 h-3.5 text-primary" fill="currentColor" />
+                <Pause
+                  className="w-3.5 h-3.5 text-primary"
+                  fill="currentColor"
+                />
               ) : (
-                <Play className="w-3.5 h-3.5 text-foreground" fill="currentColor" />
+                <Play
+                  className="w-3.5 h-3.5 text-foreground"
+                  fill="currentColor"
+                />
               )}
             </button>
           </>

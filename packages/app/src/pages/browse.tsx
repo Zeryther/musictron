@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { MediaCard } from '@/components/ui/media-card'
 import { SongRow } from '@/components/ui/song-row'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { musicAPI } from '@/lib/musickit'
+import { musicAPI, getChartData } from '@/lib/musickit'
 import { usePlayerStore } from '@/stores/player-store'
 import { Loader2 } from 'lucide-react'
 
@@ -31,10 +31,12 @@ const genres = [
 export function BrowsePage() {
   const navigate = useNavigate()
   const { playSongs } = usePlayerStore()
-  const [charts, setCharts] = useState<any>(null)
+  const [charts, setCharts] = useState<MusicKit.APIResponseData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null)
-  const [genreData, setGenreData] = useState<any>(null)
+  const [genreData, setGenreData] = useState<MusicKit.APIResponseData | null>(
+    null,
+  )
   const [loadingGenre, setLoadingGenre] = useState(false)
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export function BrowsePage() {
       try {
         const data = await musicAPI('/v1/catalog/us/charts', {
           types: 'songs,albums,playlists',
-          genre: selectedGenre,
+          genre: selectedGenre ?? '',
           limit: 20,
         })
         setGenreData(data)
@@ -76,9 +78,9 @@ export function BrowsePage() {
     fetchGenre()
   }, [selectedGenre])
 
-  const topSongs = charts?.results?.songs?.[0]?.data || []
-  const topAlbums = charts?.results?.albums?.[0]?.data || []
-  const topPlaylists = charts?.results?.playlists?.[0]?.data || []
+  const topSongs = getChartData(charts?.results?.songs)
+  const topAlbums = getChartData(charts?.results?.albums)
+  const topPlaylists = getChartData(charts?.results?.playlists)
 
   return (
     <div className="animate-fade-in">
@@ -103,7 +105,7 @@ export function BrowsePage() {
                     Top Songs
                   </h2>
                   <div className="space-y-px">
-                    {topSongs.map((song: any, idx: number) => (
+                    {topSongs.map((song: MusicKit.Resource, idx: number) => (
                       <SongRow
                         key={song.id}
                         id={song.id}
@@ -113,7 +115,9 @@ export function BrowsePage() {
                         artworkUrl={song.attributes?.artwork?.url}
                         duration={song.attributes?.durationInMillis || 0}
                         onClick={() => {
-                          const ids = topSongs.map((s: any) => s.id)
+                          const ids = topSongs.map(
+                            (s: MusicKit.Resource) => s.id,
+                          )
                           playSongs(ids, idx)
                         }}
                       />
@@ -128,7 +132,7 @@ export function BrowsePage() {
                     Top Albums
                   </h2>
                   <div className="flex flex-wrap gap-5">
-                    {topAlbums.map((album: any) => (
+                    {topAlbums.map((album: MusicKit.Resource) => (
                       <MediaCard
                         key={album.id}
                         id={album.id}
@@ -149,7 +153,7 @@ export function BrowsePage() {
                     Top Playlists
                   </h2>
                   <div className="flex flex-wrap gap-5">
-                    {topPlaylists.map((playlist: any) => (
+                    {topPlaylists.map((playlist: MusicKit.Resource) => (
                       <MediaCard
                         key={playlist.id}
                         id={playlist.id}
@@ -198,59 +202,68 @@ export function BrowsePage() {
                   </div>
                 ) : (
                   <>
-                    {genreData?.results?.songs?.[0]?.data?.length > 0 && (
-                      <section>
-                        <h3 className="text-[17px] font-semibold tracking-tight mb-3">
-                          Top Songs
-                        </h3>
-                        <div className="space-y-px">
-                          {genreData.results.songs[0].data
-                            .slice(0, 15)
-                            .map((song: any, idx: number) => (
-                              <SongRow
-                                key={song.id}
-                                id={song.id}
-                                name={song.attributes?.name}
-                                artistName={song.attributes?.artistName}
-                                albumName={song.attributes?.albumName}
-                                artworkUrl={song.attributes?.artwork?.url}
-                                duration={
-                                  song.attributes?.durationInMillis || 0
-                                }
-                                onClick={() => {
-                                  const ids =
-                                    genreData.results.songs[0].data.map(
-                                      (s: any) => s.id,
+                    {(() => {
+                      const genreSongs = getChartData(genreData?.results?.songs)
+                      if (!genreSongs.length) return null
+                      return (
+                        <section>
+                          <h3 className="text-[17px] font-semibold tracking-tight mb-3">
+                            Top Songs
+                          </h3>
+                          <div className="space-y-px">
+                            {genreSongs
+                              .slice(0, 15)
+                              .map((song: MusicKit.Resource, idx: number) => (
+                                <SongRow
+                                  key={song.id}
+                                  id={song.id}
+                                  name={song.attributes?.name}
+                                  artistName={song.attributes?.artistName}
+                                  albumName={song.attributes?.albumName}
+                                  artworkUrl={song.attributes?.artwork?.url}
+                                  duration={
+                                    song.attributes?.durationInMillis || 0
+                                  }
+                                  onClick={() => {
+                                    const ids = genreSongs.map(
+                                      (s: MusicKit.Resource) => s.id,
                                     )
-                                  playSongs(ids, idx)
-                                }}
-                              />
-                            ))}
-                        </div>
-                      </section>
-                    )}
-                    {genreData?.results?.albums?.[0]?.data?.length > 0 && (
-                      <section>
-                        <h3 className="text-[17px] font-semibold tracking-tight mb-3">
-                          Top Albums
-                        </h3>
-                        <div className="flex flex-wrap gap-5">
-                          {genreData.results.albums[0].data
-                            .slice(0, 10)
-                            .map((album: any) => (
-                              <MediaCard
-                                key={album.id}
-                                id={album.id}
-                                type="album"
-                                name={album.attributes?.name}
-                                subtitle={album.attributes?.artistName}
-                                artworkUrl={album.attributes?.artwork?.url}
-                                onClick={() => navigate(`/album/${album.id}`)}
-                              />
-                            ))}
-                        </div>
-                      </section>
-                    )}
+                                    playSongs(ids, idx)
+                                  }}
+                                />
+                              ))}
+                          </div>
+                        </section>
+                      )
+                    })()}
+                    {(() => {
+                      const genreAlbums = getChartData(
+                        genreData?.results?.albums,
+                      )
+                      if (!genreAlbums.length) return null
+                      return (
+                        <section>
+                          <h3 className="text-[17px] font-semibold tracking-tight mb-3">
+                            Top Albums
+                          </h3>
+                          <div className="flex flex-wrap gap-5">
+                            {genreAlbums
+                              .slice(0, 10)
+                              .map((album: MusicKit.Resource) => (
+                                <MediaCard
+                                  key={album.id}
+                                  id={album.id}
+                                  type="album"
+                                  name={album.attributes?.name}
+                                  subtitle={album.attributes?.artistName}
+                                  artworkUrl={album.attributes?.artwork?.url}
+                                  onClick={() => navigate(`/album/${album.id}`)}
+                                />
+                              ))}
+                          </div>
+                        </section>
+                      )
+                    })()}
                   </>
                 )}
               </div>

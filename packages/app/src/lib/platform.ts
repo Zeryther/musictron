@@ -25,7 +25,9 @@ export interface PlatformAdapter {
   windowMaximize?: () => Promise<void>
   windowIsMaximized?: () => Promise<boolean>
   windowClose?: () => Promise<void>
-  onWindowMaximizedChange?: (callback: (isMaximized: boolean) => void) => () => void
+  onWindowMaximizedChange?: (
+    callback: (isMaximized: boolean) => void,
+  ) => () => void
 
   /** Media key events — only meaningful in Electron. */
   onMediaKey?: (callback: (key: string) => void) => () => void

@@ -2,14 +2,16 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MediaCard } from '@/components/ui/media-card'
 import { Artwork } from '@/components/ui/artwork'
-import { musicAPI } from '@/lib/musickit'
+import { musicAPI, getChartData } from '@/lib/musickit'
 import { formatArtworkUrl } from '@/lib/utils'
 import { Loader2, Radio as RadioIcon } from 'lucide-react'
 
 export function RadioPage() {
   const navigate = useNavigate()
-  const [stations, setStations] = useState<any[]>([])
-  const [featuredPlaylists, setFeaturedPlaylists] = useState<any[]>([])
+  const [stations, setStations] = useState<MusicKit.Resource[]>([])
+  const [featuredPlaylists, setFeaturedPlaylists] = useState<
+    MusicKit.Resource[]
+  >([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -28,9 +30,7 @@ export function RadioPage() {
         ])
 
         setStations(stationsData?.data || [])
-        setFeaturedPlaylists(
-          chartsData?.results?.playlists?.[0]?.data || [],
-        )
+        setFeaturedPlaylists(getChartData(chartsData?.results?.playlists))
       } catch (error) {
         console.error('Failed to fetch radio:', error)
       } finally {
@@ -60,18 +60,17 @@ export function RadioPage() {
       {/* Stations */}
       {stations.length > 0 && (
         <section className="mb-10 animate-fade-in-up stagger-1">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">Stations</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+            Stations
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {stations.map((station: any) => (
+            {stations.map((station: MusicKit.Resource) => (
               <div
                 key={station.id}
                 className="group relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.99] transition-transform duration-150"
               >
                 <Artwork
-                  src={formatArtworkUrl(
-                    station.attributes?.artwork?.url,
-                    400,
-                  )}
+                  src={formatArtworkUrl(station.attributes?.artwork?.url, 400)}
                   alt={station.attributes?.name}
                   size={300}
                   rounded="none"
@@ -83,7 +82,8 @@ export function RadioPage() {
                     {station.attributes?.name}
                   </p>
                   <p className="text-white/50 text-[12px] mt-0.5 line-clamp-1">
-                    {station.attributes?.editorialNotes?.short || 'Radio Station'}
+                    {station.attributes?.editorialNotes?.short ||
+                      'Radio Station'}
                   </p>
                 </div>
               </div>
@@ -95,9 +95,11 @@ export function RadioPage() {
       {/* Featured Mixes fallback */}
       {stations.length === 0 && featuredPlaylists.length > 0 && (
         <section className="animate-fade-in-up stagger-1">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">Featured Mixes</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+            Featured Mixes
+          </h2>
           <div className="flex flex-wrap gap-5">
-            {featuredPlaylists.map((playlist: any) => (
+            {featuredPlaylists.map((playlist: MusicKit.Resource) => (
               <MediaCard
                 key={playlist.id}
                 id={playlist.id}
@@ -116,7 +118,9 @@ export function RadioPage() {
       {stations.length === 0 && featuredPlaylists.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
           <RadioIcon className="w-12 h-12 mb-3" />
-          <p className="text-[15px] text-muted-foreground/50">No radio stations available</p>
+          <p className="text-[15px] text-muted-foreground/50">
+            No radio stations available
+          </p>
           <p className="text-[13px] mt-0.5">Browse for music instead</p>
         </div>
       )}

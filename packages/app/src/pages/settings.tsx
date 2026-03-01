@@ -44,7 +44,7 @@ export function SettingsPage() {
 
   useEffect(() => {
     checkServer()
-  }, [])
+  }, [checkServer])
 
   const handleSaveToken = async () => {
     setDeveloperToken(tokenInput)
@@ -116,7 +116,9 @@ export function SettingsPage() {
           <div className="space-y-2.5">
             <div className="flex items-center gap-2">
               <Globe className="w-3.5 h-3.5 text-muted-foreground/40" />
-              <label className="text-[13px] font-medium">Server URL</label>
+              <label htmlFor="server-url" className="text-[13px] font-medium">
+                Server URL
+              </label>
             </div>
             <p className="text-[12px] text-muted-foreground/50 leading-relaxed">
               The official Musictron server is used by default. Self-hosters can
@@ -124,6 +126,7 @@ export function SettingsPage() {
             </p>
             <div className="flex gap-2">
               <Input
+                id="server-url"
                 value={serverInput}
                 onChange={(e) => setServerInput(e.target.value)}
                 placeholder="https://musictron.example.com"
@@ -189,7 +192,10 @@ export function SettingsPage() {
             <div className="space-y-2.5">
               <div className="flex items-center gap-2">
                 <Key className="w-3.5 h-3.5 text-muted-foreground/40" />
-                <label className="text-[13px] font-medium">
+                <label
+                  htmlFor="developer-token"
+                  className="text-[13px] font-medium"
+                >
                   Developer Token (JWT)
                 </label>
               </div>
@@ -209,6 +215,7 @@ export function SettingsPage() {
               </p>
               <div className="flex gap-2">
                 <Input
+                  id="developer-token"
                   type="password"
                   value={tokenInput}
                   onChange={(e) => setTokenInput(e.target.value)}

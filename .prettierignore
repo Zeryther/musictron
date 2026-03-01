@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-electron
+.next
+release
+.turbo
+build
+pnpm-lock.yaml
+*.tsbuildinfo

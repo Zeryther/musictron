@@ -7,7 +7,7 @@ import { usePlayerStore } from '@/stores/player-store'
 interface MediaCardProps {
   id: string
   type: 'album' | 'playlist' | 'station'
-  name: string
+  name?: string
   subtitle?: string
   artworkUrl?: string
   className?: string
@@ -44,12 +44,17 @@ export function MediaCard({
 
   return (
     <div
-      className={cn(
-        'group cursor-pointer flex flex-col gap-2',
-        className,
-      )}
+      className={cn('group cursor-pointer flex flex-col gap-2', className)}
       style={{ width: sizeMap[size] }}
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick?.()
+        }
+      }}
     >
       <div className="relative rounded-xl overflow-hidden">
         <Artwork

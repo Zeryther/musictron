@@ -151,9 +151,7 @@ export const useAuthStore = create<AuthState>()(
           set({
             isLoading: false,
             error:
-              error instanceof Error
-                ? error.message
-                : 'Authorization failed',
+              error instanceof Error ? error.message : 'Authorization failed',
           })
         }
       },

@@ -18,7 +18,8 @@ export function MainLayout() {
     getPlatformAdapter().getPlatform().then(setPlatform)
   }, [])
 
-  const isDesktop = platform === 'darwin' || platform === 'win32' || platform === 'linux'
+  const isDesktop =
+    platform === 'darwin' || platform === 'win32' || platform === 'linux'
   const isMac = platform === 'darwin'
   const showTitleBar = isDesktop && !isMac
 
@@ -28,7 +29,9 @@ export function MainLayout() {
       {showTitleBar && (
         <div className="flex items-center justify-between h-8 surface-glass border-b border-white/[0.06] drag-region shrink-0">
           <div className="flex items-center gap-2 px-4 no-drag">
-            <span className="text-[11px] font-medium text-muted-foreground/60">Musictron</span>
+            <span className="text-[11px] font-medium text-muted-foreground/60">
+              Musictron
+            </span>
           </div>
           <WindowControls />
         </div>

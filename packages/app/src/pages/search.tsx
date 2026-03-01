@@ -13,7 +13,10 @@ export function SearchPage() {
   const navigate = useNavigate()
   const { playSongs } = usePlayerStore()
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<any>(null)
+  const [results, setResults] = useState<Record<
+    string,
+    MusicKit.SearchResultList
+  > | null>(null)
   const [loading, setLoading] = useState(false)
   const [hints, setHints] = useState<string[]>([])
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -44,8 +47,12 @@ export function SearchPage() {
         }).catch(() => null),
       ])
 
-      setResults(searchResults?.results || null)
-      setHints(searchHints?.results?.terms || [])
+      setResults(
+        (searchResults?.results as
+          | Record<string, MusicKit.SearchResultList>
+          | undefined) ?? null,
+      )
+      setHints((searchHints?.results?.terms as string[] | undefined) ?? [])
     } catch (error) {
       console.error('Search failed:', error)
     } finally {
@@ -72,7 +79,11 @@ export function SearchPage() {
   const albums = results?.albums?.data || []
   const artists = results?.artists?.data || []
   const playlists = results?.playlists?.data || []
-  const hasResults = songs.length > 0 || albums.length > 0 || artists.length > 0 || playlists.length > 0
+  const hasResults =
+    songs.length > 0 ||
+    albums.length > 0 ||
+    artists.length > 0 ||
+    playlists.length > 0
 
   return (
     <div className="animate-fade-in">
@@ -125,7 +136,9 @@ export function SearchPage() {
       {!loading && !hasResults && query && (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/40">
           <SearchIcon className="w-10 h-10 mb-3" />
-          <p className="text-[15px] font-medium text-muted-foreground">No results found</p>
+          <p className="text-[15px] font-medium text-muted-foreground">
+            No results found
+          </p>
           <p className="text-[13px] mt-0.5">Try a different search term</p>
         </div>
       )}
@@ -133,7 +146,9 @@ export function SearchPage() {
       {!loading && !query && (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
           <SearchIcon className="w-10 h-10 mb-3" />
-          <p className="text-[15px] text-muted-foreground/50">Search Apple Music</p>
+          <p className="text-[15px] text-muted-foreground/50">
+            Search Apple Music
+          </p>
         </div>
       )}
 
@@ -150,6 +165,14 @@ export function SearchPage() {
                   <div
                     className="p-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.06] transition-colors duration-150 cursor-pointer"
                     onClick={() => navigate(`/artist/${artists[0].id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        navigate(`/artist/${artists[0].id}`)
+                      }
+                    }}
                   >
                     <Artwork
                       src={formatArtworkUrl(
@@ -164,12 +187,22 @@ export function SearchPage() {
                     <h3 className="text-[22px] font-bold leading-tight">
                       {artists[0].attributes?.name}
                     </h3>
-                    <p className="text-[13px] text-muted-foreground/60 mt-0.5">Artist</p>
+                    <p className="text-[13px] text-muted-foreground/60 mt-0.5">
+                      Artist
+                    </p>
                   </div>
                 ) : (
                   <div
                     className="p-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.06] transition-colors duration-150 cursor-pointer"
                     onClick={() => navigate(`/album/${albums[0].id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        navigate(`/album/${albums[0].id}`)
+                      }
+                    }}
                   >
                     <Artwork
                       src={formatArtworkUrl(
@@ -194,23 +227,27 @@ export function SearchPage() {
 
             {songs.length > 0 && (
               <section className="animate-fade-in-up stagger-1">
-                <h2 className="text-[17px] font-semibold tracking-tight mb-3">Songs</h2>
+                <h2 className="text-[17px] font-semibold tracking-tight mb-3">
+                  Songs
+                </h2>
                 <div className="space-y-px">
-                  {songs.slice(0, 5).map((song: any, idx: number) => (
-                    <SongRow
-                      key={song.id}
-                      id={song.id}
-                      name={song.attributes?.name}
-                      artistName={song.attributes?.artistName}
-                      artworkUrl={song.attributes?.artwork?.url}
-                      duration={song.attributes?.durationInMillis || 0}
-                      showAlbum={false}
-                      onClick={() => {
-                        const ids = songs.map((s: any) => s.id)
-                        playSongs(ids, idx)
-                      }}
-                    />
-                  ))}
+                  {songs
+                    .slice(0, 5)
+                    .map((song: MusicKit.Resource, idx: number) => (
+                      <SongRow
+                        key={song.id}
+                        id={song.id}
+                        name={song.attributes?.name}
+                        artistName={song.attributes?.artistName}
+                        artworkUrl={song.attributes?.artwork?.url}
+                        duration={song.attributes?.durationInMillis || 0}
+                        showAlbum={false}
+                        onClick={() => {
+                          const ids = songs.map((s: MusicKit.Resource) => s.id)
+                          playSongs(ids, idx)
+                        }}
+                      />
+                    ))}
                 </div>
               </section>
             )}
@@ -219,13 +256,23 @@ export function SearchPage() {
           {/* Artists */}
           {artists.length > 1 && (
             <section className="animate-fade-in-up stagger-2">
-              <h2 className="text-[17px] font-semibold tracking-tight mb-3">Artists</h2>
+              <h2 className="text-[17px] font-semibold tracking-tight mb-3">
+                Artists
+              </h2>
               <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none">
-                {artists.slice(0, 8).map((artist: any) => (
+                {artists.slice(0, 8).map((artist: MusicKit.Resource) => (
                   <div
                     key={artist.id}
                     className="flex flex-col items-center gap-2 cursor-pointer"
                     onClick={() => navigate(`/artist/${artist.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        navigate(`/artist/${artist.id}`)
+                      }
+                    }}
                   >
                     <Artwork
                       src={formatArtworkUrl(
@@ -248,9 +295,11 @@ export function SearchPage() {
           {/* Albums */}
           {albums.length > 0 && (
             <section className="animate-fade-in-up stagger-3">
-              <h2 className="text-[17px] font-semibold tracking-tight mb-3">Albums</h2>
+              <h2 className="text-[17px] font-semibold tracking-tight mb-3">
+                Albums
+              </h2>
               <div className="flex flex-wrap gap-5">
-                {albums.map((album: any) => (
+                {albums.map((album: MusicKit.Resource) => (
                   <MediaCard
                     key={album.id}
                     id={album.id}
@@ -268,9 +317,11 @@ export function SearchPage() {
           {/* Playlists */}
           {playlists.length > 0 && (
             <section className="animate-fade-in-up stagger-4">
-              <h2 className="text-[17px] font-semibold tracking-tight mb-3">Playlists</h2>
+              <h2 className="text-[17px] font-semibold tracking-tight mb-3">
+                Playlists
+              </h2>
               <div className="flex flex-wrap gap-5">
-                {playlists.map((playlist: any) => (
+                {playlists.map((playlist: MusicKit.Resource) => (
                   <MediaCard
                     key={playlist.id}
                     id={playlist.id}

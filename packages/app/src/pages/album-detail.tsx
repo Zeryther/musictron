@@ -12,8 +12,8 @@ export function AlbumDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { playAlbum, playSongs, nowPlaying, isPlaying } = usePlayerStore()
-  const [album, setAlbum] = useState<any>(null)
-  const [tracks, setTracks] = useState<any[]>([])
+  const [album, setAlbum] = useState<MusicKit.Resource | null>(null)
+  const [tracks, setTracks] = useState<MusicKit.Resource[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -22,17 +22,15 @@ export function AlbumDetailPage() {
     async function fetchAlbum() {
       setLoading(true)
       try {
-        const isLibrary = id!.startsWith('l.')
+        const isLibrary = id?.startsWith('l.')
         const path = isLibrary
           ? `/v1/me/library/albums/${id}`
           : `/v1/catalog/us/albums/${id}`
 
         const data = await musicAPI(path, { include: 'tracks' })
-        const albumData = data.data?.[0]
+        const albumData = data.data?.[0] ?? null
         setAlbum(albumData)
-        setTracks(
-          albumData?.relationships?.tracks?.data || [],
-        )
+        setTracks(albumData?.relationships?.tracks?.data || [])
       } catch (error) {
         console.error('Failed to fetch album:', error)
       } finally {
@@ -62,7 +60,8 @@ export function AlbumDetailPage() {
   const attrs = album.attributes
   const artworkUrl = formatArtworkUrl(attrs?.artwork?.url, 600)
   const totalDuration = tracks.reduce(
-    (acc: number, t: any) => acc + (t.attributes?.durationInMillis || 0),
+    (acc: number, t: MusicKit.Resource) =>
+      acc + ((t.attributes?.durationInMillis as number) || 0),
     0,
   )
 
@@ -117,10 +116,7 @@ export function AlbumDetailPage() {
           )}
 
           <div className="flex gap-2.5">
-            <Button
-              onClick={() => id && playAlbum(id)}
-              className="gap-2"
-            >
+            <Button onClick={() => id && playAlbum(id)} className="gap-2">
               <Play className="w-4 h-4" fill="currentColor" />
               Play
             </Button>
@@ -128,7 +124,7 @@ export function AlbumDetailPage() {
               variant="outline"
               onClick={() => {
                 if (tracks.length > 0) {
-                  const ids = tracks.map((t: any) => t.id)
+                  const ids = tracks.map((t: MusicKit.Resource) => t.id)
                   const shuffled = [...ids].sort(() => Math.random() - 0.5)
                   playSongs(shuffled)
                 }
@@ -144,7 +140,7 @@ export function AlbumDetailPage() {
 
       {/* Tracks */}
       <div className="space-y-px">
-        {tracks.map((track: any, idx: number) => (
+        {tracks.map((track: MusicKit.Resource, idx: number) => (
           <SongRow
             key={track.id}
             id={track.id}
@@ -160,7 +156,7 @@ export function AlbumDetailPage() {
             isActive={nowPlaying?.id === track.id}
             isPlaying={nowPlaying?.id === track.id && isPlaying}
             onClick={() => {
-              const ids = tracks.map((t: any) => t.id)
+              const ids = tracks.map((t: MusicKit.Resource) => t.id)
               playSongs(ids, idx)
             }}
           />

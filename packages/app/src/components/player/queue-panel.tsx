@@ -1,5 +1,5 @@
 import React from 'react'
-import { cn, formatTime } from '@/lib/utils'
+import { formatTime } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Artwork } from '@/components/ui/artwork'
 import { Button } from '@/components/ui/button'
@@ -83,7 +83,9 @@ export function QueuePanel() {
                       rounded="sm"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] line-clamp-1 leading-tight">{item.name}</p>
+                      <p className="text-[13px] line-clamp-1 leading-tight">
+                        {item.name}
+                      </p>
                       <p className="text-[11px] text-muted-foreground/60 line-clamp-1 leading-tight mt-0.5">
                         {item.artistName}
                       </p>

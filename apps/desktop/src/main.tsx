@@ -21,24 +21,30 @@ const electronAdapter: PlatformAdapter = {
   windowMaximize: () => window.electronAPI.windowMaximize(),
   windowIsMaximized: () => window.electronAPI.windowIsMaximized(),
   windowClose: () => window.electronAPI.windowClose(),
-  onWindowMaximizedChange: (cb) => window.electronAPI.onWindowMaximizedChange(cb),
+  onWindowMaximizedChange: (cb) =>
+    window.electronAPI.onWindowMaximizedChange(cb),
   onMediaKey: (cb) => window.electronAPI.onMediaKey(cb),
 }
 
 setPlatformAdapter(electronAdapter)
 
+// Vite injects env variables at build time via import.meta.env
+const viteEnv = (
+  import.meta as ImportMeta & { env: Record<string, string | undefined> }
+).env
+
 setAppConfig({
-  serverUrl:
-    (import.meta as any).env?.VITE_MUSICTRON_SERVER_URL || 'http://localhost:3000',
-  developerToken:
-    (import.meta as any).env?.VITE_MUSICKIT_DEVELOPER_TOKEN || '',
+  serverUrl: viteEnv.VITE_MUSICTRON_SERVER_URL || 'http://localhost:3000',
+  developerToken: viteEnv.VITE_MUSICKIT_DEVELOPER_TOKEN || '',
 })
 
 // ---------------------------------------------------------------------------
 // Render
 // ---------------------------------------------------------------------------
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const rootEl = document.getElementById('root')
+if (!rootEl) throw new Error('Root element not found')
+ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
     <BrowserRouter>
       <App />

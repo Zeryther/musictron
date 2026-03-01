@@ -15,14 +15,18 @@ interface LibraryState {
   isLoadingPlaylists: boolean
 
   fetchPlaylists: () => Promise<void>
-  createPlaylist: (name: string, description?: string, songIds?: string[]) => Promise<string | null>
+  createPlaylist: (
+    name: string,
+    description?: string,
+    songIds?: string[],
+  ) => Promise<string | null>
   deletePlaylist: (playlistId: string) => Promise<void>
   addToPlaylist: (playlistId: string, songIds: string[]) => Promise<void>
   removeFromPlaylist: (playlistId: string, songIds: string[]) => Promise<void>
   renamePlaylist: (playlistId: string, name: string) => Promise<void>
 }
 
-export const useLibraryStore = create<LibraryState>()((set, get) => ({
+export const useLibraryStore = create<LibraryState>()((set, _get) => ({
   playlists: [],
   isLoadingPlaylists: false,
 
@@ -33,14 +37,16 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
         limit: 100,
       })
 
-      const playlists: PlaylistItem[] = (data.data || []).map((item: any) => ({
-        id: item.id,
-        name: item.attributes?.name || 'Untitled',
-        description: item.attributes?.description?.standard,
-        artworkUrl: item.attributes?.artwork?.url,
-        trackCount: item.attributes?.trackCount || 0,
-        isEditable: item.attributes?.canEdit ?? true,
-      }))
+      const playlists: PlaylistItem[] = (data.data || []).map(
+        (item: MusicKit.Resource) => ({
+          id: item.id,
+          name: item.attributes?.name || 'Untitled',
+          description: item.attributes?.description?.standard,
+          artworkUrl: item.attributes?.artwork?.url,
+          trackCount: item.attributes?.trackCount || 0,
+          isEditable: item.attributes?.canEdit ?? true,
+        }),
+      )
 
       set({ playlists, isLoadingPlaylists: false })
     } catch (error) {
@@ -55,7 +61,7 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
     songIds?: string[],
   ) => {
     try {
-      const body: any = {
+      const body: Record<string, unknown> = {
         attributes: {
           name,
           description: description || '',
@@ -128,7 +134,7 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
     }
   },
 
-  removeFromPlaylist: async (playlistId: string, songIds: string[]) => {
+  removeFromPlaylist: async (_playlistId: string, _songIds: string[]) => {
     try {
       // Apple Music API doesn't have a direct remove endpoint in JS SDK
       // This would require the REST API directly

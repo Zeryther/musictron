@@ -1,11 +1,17 @@
-import { app, BrowserWindow, ipcMain, globalShortcut, shell, nativeTheme } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  globalShortcut,
+  shell,
+  nativeTheme,
+} from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const isMac = process.platform === 'darwin'
-const isWindows = process.platform === 'win32'
 
 process.env.DIST_ELECTRON = path.join(__dirname)
 process.env.DIST = path.join(__dirname, '../dist')
@@ -51,7 +57,7 @@ function createWindow() {
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
   } else {
-    mainWindow.loadFile(path.join(process.env.DIST!, 'index.html'))
+    mainWindow.loadFile(path.join(process.env.DIST ?? '', 'index.html'))
   }
 }
 

@@ -51,7 +51,10 @@ declare namespace MusicKit {
   }
 
   interface API {
-    music(path: string, queryParameters?: Record<string, any>): Promise<APIResponse>
+    music(
+      path: string,
+      queryParameters?: Record<string, any>,
+    ): Promise<APIResponse>
   }
 
   interface APIResponse {
@@ -140,5 +143,108 @@ declare namespace MusicKit {
   enum PlayerShuffleMode {
     off = 0,
     songs = 1,
+  }
+
+  /** Attributes common to Apple Music API resources */
+  interface ResourceAttributes {
+    name?: string
+    artistName?: string
+    albumName?: string
+    curatorName?: string
+    artwork?: Artwork
+    durationInMillis?: number
+    trackNumber?: number
+    discNumber?: number
+    releaseDate?: string
+    genreNames?: string[]
+    contentRating?: string
+    trackCount?: number
+    editorialNotes?: { short?: string; standard?: string }
+    description?: { short?: string; standard?: string }
+    isComplete?: boolean
+    canEdit?: boolean
+    playParams?: { id: string; kind: string; catalogId?: string }
+    title?: { stringForDisplay?: string }
+    reason?: { stringForDisplay?: string }
+    lastModifiedDate?: string
+    url?: string
+    isrc?: string
+    [key: string]: unknown
+  }
+
+  /** Generic resource returned by the Apple Music API */
+  interface Resource {
+    id: string
+    type: string
+    href?: string
+    attributes?: ResourceAttributes
+    relationships?: Record<string, { data?: Resource[]; next?: string }>
+  }
+
+  /** A chart group returned within results (e.g., results.songs[0]) */
+  interface ChartGroup {
+    data: Resource[]
+    name?: string
+    chart?: string
+    next?: string
+  }
+
+  /** Response shape returned by musicAPI() helper after unwrapping */
+  interface APIResponseData {
+    data?: Resource[]
+    results?: APIResultsMap
+    meta?: Record<string, unknown>
+    next?: string
+  }
+
+  /**
+   * Union results type — endpoints return either chart-style or search-style
+   * results. Consumers should narrow at the call site.
+   */
+  interface APIResultsMap {
+    songs?: ChartGroup[] | SearchResultList
+    albums?: ChartGroup[] | SearchResultList
+    artists?: ChartGroup[] | SearchResultList
+    playlists?: ChartGroup[] | SearchResultList
+    terms?: string[]
+    [key: string]: ChartGroup[] | SearchResultList | string[] | undefined
+  }
+
+  /**
+   * Results from chart endpoints (e.g. /charts).
+   * Each key maps to an array of chart groups.
+   */
+  interface ChartResults {
+    songs?: ChartGroup[]
+    albums?: ChartGroup[]
+    playlists?: ChartGroup[]
+    [key: string]: ChartGroup[] | undefined
+  }
+
+  /**
+   * Results from search endpoints (e.g. /search).
+   * Each key maps to a search result list.
+   */
+  interface SearchResults {
+    songs?: SearchResultList
+    albums?: SearchResultList
+    artists?: SearchResultList
+    playlists?: SearchResultList
+    terms?: string[]
+    [key: string]: SearchResultList | string[] | undefined
+  }
+
+  /** Search result for a single media type */
+  interface SearchResultList {
+    data: Resource[]
+    next?: string
+  }
+
+  /** Individual chart group entry */
+  interface ChartGroup {
+    data: Resource[]
+    name?: string
+    chart?: string
+    next?: string
   }
 }

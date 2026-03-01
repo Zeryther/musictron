@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { musicAPI } from '@/lib/musickit'
-import { formatArtworkUrl } from '@/lib/utils'
 
 // Generic hook for fetching data from Apple Music API
 export function useMusicKitAPI<T>(
   path: string | null,
-  params?: Record<string, any>,
-  transform?: (data: any) => T,
+  params?: Record<string, string | number | boolean>,
+  transform?: (data: MusicKit.APIResponseData) => T,
 ) {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(false)
@@ -74,7 +73,7 @@ export interface PlaylistData {
   lastModifiedDate?: string
 }
 
-export function transformAlbum(item: any): AlbumData {
+export function transformAlbum(item: MusicKit.Resource): AlbumData {
   return {
     id: item.id,
     name: item.attributes?.name || '',
@@ -83,12 +82,14 @@ export function transformAlbum(item: any): AlbumData {
     releaseDate: item.attributes?.releaseDate,
     trackCount: item.attributes?.trackCount,
     genreNames: item.attributes?.genreNames,
-    editorialNotes: item.attributes?.editorialNotes?.short || item.attributes?.editorialNotes?.standard,
+    editorialNotes:
+      item.attributes?.editorialNotes?.short ||
+      item.attributes?.editorialNotes?.standard,
     isComplete: item.attributes?.isComplete,
   }
 }
 
-export function transformSong(item: any): SongData {
+export function transformSong(item: MusicKit.Resource): SongData {
   return {
     id: item.id,
     name: item.attributes?.name || '',
@@ -101,18 +102,20 @@ export function transformSong(item: any): SongData {
   }
 }
 
-export function transformPlaylist(item: any): PlaylistData {
+export function transformPlaylist(item: MusicKit.Resource): PlaylistData {
   return {
     id: item.id,
     name: item.attributes?.name || '',
     curatorName: item.attributes?.curatorName,
-    description: item.attributes?.description?.short || item.attributes?.description?.standard,
+    description:
+      item.attributes?.description?.short ||
+      item.attributes?.description?.standard,
     artworkUrl: item.attributes?.artwork?.url || '',
     lastModifiedDate: item.attributes?.lastModifiedDate,
   }
 }
 
-export function transformArtist(item: any): ArtistData {
+export function transformArtist(item: MusicKit.Resource): ArtistData {
   return {
     id: item.id,
     name: item.attributes?.name || '',
@@ -130,14 +133,11 @@ export function useBrowseCharts() {
 }
 
 export function useSearch(query: string) {
-  return useMusicKitAPI(
-    query ? `/v1/catalog/{{storefrontId}}/search` : null,
-    {
-      term: query,
-      types: 'songs,albums,artists,playlists',
-      limit: 10,
-    },
-  )
+  return useMusicKitAPI(query ? `/v1/catalog/{{storefrontId}}/search` : null, {
+    term: query,
+    types: 'songs,albums,artists,playlists',
+    limit: 10,
+  })
 }
 
 export function useAlbumDetail(albumId: string | undefined) {

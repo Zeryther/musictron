@@ -20,11 +20,13 @@ type LibrarySection =
 
 export function LibraryPage() {
   const navigate = useNavigate()
-  const { section = 'recently-added' } = useParams<{ section: LibrarySection }>()
+  const { section = 'recently-added' } = useParams<{
+    section: LibrarySection
+  }>()
   const { isAuthorized } = useAuthStore()
   const { playSongs, nowPlaying, isPlaying } = usePlayerStore()
   const { playlists, fetchPlaylists, createPlaylist } = useLibraryStore()
-  const [items, setItems] = useState<any[]>([])
+  const [items, setItems] = useState<MusicKit.Resource[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export function LibraryPage() {
       setLoading(true)
       try {
         let path = ''
-        const params: Record<string, any> = {
+        const params: Record<string, string | number | boolean> = {
           limit: 100,
         }
 
@@ -70,7 +72,7 @@ export function LibraryPage() {
     }
 
     fetchLibrary()
-  }, [section, isAuthorized])
+  }, [section, isAuthorized, fetchPlaylists])
 
   if (!isAuthorized) {
     return (
@@ -107,7 +109,7 @@ export function LibraryPage() {
               <Button
                 size="sm"
                 onClick={() =>
-                  playSongs(items.map((s: any) => s.id))
+                  playSongs(items.map((s: MusicKit.Resource) => s.id))
                 }
                 className="gap-1.5"
               >
@@ -118,7 +120,7 @@ export function LibraryPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const ids = items.map((s: any) => s.id)
+                  const ids = items.map((s: MusicKit.Resource) => s.id)
                   const shuffled = [...ids].sort(() => Math.random() - 0.5)
                   playSongs(shuffled)
                 }}
@@ -133,7 +135,9 @@ export function LibraryPage() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => createPlaylist(`New Playlist ${playlists.length + 1}`)}
+              onClick={() =>
+                createPlaylist(`New Playlist ${playlists.length + 1}`)
+              }
               className="gap-1.5"
             >
               <Plus className="w-3 h-3" />
@@ -152,7 +156,7 @@ export function LibraryPage() {
           {/* Songs */}
           {section === 'songs' && (
             <div className="space-y-px">
-              {items.map((song: any, idx: number) => (
+              {items.map((song: MusicKit.Resource, idx: number) => (
                 <SongRow
                   key={song.id}
                   id={song.id}
@@ -164,7 +168,7 @@ export function LibraryPage() {
                   isActive={nowPlaying?.id === song.id}
                   isPlaying={nowPlaying?.id === song.id && isPlaying}
                   onClick={() => {
-                    const ids = items.map((s: any) => s.id)
+                    const ids = items.map((s: MusicKit.Resource) => s.id)
                     playSongs(ids, idx)
                   }}
                 />
@@ -175,15 +179,14 @@ export function LibraryPage() {
           {/* Albums / Recently Added */}
           {(section === 'albums' || section === 'recently-added') && (
             <div className="flex flex-wrap gap-5">
-              {items.map((item: any) => (
+              {items.map((item: MusicKit.Resource) => (
                 <MediaCard
                   key={item.id}
                   id={item.id}
                   type={item.type?.includes('album') ? 'album' : 'playlist'}
                   name={item.attributes?.name}
                   subtitle={
-                    item.attributes?.artistName ||
-                    item.attributes?.curatorName
+                    item.attributes?.artistName || item.attributes?.curatorName
                   }
                   artworkUrl={item.attributes?.artwork?.url}
                   onClick={() => {
@@ -200,17 +203,22 @@ export function LibraryPage() {
           {/* Artists */}
           {section === 'artists' && (
             <div className="flex flex-wrap gap-6">
-              {items.map((artist: any) => (
+              {items.map((artist: MusicKit.Resource) => (
                 <div
                   key={artist.id}
                   className="flex flex-col items-center gap-2 cursor-pointer"
                   onClick={() => navigate(`/artist/${artist.id}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      navigate(`/artist/${artist.id}`)
+                    }
+                  }}
                 >
                   <Artwork
-                    src={formatArtworkUrl(
-                      artist.attributes?.artwork?.url,
-                      200,
-                    )}
+                    src={formatArtworkUrl(artist.attributes?.artwork?.url, 200)}
                     alt={artist.attributes?.name}
                     size={148}
                     rounded="full"
@@ -243,14 +251,18 @@ export function LibraryPage() {
           {items.length === 0 && section !== 'playlists' && (
             <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
               <Music className="w-10 h-10 mb-3" />
-              <p className="text-[15px] text-muted-foreground/50">No items in your library</p>
+              <p className="text-[15px] text-muted-foreground/50">
+                No items in your library
+              </p>
             </div>
           )}
 
           {section === 'playlists' && playlists.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
               <Music className="w-10 h-10 mb-3" />
-              <p className="text-[15px] text-muted-foreground/50">No playlists yet</p>
+              <p className="text-[15px] text-muted-foreground/50">
+                No playlists yet
+              </p>
               <p className="text-[13px] mt-0.5">Create one to get started</p>
             </div>
           )}

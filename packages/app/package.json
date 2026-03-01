@@ -11,6 +11,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "clean": "rm -rf dist node_modules/.vite"
   },
   "dependencies": {

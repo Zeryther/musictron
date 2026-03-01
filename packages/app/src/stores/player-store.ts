@@ -43,7 +43,10 @@ interface PlayerState {
   setFullscreen: (value: boolean) => void
 
   // Queue management
-  playTrack: (trackId: string, options?: { startPlaying?: boolean }) => Promise<void>
+  playTrack: (
+    trackId: string,
+    options?: { startPlaying?: boolean },
+  ) => Promise<void>
   playAlbum: (albumId: string, startIndex?: number) => Promise<void>
   playPlaylist: (playlistId: string, startIndex?: number) => Promise<void>
   playSongs: (songIds: string[], startIndex?: number) => Promise<void>
@@ -163,7 +166,10 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
   playTrack: async (trackId: string, options?: { startPlaying?: boolean }) => {
     const mk = getMusicKitInstance()
     if (mk) {
-      await mk.setQueue({ song: trackId, startPlaying: options?.startPlaying ?? true })
+      await mk.setQueue({
+        song: trackId,
+        startPlaying: options?.startPlaying ?? true,
+      })
       get()._syncFromMusicKit()
       get()._startTimeUpdater()
     }
@@ -172,7 +178,11 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
   playAlbum: async (albumId: string, startIndex: number = 0) => {
     const mk = getMusicKitInstance()
     if (mk) {
-      await mk.setQueue({ album: albumId, startWith: startIndex, startPlaying: true })
+      await mk.setQueue({
+        album: albumId,
+        startWith: startIndex,
+        startPlaying: true,
+      })
       get()._syncFromMusicKit()
       get()._startTimeUpdater()
     }
@@ -181,7 +191,11 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
   playPlaylist: async (playlistId: string, startIndex: number = 0) => {
     const mk = getMusicKitInstance()
     if (mk) {
-      await mk.setQueue({ playlist: playlistId, startWith: startIndex, startPlaying: true })
+      await mk.setQueue({
+        playlist: playlistId,
+        startWith: startIndex,
+        startPlaying: true,
+      })
       get()._syncFromMusicKit()
       get()._startTimeUpdater()
     }
@@ -190,7 +204,11 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
   playSongs: async (songIds: string[], startIndex: number = 0) => {
     const mk = getMusicKitInstance()
     if (mk) {
-      await mk.setQueue({ songs: songIds, startWith: startIndex, startPlaying: true })
+      await mk.setQueue({
+        songs: songIds,
+        startWith: startIndex,
+        startPlaying: true,
+      })
       get()._syncFromMusicKit()
       get()._startTimeUpdater()
     }
@@ -300,18 +318,21 @@ export function initializePlayerEvents() {
     }, 50)
   })
 
-  mk.addEventListener('playbackStateDidChange', (event: any) => {
-    const state = event?.state ?? event
-    usePlayerStore.setState({
-      isPlaying: state === 2,
-    })
+  mk.addEventListener(
+    'playbackStateDidChange',
+    (event: { state?: number } | number) => {
+      const state = typeof event === 'number' ? event : (event?.state ?? event)
+      usePlayerStore.setState({
+        isPlaying: state === 2,
+      })
 
-    if (state === 2) {
-      usePlayerStore.getState()._startTimeUpdater()
-    } else {
-      usePlayerStore.getState()._stopTimeUpdater()
-    }
-  })
+      if (state === 2) {
+        usePlayerStore.getState()._startTimeUpdater()
+      } else {
+        usePlayerStore.getState()._stopTimeUpdater()
+      }
+    },
+  )
 
   mk.addEventListener('queueItemsDidChange', () => {
     usePlayerStore.getState()._syncFromMusicKit()

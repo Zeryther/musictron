@@ -58,16 +58,29 @@ export function getMusicKitInstance(): MusicKit.MusicKitInstance | null {
   }
 }
 
+/**
+ * Extract the first chart group's data from a results entry.
+ * Chart endpoints return arrays like `results.songs = [{ data: [...] }]`.
+ */
+export function getChartData(
+  entry: MusicKit.ChartGroup[] | MusicKit.SearchResultList | undefined,
+): MusicKit.Resource[] {
+  if (!entry) return []
+  if (Array.isArray(entry)) return entry[0]?.data ?? []
+  return entry.data ?? []
+}
+
 // Apple Music API helper
 export async function musicAPI(
   path: string,
-  params?: Record<string, any>,
-): Promise<any> {
+  params?: Record<string, string | number | boolean>,
+): Promise<MusicKit.APIResponseData> {
   const instance = getMusicKitInstance()
   if (!instance) throw new Error('MusicKit not configured')
 
   // Replace storefront placeholder with actual storefront
-  const storefront = instance.storefrontCountryCode || instance.storefrontId || 'us'
+  const storefront =
+    instance.storefrontCountryCode || instance.storefrontId || 'us'
   const resolvedPath = path.replace('{{storefrontId}}', storefront)
 
   const response = await instance.api.music(resolvedPath, params)

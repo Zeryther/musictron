@@ -58,14 +58,18 @@ export function Sidebar({ platform }: { platform: string }) {
         <div className="h-[52px] drag-region flex items-center px-5 shrink-0">
           <div className="no-drag flex items-center gap-2 ml-16">
             <Music2 className="w-[18px] h-[18px] text-primary" />
-            <span className="font-semibold text-[13px] tracking-tight">Musictron</span>
+            <span className="font-semibold text-[13px] tracking-tight">
+              Musictron
+            </span>
           </div>
         </div>
       ) : (
         <div className="h-11 flex items-center px-5 shrink-0">
           <div className="flex items-center gap-2">
             <Music2 className="w-[18px] h-[18px] text-primary" />
-            <span className="font-semibold text-[13px] tracking-tight">Musictron</span>
+            <span className="font-semibold text-[13px] tracking-tight">
+              Musictron
+            </span>
           </div>
         </div>
       )}
@@ -174,9 +178,7 @@ export function Sidebar({ platform }: { platform: string }) {
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut}>
-                Sign Out
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={signOut}>Sign Out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (

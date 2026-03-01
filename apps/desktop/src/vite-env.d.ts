@@ -9,7 +9,9 @@ interface Window {
     windowMaximize: () => Promise<void>
     windowIsMaximized: () => Promise<boolean>
     windowClose: () => Promise<void>
-    onWindowMaximizedChange: (callback: (isMaximized: boolean) => void) => () => void
+    onWindowMaximizedChange: (
+      callback: (isMaximized: boolean) => void,
+    ) => () => void
     onMediaKey: (callback: (key: string) => void) => () => void
   }
 }

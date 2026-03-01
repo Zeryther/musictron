@@ -1,4 +1,4 @@
-import { SignJWT, importPKCS8 } from 'jose'
+import { SignJWT } from 'jose'
 import crypto from 'node:crypto'
 
 // Cache the imported key so we don't re-parse it on every request
@@ -101,7 +101,10 @@ export function isConfigured(): boolean {
     getEnvOrThrow('MUSICKIT_KEY_ID')
     getEnvOrThrow('MUSICKIT_TEAM_ID')
     // Check that at least one key source exists
-    if (!process.env.MUSICKIT_PRIVATE_KEY && !process.env.MUSICKIT_PRIVATE_KEY_PATH) {
+    if (
+      !process.env.MUSICKIT_PRIVATE_KEY &&
+      !process.env.MUSICKIT_PRIVATE_KEY_PATH
+    ) {
       return false
     }
     return true

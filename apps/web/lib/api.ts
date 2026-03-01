@@ -1,6 +1,6 @@
-import { Elysia, t } from 'elysia'
+import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
-import { generateDeveloperToken, isConfigured, invalidateCache } from './musickit-token'
+import { generateDeveloperToken, isConfigured } from './musickit-token'
 
 /**
  * Musictron API — powered by Elysia, mounted inside Next.js.

@@ -13,10 +13,10 @@ export function ArtistDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { playSongs } = usePlayerStore()
-  const [artist, setArtist] = useState<any>(null)
-  const [topSongs, setTopSongs] = useState<any[]>([])
-  const [albums, setAlbums] = useState<any[]>([])
-  const [playlists, setPlaylists] = useState<any[]>([])
+  const [artist, setArtist] = useState<MusicKit.Resource | null>(null)
+  const [topSongs, setTopSongs] = useState<MusicKit.Resource[]>([])
+  const [albums, setAlbums] = useState<MusicKit.Resource[]>([])
+  const [playlists, setPlaylists] = useState<MusicKit.Resource[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export function ArtistDetailPage() {
           }).catch(() => null),
         ])
 
-        const a = artistData.data?.[0]
+        const a = artistData.data?.[0] ?? null
         setArtist(a)
         setAlbums(a?.relationships?.albums?.data || [])
         setTopSongs(songsData?.data || [])
@@ -91,7 +91,10 @@ export function ArtistDetailPage() {
           style={{ height: '280px' }}
         />
 
-        <div className="relative flex items-end gap-7 pb-6" style={{ minHeight: '220px' }}>
+        <div
+          className="relative flex items-end gap-7 pb-6"
+          style={{ minHeight: '220px' }}
+        >
           <Artwork
             src={artworkUrl}
             alt={attrs?.name}
@@ -106,16 +109,16 @@ export function ArtistDetailPage() {
             <h1 className="text-[36px] font-bold tracking-tight leading-tight mb-2">
               {attrs?.name}
             </h1>
-            {attrs?.genreNames?.length > 0 && (
+            {(attrs?.genreNames?.length ?? 0) > 0 && (
               <p className="text-[13px] text-muted-foreground/50 mb-5">
-                {attrs.genreNames.join(', ')}
+                {attrs?.genreNames?.join(', ')}
               </p>
             )}
             <div className="flex gap-2.5">
               <Button
                 onClick={() => {
                   if (topSongs.length > 0) {
-                    playSongs(topSongs.map((s: any) => s.id))
+                    playSongs(topSongs.map((s: MusicKit.Resource) => s.id))
                   }
                 }}
                 className="gap-2"
@@ -127,7 +130,7 @@ export function ArtistDetailPage() {
                 variant="outline"
                 onClick={() => {
                   if (topSongs.length > 0) {
-                    const ids = topSongs.map((s: any) => s.id)
+                    const ids = topSongs.map((s: MusicKit.Resource) => s.id)
                     const shuffled = [...ids].sort(() => Math.random() - 0.5)
                     playSongs(shuffled)
                   }
@@ -145,23 +148,27 @@ export function ArtistDetailPage() {
       {/* Top Songs */}
       {topSongs.length > 0 && (
         <section className="mb-10 animate-fade-in-up stagger-1">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">Top Songs</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+            Top Songs
+          </h2>
           <div className="space-y-px">
-            {topSongs.slice(0, 10).map((song: any, idx: number) => (
-              <SongRow
-                key={song.id}
-                id={song.id}
-                name={song.attributes?.name}
-                artistName={song.attributes?.artistName}
-                albumName={song.attributes?.albumName}
-                artworkUrl={song.attributes?.artwork?.url}
-                duration={song.attributes?.durationInMillis || 0}
-                onClick={() => {
-                  const ids = topSongs.map((s: any) => s.id)
-                  playSongs(ids, idx)
-                }}
-              />
-            ))}
+            {topSongs
+              .slice(0, 10)
+              .map((song: MusicKit.Resource, idx: number) => (
+                <SongRow
+                  key={song.id}
+                  id={song.id}
+                  name={song.attributes?.name}
+                  artistName={song.attributes?.artistName}
+                  albumName={song.attributes?.albumName}
+                  artworkUrl={song.attributes?.artwork?.url}
+                  duration={song.attributes?.durationInMillis || 0}
+                  onClick={() => {
+                    const ids = topSongs.map((s: MusicKit.Resource) => s.id)
+                    playSongs(ids, idx)
+                  }}
+                />
+              ))}
           </div>
         </section>
       )}
@@ -169,15 +176,23 @@ export function ArtistDetailPage() {
       {/* Albums */}
       {albums.length > 0 && (
         <section className="mb-10 animate-fade-in-up stagger-2">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">Albums</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+            Albums
+          </h2>
           <div className="flex flex-wrap gap-5">
-            {albums.map((album: any) => (
+            {albums.map((album: MusicKit.Resource) => (
               <MediaCard
                 key={album.id}
                 id={album.id}
                 type="album"
                 name={album.attributes?.name}
-                subtitle={new Date(album.attributes?.releaseDate).getFullYear().toString()}
+                subtitle={
+                  album.attributes?.releaseDate
+                    ? new Date(album.attributes.releaseDate)
+                        .getFullYear()
+                        .toString()
+                    : undefined
+                }
                 artworkUrl={album.attributes?.artwork?.url}
                 onClick={() => navigate(`/album/${album.id}`)}
               />
@@ -189,9 +204,11 @@ export function ArtistDetailPage() {
       {/* Featured Playlists */}
       {playlists.length > 0 && (
         <section className="mb-10 animate-fade-in-up stagger-3">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">Featured Playlists</h2>
+          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+            Featured Playlists
+          </h2>
           <div className="flex flex-wrap gap-5">
-            {playlists.map((playlist: any) => (
+            {playlists.map((playlist: MusicKit.Resource) => (
               <MediaCard
                 key={playlist.id}
                 id={playlist.id}
