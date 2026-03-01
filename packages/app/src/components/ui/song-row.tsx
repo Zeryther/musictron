@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn, formatArtworkUrl, formatDuration } from '@/lib/utils'
 import { Artwork } from './artwork'
@@ -9,6 +9,7 @@ import {
   ListPlus,
   ListEnd,
   Heart,
+  Loader2,
 } from 'lucide-react'
 import { usePlayerStore } from '@/stores/player-store'
 import {
@@ -60,8 +61,26 @@ export function SongRow({
 }: SongRowProps) {
   const navigate = useNavigate()
   const { playTrack, playNext, addToQueue } = usePlayerStore()
+  const [isLoading, setIsLoading] = useState(false)
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  // Clear loading state when this track becomes active
+  useEffect(() => {
+    if (isActive && isLoading) {
+      setIsLoading(false)
+    }
+  }, [isActive, isLoading])
+
+  // Safety timeout — clear loading after 10s in case playback never starts
+  useEffect(() => {
+    if (isLoading) {
+      loadingTimeoutRef.current = setTimeout(() => setIsLoading(false), 10000)
+      return () => clearTimeout(loadingTimeoutRef.current)
+    }
+  }, [isLoading])
 
   const handlePlay = () => {
+    setIsLoading(true)
     if (onClick) {
       onClick()
     } else {
@@ -78,9 +97,11 @@ export function SongRow({
       )}
       onDoubleClick={handlePlay}
     >
-      {/* Track number / play icon / equalizer */}
+      {/* Track number / play icon / equalizer / loading spinner */}
       <div className="w-7 flex items-center justify-center flex-shrink-0">
-        {showTrackNumber ? (
+        {isLoading && !isActive ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+        ) : showTrackNumber ? (
           <>
             <span
               className={cn(
