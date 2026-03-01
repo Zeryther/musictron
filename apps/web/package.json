@@ -7,6 +7,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "typecheck": "tsc --noEmit",
     "clean": "rm -rf .next out node_modules/.cache"
   },
   "dependencies": {

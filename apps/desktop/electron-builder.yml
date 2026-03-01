@@ -7,23 +7,50 @@ files:
   - dist
   - dist-electron
 asar: true
+
 mac:
   target:
-    - dmg
-    - zip
-  artifactName: "${productName}-${version}-${arch}.${ext}"
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+  artifactName: "${productName}-${version}-mac-${arch}.${ext}"
   category: public.app-category.music
+  darkModeSupport: true
+  hardenedRuntime: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+dmg:
+  artifactName: "${productName}-${version}-mac-${arch}.${ext}"
+
 win:
   target:
-    - nsis
-  artifactName: "${productName}-${version}-setup.${ext}"
-linux:
-  target:
-    - AppImage
-    - deb
-  artifactName: "${productName}-${version}.${ext}"
-  category: Audio
+    - target: nsis
+      arch:
+        - x64
+        - arm64
+  artifactName: "${productName}-${version}-win-${arch}-setup.${ext}"
+
 nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64
+  artifactName: "${productName}-${version}-linux-${arch}.${ext}"
+  category: Audio
+  maintainer: hello@musictron.app

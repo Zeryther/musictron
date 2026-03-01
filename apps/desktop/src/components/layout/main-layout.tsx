@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './sidebar'
+import { WindowControls } from './window-controls'
 import { PlayerBar } from '../player/player-bar'
 import { QueuePanel } from '../player/queue-panel'
 import { FullscreenPlayer } from '../player/fullscreen-player'
@@ -10,13 +11,30 @@ import { usePlayerStore } from '@/stores/player-store'
 export function MainLayout() {
   const isQueueOpen = usePlayerStore((s) => s.isQueueOpen)
   const isFullscreen = usePlayerStore((s) => s.isFullscreen)
+  const [platform, setPlatform] = useState<string>('linux')
+
+  useEffect(() => {
+    window.electronAPI?.getPlatform().then(setPlatform)
+  }, [])
+
+  const isMac = platform === 'darwin'
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden">
+      {/* Windows/Linux: custom title bar with drag region and window controls */}
+      {!isMac && (
+        <div className="flex items-center justify-between h-8 bg-background/50 border-b border-border/30 drag-region shrink-0">
+          <div className="flex items-center gap-2 px-4 no-drag">
+            <span className="text-xs font-medium text-muted-foreground">Musictron</span>
+          </div>
+          <WindowControls />
+        </div>
+      )}
+
       {/* Main content area */}
       <div className="flex-1 flex min-h-0">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar platform={platform} />
 
         {/* Content */}
         <main className="flex-1 min-w-0 flex">

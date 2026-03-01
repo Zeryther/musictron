@@ -4,6 +4,9 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+const isMac = process.platform === 'darwin'
+const isWindows = process.platform === 'win32'
+
 process.env.DIST_ELECTRON = path.join(__dirname)
 process.env.DIST = path.join(__dirname, '../dist')
 process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
@@ -18,8 +21,11 @@ function createWindow() {
     height: 900,
     minWidth: 900,
     minHeight: 600,
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 16, y: 16 },
+    // macOS: native hidden title bar with traffic lights
+    // Windows/Linux: frameless window with custom title bar rendered in the app
+    ...(isMac
+      ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 16, y: 16 } }
+      : { frame: false }),
     backgroundColor: '#0a0a0a',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -101,6 +107,26 @@ ipcMain.handle('window-maximize', () => {
   }
 })
 
+ipcMain.handle('window-is-maximized', () => {
+  return mainWindow?.isMaximized() ?? false
+})
+
 ipcMain.handle('window-close', () => {
   mainWindow?.close()
+})
+
+// Notify renderer when maximize state changes (for window control icons)
+app.whenReady().then(() => {
+  // Defer until after window is created
+  const interval = setInterval(() => {
+    if (mainWindow) {
+      clearInterval(interval)
+      mainWindow.on('maximize', () => {
+        mainWindow?.webContents.send('window-maximized-change', true)
+      })
+      mainWindow.on('unmaximize', () => {
+        mainWindow?.webContents.send('window-maximized-change', false)
+      })
+    }
+  }, 100)
 })

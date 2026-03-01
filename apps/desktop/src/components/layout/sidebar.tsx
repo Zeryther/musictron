@@ -42,7 +42,7 @@ const libraryNavItems = [
   { to: '/library/playlists', icon: ListMusic, label: 'Playlists' },
 ]
 
-export function Sidebar() {
+export function Sidebar({ platform }: { platform: string }) {
   const navigate = useNavigate()
   const { isAuthorized, signOut } = useAuthStore()
   const { playlists, createPlaylist } = useLibraryStore()
@@ -54,13 +54,22 @@ export function Sidebar() {
 
   return (
     <div className="w-[240px] h-full flex flex-col border-r border-border/50 bg-background/50 backdrop-blur-xl">
-      {/* Drag region / title area */}
-      <div className="h-12 drag-region flex items-center px-4">
-        <div className="no-drag flex items-center gap-2 ml-16">
-          <Music2 className="w-5 h-5 text-primary" />
-          <span className="font-semibold text-sm">Musictron</span>
+      {/* Drag region / title area — macOS only (Windows/Linux has a top-level title bar) */}
+      {platform === 'darwin' ? (
+        <div className="h-12 drag-region flex items-center px-4">
+          <div className="no-drag flex items-center gap-2 ml-16">
+            <Music2 className="w-5 h-5 text-primary" />
+            <span className="font-semibold text-sm">Musictron</span>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="h-10 flex items-center px-4">
+          <div className="flex items-center gap-2">
+            <Music2 className="w-5 h-5 text-primary" />
+            <span className="font-semibold text-sm">Musictron</span>
+          </div>
+        </div>
+      )}
 
       {/* Main navigation */}
       <nav className="px-3 py-2 space-y-0.5">

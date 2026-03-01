@@ -2,12 +2,22 @@
   "name": "@musictron/desktop",
   "private": true,
   "version": "1.0.0",
+  "description": "Musictron - Apple Music desktop client",
+  "author": {
+    "name": "Musictron",
+    "email": "hello@musictron.app"
+  },
+  "homepage": "https://github.com/Zeryther/musictron",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
+    "typecheck": "tsc -b --noEmit",
     "dev": "vite",
     "build": "tsc -b && vite build && electron-builder",
     "build:vite": "tsc -b && vite build",
+    "build:mac": "tsc -b && vite build && electron-builder --mac",
+    "build:win": "tsc -b && vite build && electron-builder --win",
+    "build:linux": "tsc -b && vite build && electron-builder --linux",
     "preview": "vite preview",
     "clean": "rm -rf dist dist-electron release node_modules/.vite"
   },
