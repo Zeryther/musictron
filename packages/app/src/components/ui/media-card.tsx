@@ -44,7 +44,7 @@ export function MediaCard({
 
   return (
     <div
-      className={cn('group cursor-pointer flex flex-col gap-2', className)}
+      className={cn('group cursor-pointer flex flex-col gap-2 shrink-0', className)}
       style={{ width: sizeMap[size] }}
       onClick={onClick}
       role="button"

@@ -66,7 +66,7 @@ export function SongRow({
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 px-3 py-[7px] rounded-lg transition-colors duration-100 cursor-pointer',
+        'group flex items-center gap-3 px-3 py-[7px] rounded-lg transition-colors duration-100 cursor-pointer min-w-0',
         isActive ? 'bg-primary/[0.08]' : 'hover:bg-white/[0.04]',
         className,
       )}

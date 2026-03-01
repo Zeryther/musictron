@@ -233,7 +233,7 @@ export function SearchPage() {
                 {artists.slice(0, 8).map((artist: MusicKit.Resource) => (
                   <div
                     key={artist.id}
-                    className="flex flex-col items-center gap-2 cursor-pointer"
+                    className="flex flex-col items-center gap-2 cursor-pointer shrink-0"
                     onClick={() => navigate(`/artist/${artist.id}`)}
                     role="button"
                     tabIndex={0}
