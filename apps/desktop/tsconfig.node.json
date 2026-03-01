@@ -12,5 +12,5 @@
     "composite": true,
     "noEmit": true
   },
-  "include": ["vite.config.ts", "electron/**/*"]
+  "include": ["electron.vite.config.ts", "electron/**/*"]
 }

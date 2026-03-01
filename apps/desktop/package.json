@@ -9,18 +9,18 @@
   },
   "homepage": "https://github.com/Zeryther/musictron",
   "type": "module",
-  "main": "dist-electron/main.js",
+  "main": "out/main/index.js",
   "scripts": {
     "typecheck": "tsc -b --noEmit",
-    "dev": "vite",
-    "build": "tsc -b && vite build && electron-builder",
-    "build:vite": "tsc -b && vite build",
-    "build:mac": "tsc -b && vite build && electron-builder --mac",
-    "build:win": "tsc -b && vite build && electron-builder --win",
-    "build:linux": "tsc -b && vite build && electron-builder --linux",
-    "preview": "vite preview",
+    "dev": "electron-vite dev",
+    "build": "tsc -b && electron-vite build && electron-builder",
+    "build:vite": "tsc -b && electron-vite build",
+    "build:mac": "tsc -b && electron-vite build && electron-builder --mac",
+    "build:win": "tsc -b && electron-vite build && electron-builder --win",
+    "build:linux": "tsc -b && electron-vite build && electron-builder --linux",
+    "preview": "electron-vite preview",
     "lint": "eslint .",
-    "clean": "rm -rf dist dist-electron release node_modules/.vite"
+    "clean": "rm -rf out release node_modules/.vite"
   },
   "dependencies": {
     "@musictron/app": "workspace:*",
@@ -35,11 +35,10 @@
     "autoprefixer": "^10.4.21",
     "electron": "^36.3.0",
     "electron-builder": "^26.0.12",
+    "electron-vite": "^5.0.0",
     "postcss": "^8.5.4",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
-    "vite": "^6.3.5",
-    "vite-plugin-electron": "^0.29.0",
-    "vite-plugin-electron-renderer": "^0.14.6"
+    "vite": "^6.3.5"
   }
 }

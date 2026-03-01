@@ -81,6 +81,9 @@ importers:
       electron-builder:
         specifier: ^26.0.12
         version: 26.8.1(electron-builder-squirrel-windows@26.8.1)
+      electron-vite:
+        specifier: ^5.0.0
+        version: 5.0.0(vite@6.4.1(@types/node@25.3.3)(jiti@1.21.7))
       postcss:
         specifier: ^8.5.4
         version: 8.5.6
@@ -93,12 +96,6 @@ importers:
       vite:
         specifier: ^6.3.5
         version: 6.4.1(@types/node@25.3.3)(jiti@1.21.7)
-      vite-plugin-electron:
-        specifier: ^0.29.0
-        version: 0.29.0(vite-plugin-electron-renderer@0.14.6)
-      vite-plugin-electron-renderer:
-        specifier: ^0.14.6
-        version: 0.14.6
 
   apps/web:
     dependencies:
@@ -313,6 +310,12 @@ packages:
     resolution: {integrity: sha512-IyDgFV5GeDUVX4YdF/3CPULtVGSXXMLh1xVIgdCgxApktqnQV0r7/8Nqthg+8YLGaAtdyIlo2qIdZrbCv4+7ww==}
     engines: {node: '>=6.0.0'}
     hasBin: true
+
+  '@babel/plugin-transform-arrow-functions@7.27.1':
+    resolution: {integrity: sha512-8Z4TGic6xW70FKThA5HYEKKyBpOOsucTOD1DjU3fZxDg+K3zBJcXMFnt/4yQiZnf5+MiOMSXQ9PaEK/Ilh1DeA==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
 
   '@babel/plugin-transform-react-jsx-self@7.27.1':
     resolution: {integrity: sha512-6UzkCs+ejGdZ5mFFC/OCUrv028ab2fp1znZmCZjAOBKiBK2jXD1O+BPSfX8X2qjJ75fZBMSnQn3Rq2mrBJK2mw==}
@@ -1910,6 +1913,10 @@ packages:
   builder-util@26.8.1:
     resolution: {integrity: sha512-pm1lTYbGyc90DHgCDO7eo8Rl4EqKLciayNbZqGziqnH9jrlKe8ZANGdityLZU+pJh16dfzjAx2xQq9McuIPEtw==}
 
+  cac@6.7.14:
+    resolution: {integrity: sha512-b6Ilus+c3RrdDk+JhLKUAQfzzgLEPy6wcXqS7f/xe1EETvsDP6GORG7SFuOs6cID5YkqchW/LXZbX5bc8j7ZcQ==}
+    engines: {node: '>=8'}
+
   cacache@19.0.1:
     resolution: {integrity: sha512-hdsUxulXCi5STId78vRVYEtDAjq99ICAUktLTeTYsLoTE6Z8dS0c8pWNCxwdrk9YfJeobDZc2Y186hD/5ZQgFQ==}
     engines: {node: ^18.17.0 || >=20.5.0}
@@ -2192,6 +2199,17 @@ packages:
 
   electron-to-chromium@1.5.302:
     resolution: {integrity: sha512-sM6HAN2LyK82IyPBpznDRqlTQAtuSaO+ShzFiWTvoMJLHyZ+Y39r8VMfHzwbU8MVBzQ4Wdn85+wlZl2TLGIlwg==}
+
+  electron-vite@5.0.0:
+    resolution: {integrity: sha512-OHp/vjdlubNlhNkPkL/+3JD34ii5ov7M0GpuXEVdQeqdQ3ulvVR7Dg/rNBLfS5XPIFwgoBLDf9sjjrL+CuDyRQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
+    peerDependencies:
+      '@swc/core': ^1.0.0
+      vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+    peerDependenciesMeta:
+      '@swc/core':
+        optional: true
 
   electron-winstaller@5.4.0:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
@@ -2966,6 +2984,9 @@ packages:
     resolution: {integrity: sha512-Sy7bY0MeicRm2pzrnoHm2h6C1iVoeHyBU2fjdQDsXGP51fhkhau1/ZV/dzrcxEmAKsxYb6bGaIsMnGHuQ5s0dw==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  magic-string@0.30.21:
+    resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
   make-fetch-happen@14.0.3:
     resolution: {integrity: sha512-QMjGbFTP0blj97EeidG5hk/QhKQ3T4ICckQGLgz38QF7Vgbk6e6FTARN8KhKxyBbWn8R0HU+bnw8aSoFPD4qtQ==}
@@ -4028,17 +4049,6 @@ packages:
     resolution: {integrity: sha512-veufcmxri4e3XSrT0xwfUR7kguIkaxBeosDg00yDWhk49wdwkSUrvvsm7nc75e1PUyvIeZj6nS8VQRYz2/S4Xg==}
     engines: {node: '>=0.6.0'}
 
-  vite-plugin-electron-renderer@0.14.6:
-    resolution: {integrity: sha512-oqkWFa7kQIkvHXG7+Mnl1RTroA4sP0yesKatmAy0gjZC4VwUqlvF9IvOpHd1fpLWsqYX/eZlVxlhULNtaQ78Jw==}
-
-  vite-plugin-electron@0.29.0:
-    resolution: {integrity: sha512-HP0DI9Shg41hzt55IKYVnbrChWXHX95QtsEQfM+szQBpWjVhVGMlqRjVco6ebfQjWNr+Ga+PeoBjMIl8zMaufw==}
-    peerDependencies:
-      vite-plugin-electron-renderer: '*'
-    peerDependenciesMeta:
-      vite-plugin-electron-renderer:
-        optional: true
-
   vite@6.4.1:
     resolution: {integrity: sha512-+Oxm7q9hDoLMyJOYfUYBuHQo+dkAloi33apOPP56pzj+vsdJDzr+j1NISE5pyaAuKL4A3UD34qd0lx5+kfKp2g==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
@@ -4273,6 +4283,11 @@ snapshots:
   '@babel/parser@7.29.0':
     dependencies:
       '@babel/types': 7.29.0
+
+  '@babel/plugin-transform-arrow-functions@7.27.1(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-transform-react-jsx-self@7.27.1(@babel/core@7.29.0)':
     dependencies:
@@ -5968,6 +5983,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  cac@6.7.14: {}
+
   cacache@19.0.1:
     dependencies:
       '@npmcli/fs': 4.0.0
@@ -6285,6 +6302,18 @@ snapshots:
       - supports-color
 
   electron-to-chromium@1.5.302: {}
+
+  electron-vite@5.0.0(vite@6.4.1(@types/node@25.3.3)(jiti@1.21.7)):
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/plugin-transform-arrow-functions': 7.27.1(@babel/core@7.29.0)
+      cac: 6.7.14
+      esbuild: 0.25.12
+      magic-string: 0.30.21
+      picocolors: 1.1.1
+      vite: 6.4.1(@types/node@25.3.3)(jiti@1.21.7)
+    transitivePeerDependencies:
+      - supports-color
 
   electron-winstaller@5.4.0:
     dependencies:
@@ -7238,6 +7267,10 @@ snapshots:
   lucide-react@0.515.0(react@19.2.4):
     dependencies:
       react: 19.2.4
+
+  magic-string@0.30.21:
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.5.5
 
   make-fetch-happen@14.0.3:
     dependencies:
@@ -8409,12 +8442,6 @@ snapshots:
       core-util-is: 1.0.2
       extsprintf: 1.4.1
     optional: true
-
-  vite-plugin-electron-renderer@0.14.6: {}
-
-  vite-plugin-electron@0.29.0(vite-plugin-electron-renderer@0.14.6):
-    optionalDependencies:
-      vite-plugin-electron-renderer: 0.14.6
 
   vite@6.4.1(@types/node@25.3.3)(jiti@1.21.7):
     dependencies:

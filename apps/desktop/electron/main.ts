@@ -7,17 +7,8 @@ import {
   nativeTheme,
 } from 'electron'
 import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const isMac = process.platform === 'darwin'
-
-process.env.DIST_ELECTRON = path.join(__dirname)
-process.env.DIST = path.join(__dirname, '../dist')
-process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
-  ? path.join(__dirname, '../public')
-  : process.env.DIST
 
 let mainWindow: BrowserWindow | null = null
 
@@ -34,7 +25,7 @@ function createWindow() {
       : { frame: false }),
     backgroundColor: '#0a0a0a',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, '../preload/index.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: false,
@@ -54,10 +45,11 @@ function createWindow() {
     return { action: 'deny' }
   })
 
-  if (process.env.VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
+  // electron-vite injects ELECTRON_RENDERER_URL in dev mode
+  if (process.env.ELECTRON_RENDERER_URL) {
+    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
-    mainWindow.loadFile(path.join(process.env.DIST ?? '', 'index.html'))
+    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
 }
 

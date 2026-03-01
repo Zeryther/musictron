@@ -4,8 +4,7 @@ directories:
   buildResources: build
   output: release
 files:
-  - dist
-  - dist-electron
+  - out
 asar: true
 
 mac:
@@ -18,7 +17,7 @@ mac:
       arch:
         - x64
         - arm64
-  artifactName: "${productName}-${version}-mac-${arch}.${ext}"
+  artifactName: '${productName}-${version}-mac-${arch}.${ext}'
   category: public.app-category.music
   darkModeSupport: true
   hardenedRuntime: true
@@ -26,7 +25,7 @@ mac:
   entitlementsInherit: build/entitlements.mac.plist
 
 dmg:
-  artifactName: "${productName}-${version}-mac-${arch}.${ext}"
+  artifactName: '${productName}-${version}-mac-${arch}.${ext}'
 
 win:
   target:
@@ -34,7 +33,7 @@ win:
       arch:
         - x64
         - arm64
-  artifactName: "${productName}-${version}-win-${arch}-setup.${ext}"
+  artifactName: '${productName}-${version}-win-${arch}-setup.${ext}'
 
 nsis:
   oneClick: false
@@ -51,6 +50,6 @@ linux:
       arch:
         - x64
         - arm64
-  artifactName: "${productName}-${version}-linux-${arch}.${ext}"
+  artifactName: '${productName}-${version}-linux-${arch}.${ext}'
   category: Audio
   maintainer: hello@musictron.app
