@@ -4,6 +4,9 @@
  * These routes proxy all Last.fm API calls through the server so that the
  * API secret is never exposed to the client. The Last.fm session key (sk)
  * is passed from the client for authenticated (write) calls.
+ *
+ * Read-only metadata endpoints set Cache-Control headers so CDNs and
+ * browsers cache responses without hitting Last.fm on every request.
  */
 
 import { Elysia, t } from 'elysia'
@@ -23,6 +26,23 @@ import {
   type LastfmNowPlayingResponse,
 } from './lastfm'
 
+// ─── Cache Configuration ─────────────────────────────────────────────────────
+
+/**
+ * Cache-Control header for cacheable metadata responses.
+ *
+ *   max-age=300                — browsers reuse cached response for 5 minutes
+ *   s-maxage=3600              — CDN serves cached response for 1 hour
+ *   stale-while-revalidate=18000 — CDN may serve stale for up to 5 hours
+ *                                  while revalidating in the background
+ *   stale-if-error=86400       — CDN serves stale for 24h if origin errors
+ *                                  (e.g. Last.fm is down)
+ */
+const METADATA_CACHE_CONTROL =
+  'public, max-age=300, s-maxage=3600, stale-while-revalidate=18000, stale-if-error=86400'
+
+// ─── Auth Token Store ────────────────────────────────────────────────────────
+
 // Temporary in-memory store for pending auth tokens.
 // In production you'd use a more durable store, but for our use case
 // (single-server, short-lived tokens) this is sufficient.
@@ -40,6 +60,8 @@ setInterval(
   },
   10 * 60 * 1000,
 )
+
+// ─── Routes ──────────────────────────────────────────────────────────────────
 
 export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
 
@@ -101,11 +123,11 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
     },
   )
 
-  // ── Metadata (read-only, no auth needed) ────────────────────────────────
+  // ── Metadata (read-only, cached) ────────────────────────────────────────
 
   .get(
     '/artist',
-    async ({ query, status }) => {
+    async ({ query, status, set }) => {
       if (!isLastfmConfigured()) {
         return status(503, { error: 'Last.fm is not configured' })
       }
@@ -119,6 +141,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
           lang: query.lang,
           username: query.username,
         })
+        set.headers['cache-control'] = METADATA_CACHE_CONTROL
         return data
       } catch (err) {
         console.error('[lastfm] artist.getInfo error:', err)
@@ -140,7 +163,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
 
   .get(
     '/artist/similar',
-    async ({ query, status }) => {
+    async ({ query, status, set }) => {
       if (!isLastfmConfigured()) {
         return status(503, { error: 'Last.fm is not configured' })
       }
@@ -153,6 +176,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
           limit: query.limit,
           autocorrect: 1,
         })
+        set.headers['cache-control'] = METADATA_CACHE_CONTROL
         return data
       } catch (err) {
         console.error('[lastfm] artist.getSimilar error:', err)
@@ -173,7 +197,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
 
   .get(
     '/album',
-    async ({ query, status }) => {
+    async ({ query, status, set }) => {
       if (!isLastfmConfigured()) {
         return status(503, { error: 'Last.fm is not configured' })
       }
@@ -188,6 +212,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
           lang: query.lang,
           username: query.username,
         })
+        set.headers['cache-control'] = METADATA_CACHE_CONTROL
         return data
       } catch (err) {
         console.error('[lastfm] album.getInfo error:', err)
@@ -210,7 +235,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
 
   .get(
     '/track',
-    async ({ query, status }) => {
+    async ({ query, status, set }) => {
       if (!isLastfmConfigured()) {
         return status(503, { error: 'Last.fm is not configured' })
       }
@@ -224,6 +249,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
           autocorrect: 1,
           username: query.username,
         })
+        set.headers['cache-control'] = METADATA_CACHE_CONTROL
         return data
       } catch (err) {
         console.error('[lastfm] track.getInfo error:', err)
@@ -245,7 +271,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
 
   .get(
     '/track/similar',
-    async ({ query, status }) => {
+    async ({ query, status, set }) => {
       if (!isLastfmConfigured()) {
         return status(503, { error: 'Last.fm is not configured' })
       }
@@ -259,6 +285,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
           limit: query.limit,
           autocorrect: 1,
         })
+        set.headers['cache-control'] = METADATA_CACHE_CONTROL
         return data
       } catch (err) {
         console.error('[lastfm] track.getSimilar error:', err)
@@ -278,7 +305,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
     },
   )
 
-  // ── Scrobbling (authenticated) ──────────────────────────────────────────
+  // ── Scrobbling (authenticated, no caching) ──────────────────────────────
 
   .post(
     '/now-playing',
@@ -399,7 +426,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
     },
   )
 
-  // ── Love / Unlove ───────────────────────────────────────────────────────
+  // ── Love / Unlove (authenticated, no caching) ──────────────────────────
 
   .post(
     '/love',
