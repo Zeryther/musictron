@@ -53,4 +53,18 @@ export const queryKeys = {
   // ── Personalized ────────────────────────────────────────
   recommendations: () => ['recommendations'] as const,
   recentlyPlayed: () => ['recentlyPlayed'] as const,
+
+  // ── Last.fm ────────────────────────────────────────────
+  lastfm: {
+    all: ['lastfm'] as const,
+    artist: (name: string) => ['lastfm', 'artist', name] as const,
+    similarArtists: (name: string) =>
+      ['lastfm', 'artist', name, 'similar'] as const,
+    album: (artist: string, album: string) =>
+      ['lastfm', 'album', artist, album] as const,
+    track: (artist: string, track: string) =>
+      ['lastfm', 'track', artist, track] as const,
+    similarTracks: (artist: string, track: string) =>
+      ['lastfm', 'track', artist, track, 'similar'] as const,
+  },
 } as const

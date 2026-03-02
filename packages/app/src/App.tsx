@@ -17,6 +17,8 @@ import { usePlayerStore } from '@/stores/player-store'
 import { initializePlayerEvents } from '@/stores/player-store'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 import { initializeTheme } from '@/stores/theme-store'
+import { initializeScrobbler } from '@/lib/lastfm-scrobbler'
+import { useLastfmStore } from '@/stores/lastfm-store'
 import { getPlatformAdapter } from '@/lib/platform'
 
 // Apply persisted theme and listen for system preference changes
@@ -36,6 +38,11 @@ function AppInner() {
   useEffect(() => {
     initialize().then(() => {
       initializePlayerEvents()
+      initializeScrobbler()
+      // Check whether Last.fm is configured on the server so metadata
+      // hooks (useLastfmArtist, etc.) can fire — they are gated on
+      // serverConfigured === true.
+      useLastfmStore.getState().checkServer()
     })
   }, [developerToken, initialize])
 

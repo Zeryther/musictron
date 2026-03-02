@@ -21,7 +21,7 @@ export function QueuePanel() {
         <Button
           variant="ghost"
           size="icon-sm"
-          className="text-muted-foreground/50 hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground"
           onClick={toggleQueue}
         >
           <X className="w-4 h-4" />
@@ -33,7 +33,7 @@ export function QueuePanel() {
           {/* Now Playing */}
           {nowPlaying && (
             <div className="mb-5">
-              <h4 className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-widest px-2 mb-2">
+              <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-2 mb-2">
                 Now Playing
               </h4>
               <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-primary/[0.06]">
@@ -50,7 +50,9 @@ export function QueuePanel() {
                   <p className="text-[11px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
                     {nowPlaying.artistId ? (
                       <button
-                        onClick={() => navigate(`/artist/${nowPlaying.artistId}`)}
+                        onClick={() =>
+                          navigate(`/artist/${nowPlaying.artistId}`)
+                        }
                         className="hover:underline hover:text-foreground transition-colors"
                       >
                         {nowPlaying.artistName}
@@ -60,7 +62,7 @@ export function QueuePanel() {
                     )}
                   </p>
                 </div>
-                <span className="text-[11px] tabular-nums text-muted-foreground/50">
+                <span className="text-[11px] tabular-nums text-muted-foreground">
                   {formatTime(nowPlaying.duration)}
                 </span>
               </div>
@@ -69,11 +71,11 @@ export function QueuePanel() {
 
           {/* Up Next */}
           <div>
-            <h4 className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-widest px-2 mb-2">
+            <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-2 mb-2">
               Up Next{upNext.length > 0 && ` (${upNext.length})`}
             </h4>
             {upNext.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/40">
+              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/70">
                 <Music className="w-7 h-7 mb-2" />
                 <p className="text-[13px]">Queue is empty</p>
               </div>
@@ -84,7 +86,7 @@ export function QueuePanel() {
                     key={`${item.id}-${index}`}
                     className="flex items-center gap-3 px-2 py-[6px] rounded-lg hover:bg-white/[0.04] transition-colors duration-100 cursor-pointer"
                   >
-                    <span className="text-[11px] tabular-nums text-muted-foreground/40 w-4 text-right">
+                    <span className="text-[11px] tabular-nums text-muted-foreground/70 w-4 text-right">
                       {index + 1}
                     </span>
                     <Artwork
@@ -97,11 +99,11 @@ export function QueuePanel() {
                       <p className="text-[13px] line-clamp-1 leading-tight">
                         {item.name}
                       </p>
-                      <p className="text-[11px] text-muted-foreground/60 line-clamp-1 leading-tight mt-0.5">
+                      <p className="text-[11px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
                         {item.artistName}
                       </p>
                     </div>
-                    <span className="text-[11px] tabular-nums text-muted-foreground/40">
+                    <span className="text-[11px] tabular-nums text-muted-foreground/70">
                       {formatTime(item.duration)}
                     </span>
                   </div>

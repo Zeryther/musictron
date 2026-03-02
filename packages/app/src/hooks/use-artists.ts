@@ -15,9 +15,7 @@ async function resolveCatalogArtistId(
   libraryId: string,
 ): Promise<string | null> {
   try {
-    const data = await musicAPI(
-      `/v1/me/library/artists/${libraryId}/catalog`,
-    )
+    const data = await musicAPI(`/v1/me/library/artists/${libraryId}/catalog`)
     return data.data?.[0]?.id ?? null
   } catch {
     return null
@@ -34,7 +32,7 @@ export function useArtistDetail(artistId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.artists.detail(artistId ?? ''),
     queryFn: async () => {
-      let catalogId = artistId!
+      let catalogId = artistId ?? ''
 
       if (isLibraryArtistId(catalogId)) {
         const resolved = await resolveCatalogArtistId(catalogId)
@@ -64,7 +62,7 @@ export function useArtistTopSongs(artistId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.artists.topSongs(artistId ?? ''),
     queryFn: async () => {
-      let catalogId = artistId!
+      let catalogId = artistId ?? ''
 
       if (isLibraryArtistId(catalogId)) {
         const resolved = await resolveCatalogArtistId(catalogId)
@@ -91,7 +89,7 @@ export function useArtistPlaylists(artistId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.artists.playlists(artistId ?? ''),
     queryFn: async () => {
-      let catalogId = artistId!
+      let catalogId = artistId ?? ''
 
       if (isLibraryArtistId(catalogId)) {
         const resolved = await resolveCatalogArtistId(catalogId)

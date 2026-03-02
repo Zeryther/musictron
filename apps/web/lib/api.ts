@@ -1,14 +1,17 @@
 import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
 import { generateDeveloperToken, isConfigured } from './musickit-token'
+import { lastfmRoutes } from './lastfm-routes'
+import { isLastfmConfigured } from './lastfm'
 
 /**
  * Musictron API — powered by Elysia, mounted inside Next.js.
  *
  * Endpoints:
- *   GET  /api/health          — server health check
- *   GET  /api/token            — get a MusicKit developer token
- *   GET  /api/config           — public client config (whether server is configured)
+ *   GET  /api/health              — server health check
+ *   GET  /api/token               — get a MusicKit developer token
+ *   GET  /api/config              — public client config (whether server is configured)
+ *   /api/lastfm/*                 — Last.fm API proxy (see lastfm-routes.ts)
  */
 export const api = new Elysia({ prefix: '/api' })
   .use(
@@ -16,21 +19,26 @@ export const api = new Elysia({ prefix: '/api' })
       // In production, restrict to your desktop app's origin.
       // For development, allow everything.
       origin: process.env.CORS_ORIGIN ?? true,
-      methods: ['GET', 'OPTIONS'],
+      methods: ['GET', 'POST', 'OPTIONS'],
       credentials: false,
     }),
   )
+
+  // ---------- Last.fm routes ----------
+  .use(lastfmRoutes)
 
   // ---------- Health ----------
   .get('/health', () => ({
     status: 'ok',
     timestamp: new Date().toISOString(),
     configured: isConfigured(),
+    lastfmConfigured: isLastfmConfigured(),
   }))
 
   // ---------- Config ----------
   .get('/config', () => ({
     configured: isConfigured(),
+    lastfmConfigured: isLastfmConfigured(),
     name: 'Musictron',
     version: '1.0.0',
   }))

@@ -5,6 +5,8 @@ import { Artwork } from '@/components/ui/artwork'
 import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { usePlayerStore } from '@/stores/player-store'
+import { useLastfmStore } from '@/stores/lastfm-store'
+import { useLastfmLove, useLastfmTrack } from '@/hooks/use-lastfm'
 import {
   Play,
   Pause,
@@ -18,6 +20,7 @@ import {
   VolumeX,
   ListMusic,
   Maximize2,
+  Heart,
 } from 'lucide-react'
 
 export function PlayerBar() {
@@ -41,6 +44,13 @@ export function PlayerBar() {
     setFullscreen,
   } = usePlayerStore()
   const navigate = useNavigate()
+  const lastfmConnected = useLastfmStore((s) => s.isConnected)
+  const { mutate: sendLove, isPending: isLoveLoading } = useLastfmLove()
+  const { data: lastfmTrack } = useLastfmTrack(
+    nowPlaying?.artistName,
+    nowPlaying?.name,
+  )
+  const isLoved = lastfmTrack?.userLoved ?? false
 
   return (
     <div className="h-[84px] border-t border-white/[0.06] surface-glass-heavy flex flex-col shrink-0">
@@ -59,7 +69,7 @@ export function PlayerBar() {
 
       <div className="flex-1 flex items-center px-5 gap-4">
         {/* Now playing info — left */}
-        <div className="flex items-center gap-3 w-[260px] min-w-0">
+        <div className="flex items-center gap-3 w-[260px] min-w-0 group/now-playing">
           {nowPlaying ? (
             <>
               <Artwork
@@ -70,7 +80,7 @@ export function PlayerBar() {
                 onClick={() => setFullscreen(true)}
                 className="cursor-pointer shadow-lg shadow-black/30"
               />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-medium line-clamp-1 leading-tight">
                   {nowPlaying.name}
                 </p>
@@ -90,13 +100,36 @@ export function PlayerBar() {
                   )}
                 </p>
               </div>
+              {lastfmConnected && (
+                <Button
+                  variant="player"
+                  size="icon-sm"
+                  disabled={isLoveLoading}
+                  onClick={() =>
+                    sendLove({
+                      artist: nowPlaying.artistName,
+                      track: nowPlaying.name,
+                      love: !isLoved,
+                    })
+                  }
+                  className={cn(
+                    'shrink-0 transition-opacity',
+                    isLoved
+                      ? 'opacity-100 text-red-500'
+                      : 'opacity-0 group-hover/now-playing:opacity-100',
+                  )}
+                >
+                  <Heart
+                    className="w-[14px] h-[14px]"
+                    fill={isLoved ? 'currentColor' : 'none'}
+                  />
+                </Button>
+              )}
             </>
           ) : (
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded bg-muted/60" />
-              <p className="text-[13px] text-muted-foreground/50">
-                Not Playing
-              </p>
+              <p className="text-[13px] text-muted-foreground">Not Playing</p>
             </div>
           )}
         </div>
@@ -150,9 +183,9 @@ export function PlayerBar() {
           </div>
 
           {/* Time */}
-          <div className="flex items-center gap-2 text-[10px] tabular-nums text-muted-foreground/50">
+          <div className="flex items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
             <span className="w-9 text-right">{formatTime(currentTime)}</span>
-            <span className="opacity-40">/</span>
+            <span className="opacity-60">/</span>
             <span className="w-9">{formatTime(duration)}</span>
           </div>
         </div>

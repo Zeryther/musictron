@@ -55,7 +55,7 @@ export function BrowsePage() {
         <TabsContent value="charts">
           {loading ? (
             <div className="flex items-center justify-center py-24">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <div className="space-y-10">
@@ -72,7 +72,9 @@ export function BrowsePage() {
                         name={song.attributes?.name}
                         artistName={song.attributes?.artistName}
                         albumName={song.attributes?.albumName}
-                        albumId={extractAlbumIdFromUrl(song.attributes?.url as string | undefined)}
+                        albumId={extractAlbumIdFromUrl(
+                          song.attributes?.url as string | undefined,
+                        )}
                         artworkUrl={song.attributes?.artwork?.url}
                         duration={song.attributes?.durationInMillis || 0}
                         onClick={() => {
@@ -159,7 +161,7 @@ export function BrowsePage() {
               <div className="space-y-8 animate-fade-in-up">
                 {loadingGenre ? (
                   <div className="flex items-center justify-center py-16">
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
                   <>
@@ -181,7 +183,9 @@ export function BrowsePage() {
                                   name={song.attributes?.name}
                                   artistName={song.attributes?.artistName}
                                   albumName={song.attributes?.albumName}
-                                  albumId={extractAlbumIdFromUrl(song.attributes?.url as string | undefined)}
+                                  albumId={extractAlbumIdFromUrl(
+                                    song.attributes?.url as string | undefined,
+                                  )}
                                   artworkUrl={song.attributes?.artwork?.url}
                                   duration={
                                     song.attributes?.durationInMillis || 0
