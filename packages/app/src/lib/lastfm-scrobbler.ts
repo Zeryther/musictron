@@ -41,6 +41,8 @@ let currentTrack: {
   album: string
   duration: number
   startTimestamp: number
+  /** Accumulated playback time in seconds (updated from player's currentTime) */
+  lastKnownPlaybackTime: number
   scrobbled: boolean
   nowPlayingSent: boolean
 } | null = null
@@ -186,6 +188,7 @@ function onNowPlayingChanged(nowPlaying: NowPlayingItem | null): void {
     album: nowPlaying.albumName,
     duration: nowPlaying.duration,
     startTimestamp: Math.floor(Date.now() / 1000),
+    lastKnownPlaybackTime: 0,
     scrobbled: false,
     nowPlayingSent: false,
   }
@@ -211,9 +214,11 @@ function scrobblePreviousTrackIfNeeded(): void {
     return
   }
 
-  // Check if the track qualifies for scrobbling based on elapsed time
-  const elapsed = Math.floor(Date.now() / 1000) - currentTrack.startTimestamp
-  if (shouldScrobble(currentTrack.duration, elapsed)) {
+  // Check if the track qualifies for scrobbling based on actual playback time
+  // (not wall-clock time, which would be inflated if the track was paused)
+  if (
+    shouldScrobble(currentTrack.duration, currentTrack.lastKnownPlaybackTime)
+  ) {
     doScrobble(currentTrack, lastfm.sessionKey)
   }
 }
@@ -248,6 +253,10 @@ function doScrobble(track: NonNullable<typeof currentTrack>, sk: string): void {
 
 function onTimeUpdate(currentTime: number): void {
   if (!currentTrack || currentTrack.scrobbled) return
+
+  // Always update the last known playback position so that
+  // scrobblePreviousTrackIfNeeded() has an accurate value
+  currentTrack.lastKnownPlaybackTime = currentTime
 
   const lastfm = useLastfmStore.getState()
   if (!lastfm.isConnected || !lastfm.sessionKey || !lastfm.scrobblingEnabled) {

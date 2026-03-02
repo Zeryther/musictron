@@ -91,7 +91,7 @@ export const useLastfmStore = create<LastfmState>()(
         const deadline = Date.now() + POLL_TIMEOUT
 
         while (Date.now() < deadline) {
-          // If the user disconnected or navigated away, stop polling
+          // If already connected (e.g. another tab completed auth), stop polling
           if (get().isConnected) return true
 
           try {

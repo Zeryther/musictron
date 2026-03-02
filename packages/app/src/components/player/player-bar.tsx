@@ -6,7 +6,7 @@ import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { usePlayerStore } from '@/stores/player-store'
 import { useLastfmStore } from '@/stores/lastfm-store'
-import { useLastfmLove } from '@/hooks/use-lastfm'
+import { useLastfmLove, useLastfmTrack } from '@/hooks/use-lastfm'
 import {
   Play,
   Pause,
@@ -45,7 +45,12 @@ export function PlayerBar() {
   } = usePlayerStore()
   const navigate = useNavigate()
   const lastfmConnected = useLastfmStore((s) => s.isConnected)
-  const { mutate: toggleLove, isPending: isLoveLoading } = useLastfmLove()
+  const { mutate: sendLove, isPending: isLoveLoading } = useLastfmLove()
+  const { data: lastfmTrack } = useLastfmTrack(
+    nowPlaying?.artistName,
+    nowPlaying?.name,
+  )
+  const isLoved = lastfmTrack?.userLoved ?? false
 
   return (
     <div className="h-[84px] border-t border-white/[0.06] surface-glass-heavy flex flex-col shrink-0">
@@ -101,15 +106,23 @@ export function PlayerBar() {
                   size="icon-sm"
                   disabled={isLoveLoading}
                   onClick={() =>
-                    toggleLove({
+                    sendLove({
                       artist: nowPlaying.artistName,
                       track: nowPlaying.name,
-                      love: true,
+                      love: !isLoved,
                     })
                   }
-                  className="opacity-0 group-hover/now-playing:opacity-100 transition-opacity shrink-0"
+                  className={cn(
+                    'shrink-0 transition-opacity',
+                    isLoved
+                      ? 'opacity-100 text-red-500'
+                      : 'opacity-0 group-hover/now-playing:opacity-100',
+                  )}
                 >
-                  <Heart className="w-[14px] h-[14px]" />
+                  <Heart
+                    className="w-[14px] h-[14px]"
+                    fill={isLoved ? 'currentColor' : 'none'}
+                  />
                 </Button>
               )}
             </>

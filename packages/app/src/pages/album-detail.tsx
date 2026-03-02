@@ -115,7 +115,7 @@ export function AlbumDetailPage() {
           {/* Last.fm tags */}
           {(lastfmAlbum?.tags?.length ?? 0) > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {lastfmAlbum!.tags.slice(0, 5).map((tag) => (
+              {lastfmAlbum?.tags.slice(0, 5).map((tag) => (
                 <span
                   key={tag}
                   className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-muted-foreground/90"

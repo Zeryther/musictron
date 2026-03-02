@@ -138,12 +138,6 @@ export function ArtistDetailPage() {
               </div>
             )}
 
-            {/* Fallback if no Last.fm data — show genres the old way */}
-            {
-              !lastfmArtist &&
-                (attrs?.genreNames?.length ?? 0) > 0 &&
-                false /* already shown above */
-            }
             <div className="flex gap-2.5">
               <Button
                 onClick={() => {

@@ -47,6 +47,7 @@ export interface LastfmTrackData {
   url: string
   listeners?: number
   playcount?: number
+  userLoved?: boolean
   tags: string[]
   wiki?: {
     summary: string
@@ -266,12 +267,16 @@ export function useLastfmAlbum(
 
 /**
  * Fetch extended track info from Last.fm.
+ *
+ * When the user is connected to Last.fm, the `username` parameter is
+ * included so that the response contains the `userloved` field.
  */
 export function useLastfmTrack(
   artistName: string | undefined,
   trackName: string | undefined,
 ) {
   const serverConfigured = useLastfmStore((s) => s.serverConfigured)
+  const username = useLastfmStore((s) => s.username)
 
   return useQuery({
     queryKey: queryKeys.lastfm.track(artistName ?? '', trackName ?? ''),
@@ -282,11 +287,16 @@ export function useLastfmTrack(
           url: string
           listeners: string
           playcount: string
+          userloved?: string
           artist: { name: string }
           toptags?: { tag: Array<{ name: string }> | { name: string } }
           wiki?: { summary: string; content: string }
         }
-      }>('track', { artist: artistName, track: trackName })
+      }>('track', {
+        artist: artistName,
+        track: trackName,
+        username: username ?? undefined,
+      })
 
       if (!data.track) return null
 
@@ -303,6 +313,7 @@ export function useLastfmTrack(
         url: t.url,
         listeners: t.listeners ? parseInt(t.listeners, 10) : undefined,
         playcount: t.playcount ? parseInt(t.playcount, 10) : undefined,
+        userLoved: t.userloved === '1',
         tags,
         wiki: t.wiki?.summary
           ? {

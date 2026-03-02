@@ -26,7 +26,7 @@ export function useGenreCharts(genreId: string | null) {
     queryFn: () =>
       musicAPI('/v1/catalog/{{storefrontId}}/charts', {
         types: 'songs,albums,playlists',
-        genre: genreId!,
+        genre: genreId ?? '',
         limit: 20,
       }),
     enabled: genreId !== null,

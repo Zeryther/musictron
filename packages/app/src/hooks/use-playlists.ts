@@ -22,7 +22,7 @@ export function usePlaylistDetail(playlistId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.playlists.detail(playlistId ?? ''),
     queryFn: async () => {
-      const isLibrary = playlistId!.startsWith('p.')
+      const isLibrary = playlistId?.startsWith('p.') ?? false
       const path = isLibrary
         ? `/v1/me/library/playlists/${playlistId}`
         : `/v1/catalog/{{storefrontId}}/playlists/${playlistId}`
@@ -59,7 +59,7 @@ export function usePlaylistTracks(playlistId: string | undefined) {
       }
 
       // First page: fetch the playlist with included tracks
-      const isLibrary = playlistId!.startsWith('p.')
+      const isLibrary = playlistId?.startsWith('p.') ?? false
       const path = isLibrary
         ? `/v1/me/library/playlists/${playlistId}`
         : `/v1/catalog/{{storefrontId}}/playlists/${playlistId}`

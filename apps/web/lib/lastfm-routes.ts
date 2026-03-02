@@ -41,26 +41,6 @@ import {
 const METADATA_CACHE_CONTROL =
   'public, max-age=300, s-maxage=3600, stale-while-revalidate=18000, stale-if-error=86400'
 
-// ─── Auth Token Store ────────────────────────────────────────────────────────
-
-// Temporary in-memory store for pending auth tokens.
-// In production you'd use a more durable store, but for our use case
-// (single-server, short-lived tokens) this is sufficient.
-const pendingTokens = new Map<string, { token: string; createdAt: number }>()
-
-// Clean up expired tokens (older than 60 minutes) every 10 minutes
-setInterval(
-  () => {
-    const now = Date.now()
-    for (const [key, val] of pendingTokens) {
-      if (now - val.createdAt > 60 * 60 * 1000) {
-        pendingTokens.delete(key)
-      }
-    }
-  },
-  10 * 60 * 1000,
-)
-
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
@@ -84,9 +64,6 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
       const token = await getAuthToken()
       const url = buildAuthUrl(token)
 
-      // Store the token so we can exchange it later via /auth/session
-      pendingTokens.set(token, { token, createdAt: Date.now() })
-
       return { url, token }
     } catch (err) {
       console.error('[lastfm] auth/start error:', err)
@@ -106,7 +83,6 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
 
       try {
         const session = await getSession(body.token)
-        pendingTokens.delete(body.token)
         return { sessionKey: session.key, username: session.name }
       } catch (err) {
         console.error('[lastfm] auth/session error:', err)
