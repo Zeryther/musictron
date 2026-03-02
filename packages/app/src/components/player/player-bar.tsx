@@ -116,9 +116,7 @@ export function PlayerBar() {
           ) : (
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded bg-muted/60" />
-              <p className="text-[13px] text-muted-foreground/50">
-                Not Playing
-              </p>
+              <p className="text-[13px] text-muted-foreground">Not Playing</p>
             </div>
           )}
         </div>
@@ -172,9 +170,9 @@ export function PlayerBar() {
           </div>
 
           {/* Time */}
-          <div className="flex items-center gap-2 text-[10px] tabular-nums text-muted-foreground/50">
+          <div className="flex items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
             <span className="w-9 text-right">{formatTime(currentTime)}</span>
-            <span className="opacity-40">/</span>
+            <span className="opacity-60">/</span>
             <span className="w-9">{formatTime(duration)}</span>
           </div>
         </div>

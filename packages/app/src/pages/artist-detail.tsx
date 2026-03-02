@@ -46,14 +46,14 @@ export function ArtistDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   if (!artist) {
     return (
-      <div className="text-center py-24 text-muted-foreground/50 text-[15px]">
+      <div className="text-center py-24 text-muted-foreground text-[15px]">
         Artist not found
       </div>
     )
@@ -83,10 +83,10 @@ export function ArtistDetailPage() {
             shadow
           />
           <div className="min-w-0 pb-1">
-            <p className="text-[11px] text-muted-foreground/40 uppercase tracking-widest font-semibold mb-1.5">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">
               Artist
             </p>
-            <h1 className="text-[36px] font-bold tracking-tight leading-tight mb-2">
+            <h1 className="text-[36px] font-bold tracking-tight leading-tight mb-2 line-clamp-2">
               {attrs?.name}
             </h1>
             {/* Genre tags — combine Apple Music genres with Last.fm tags */}
@@ -96,7 +96,7 @@ export function ArtistDetailPage() {
                 {attrs?.genreNames?.map((genre: string) => (
                   <span
                     key={genre}
-                    className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-muted-foreground/70"
+                    className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.08] text-muted-foreground"
                   >
                     {genre}
                   </span>
@@ -112,7 +112,7 @@ export function ArtistDetailPage() {
                   .map((tag) => (
                     <span
                       key={tag}
-                      className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.04] text-muted-foreground/50"
+                      className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-muted-foreground/90"
                     >
                       {tag}
                     </span>
@@ -122,7 +122,7 @@ export function ArtistDetailPage() {
 
             {/* Last.fm stats */}
             {lastfmArtist && (
-              <div className="flex items-center gap-3 text-[12px] text-muted-foreground/50 mb-5">
+              <div className="flex items-center gap-3 text-[12px] text-muted-foreground mb-5">
                 {lastfmArtist.listeners != null && (
                   <span className="flex items-center gap-1">
                     <Users className="w-3 h-3" />
@@ -267,12 +267,12 @@ export function ArtistDetailPage() {
                 href={similar.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-colors group"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] transition-colors group"
               >
-                <span className="text-[13px] font-medium group-hover:text-foreground text-muted-foreground/70">
+                <span className="text-[13px] font-medium group-hover:text-foreground text-muted-foreground truncate max-w-[200px]">
                   {similar.name}
                 </span>
-                <ExternalLink className="w-3 h-3 text-muted-foreground/30 group-hover:text-muted-foreground/60" />
+                <ExternalLink className="w-3 h-3 text-muted-foreground/60 group-hover:text-muted-foreground" />
               </a>
             ))}
           </div>
@@ -285,9 +285,9 @@ export function ArtistDetailPage() {
           <h2 className="text-[20px] font-semibold tracking-tight mb-4">
             About
           </h2>
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
             <p
-              className={`text-[13px] text-muted-foreground/70 leading-relaxed whitespace-pre-line ${
+              className={`text-[13px] text-muted-foreground leading-relaxed whitespace-pre-line ${
                 !bioExpanded ? 'line-clamp-4' : ''
               }`}
             >
@@ -316,7 +316,7 @@ export function ArtistDetailPage() {
               href={lastfmArtist.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/40 hover:text-muted-foreground/60 mt-3 transition-colors"
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/70 hover:text-muted-foreground mt-3 transition-colors"
             >
               Source: Last.fm
               <ExternalLink className="w-2.5 h-2.5" />

@@ -18,7 +18,7 @@ export function RadioPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -27,7 +27,7 @@ export function RadioPage() {
     <div className="animate-fade-in">
       <div className="mb-8">
         <h1 className="text-[28px] font-bold tracking-tight">Radio</h1>
-        <p className="text-[13px] text-muted-foreground/60 mt-1">
+        <p className="text-[13px] text-muted-foreground mt-1">
           Live and on-demand radio stations
         </p>
       </div>
@@ -53,10 +53,10 @@ export function RadioPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 <div className="absolute bottom-0 left-0 p-4">
-                  <p className="text-white font-semibold text-[13px] leading-tight">
+                  <p className="text-white font-semibold text-[13px] leading-tight line-clamp-1">
                     {station.attributes?.name}
                   </p>
-                  <p className="text-white/50 text-[12px] mt-0.5 line-clamp-1">
+                  <p className="text-white/70 text-[12px] mt-0.5 line-clamp-1">
                     {station.attributes?.editorialNotes?.short ||
                       'Radio Station'}
                   </p>
@@ -91,9 +91,9 @@ export function RadioPage() {
 
       {/* Empty state */}
       {stations.length === 0 && featuredPlaylists.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
+        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
           <RadioIcon className="w-12 h-12 mb-3" />
-          <p className="text-[15px] text-muted-foreground/50">
+          <p className="text-[15px] text-muted-foreground">
             No radio stations available
           </p>
           <p className="text-[13px] mt-0.5">Browse for music instead</p>

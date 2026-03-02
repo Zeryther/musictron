@@ -73,7 +73,7 @@ export function Artwork({
         </>
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-muted">
-          <Music className="w-1/3 h-1/3 text-muted-foreground/40" />
+          <Music className="w-1/3 h-1/3 text-muted-foreground/70" />
         </div>
       )}
 

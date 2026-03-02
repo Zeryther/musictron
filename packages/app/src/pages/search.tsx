@@ -24,9 +24,10 @@ export function SearchPage() {
   const { data: searchData, isLoading: loading } = useSearch(debouncedQuery)
   const { data: hintsData } = useSearchHints(debouncedQuery)
 
-  const results = (searchData?.results as
-    | Record<string, MusicKit.SearchResultList>
-    | undefined) ?? null
+  const results =
+    (searchData?.results as
+      | Record<string, MusicKit.SearchResultList>
+      | undefined) ?? null
   const hints = (hintsData?.results?.terms as string[] | undefined) ?? []
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,18 +65,18 @@ export function SearchPage() {
 
       {/* Search input */}
       <div className="relative max-w-lg mb-2">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           ref={inputRef}
           value={query}
           onChange={handleInputChange}
           placeholder="Artists, songs, albums, playlists..."
-          className="pl-9 pr-9 h-10 bg-white/[0.06] border-white/[0.06] rounded-xl text-[13px] placeholder:text-muted-foreground/40 focus-visible:ring-primary/30"
+          className="pl-9 pr-9 h-10 bg-white/[0.06] border-white/[0.06] rounded-xl text-[13px] placeholder:text-muted-foreground/70 focus-visible:ring-primary/30"
         />
         {query && (
           <button
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -99,12 +100,12 @@ export function SearchPage() {
 
       {loading && (
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
         </div>
       )}
 
       {!loading && !hasResults && debouncedQuery && (
-        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/40">
+        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
           <SearchIcon className="w-10 h-10 mb-3" />
           <p className="text-[15px] font-medium text-muted-foreground">
             No results found
@@ -114,9 +115,9 @@ export function SearchPage() {
       )}
 
       {!loading && !debouncedQuery && (
-        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
+        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
           <SearchIcon className="w-10 h-10 mb-3" />
-          <p className="text-[15px] text-muted-foreground/50">
+          <p className="text-[15px] text-muted-foreground">
             Search Apple Music
           </p>
         </div>
@@ -154,10 +155,10 @@ export function SearchPage() {
                       rounded="full"
                       className="mb-3"
                     />
-                    <h3 className="text-[22px] font-bold leading-tight">
+                    <h3 className="text-[22px] font-bold leading-tight line-clamp-1">
                       {artists[0].attributes?.name}
                     </h3>
-                    <p className="text-[13px] text-muted-foreground/60 mt-0.5">
+                    <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-1">
                       Artist
                     </p>
                   </div>
@@ -184,10 +185,10 @@ export function SearchPage() {
                       rounded="md"
                       className="mb-3"
                     />
-                    <h3 className="text-[22px] font-bold leading-tight">
+                    <h3 className="text-[22px] font-bold leading-tight line-clamp-1">
                       {albums[0].attributes?.name}
                     </h3>
-                    <p className="text-[13px] text-muted-foreground/60 mt-0.5">
+                    <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-1">
                       {albums[0].attributes?.artistName}
                     </p>
                   </div>
@@ -209,7 +210,9 @@ export function SearchPage() {
                         id={song.id}
                         name={song.attributes?.name}
                         artistName={song.attributes?.artistName}
-                        albumId={extractAlbumIdFromUrl(song.attributes?.url as string | undefined)}
+                        albumId={extractAlbumIdFromUrl(
+                          song.attributes?.url as string | undefined,
+                        )}
                         artworkUrl={song.attributes?.artwork?.url}
                         duration={song.attributes?.durationInMillis || 0}
                         showAlbum={false}

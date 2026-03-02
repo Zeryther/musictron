@@ -102,7 +102,7 @@ export function Sidebar({ platform }: { platform: string }) {
       {isAuthorized && (
         <>
           <div className="px-6 pt-5 pb-1.5">
-            <h3 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
+            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
               Library
             </h3>
           </div>
@@ -128,13 +128,13 @@ export function Sidebar({ platform }: { platform: string }) {
 
           {/* Playlists */}
           <div className="px-3 pt-5 pb-1.5 flex items-center justify-between">
-            <h3 className="px-3 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
+            <h3 className="px-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
               Playlists
             </h3>
             <Button
               variant="ghost"
               size="icon-sm"
-              className="no-drag text-muted-foreground/50 hover:text-foreground"
+              className="no-drag text-muted-foreground hover:text-foreground"
               onClick={handleCreatePlaylist}
             >
               <Plus className="w-4 h-4" />

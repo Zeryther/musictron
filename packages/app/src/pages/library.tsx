@@ -70,7 +70,11 @@ export function LibraryPage() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMoreArtists && !fetchingMoreArtists) {
+        if (
+          entries[0].isIntersecting &&
+          hasMoreArtists &&
+          !fetchingMoreArtists
+        ) {
           fetchMoreArtists()
         }
       },
@@ -83,12 +87,12 @@ export function LibraryPage() {
 
   if (!isAuthorized) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/40">
+      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
         <Music className="w-12 h-12 mb-3" />
         <h2 className="text-[17px] font-semibold text-foreground mb-1">
           Sign in to Apple Music
         </h2>
-        <p className="text-[13px] text-muted-foreground/60 mb-5">
+        <p className="text-[13px] text-muted-foreground mb-5">
           Access your library by signing in with your Apple Music account.
         </p>
         <Button onClick={() => navigate('/settings')}>Set Up</Button>
@@ -183,7 +187,7 @@ export function LibraryPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/40" />
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <>
@@ -274,7 +278,7 @@ export function LibraryPage() {
 
               {fetchingMoreArtists && (
                 <div className="flex items-center justify-center py-6">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                 </div>
               )}
             </>
@@ -300,27 +304,27 @@ export function LibraryPage() {
           {section !== 'artists' &&
             section !== 'playlists' &&
             items.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
+              <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
                 <Music className="w-10 h-10 mb-3" />
-                <p className="text-[15px] text-muted-foreground/50">
+                <p className="text-[15px] text-muted-foreground">
                   No items in your library
                 </p>
               </div>
             )}
 
           {section === 'artists' && artists.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
+            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
               <Music className="w-10 h-10 mb-3" />
-              <p className="text-[15px] text-muted-foreground/50">
+              <p className="text-[15px] text-muted-foreground">
                 No artists in your library
               </p>
             </div>
           )}
 
           {section === 'playlists' && playlists.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/30">
+            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
               <Music className="w-10 h-10 mb-3" />
-              <p className="text-[15px] text-muted-foreground/50">
+              <p className="text-[15px] text-muted-foreground">
                 No playlists yet
               </p>
               <p className="text-[13px] mt-0.5">Create one to get started</p>
