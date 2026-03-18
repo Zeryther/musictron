@@ -1,5 +1,3 @@
-import { Elysia } from 'elysia'
-
 /**
  * Cache policy helpers for API responses.
  *
@@ -51,26 +49,3 @@ export function applyCachePolicy(
     headers['vercel-cdn-cache-control'] = policy.vercel
   }
 }
-
-export function createCachePlugin(name: string, policy: CachePolicy): Elysia {
-  return new Elysia({ name }).onBeforeHandle(({ set }) => {
-    applyCachePolicy(set.headers, policy)
-  })
-}
-
-export const noStoreCachePlugin = createCachePlugin(
-  'cache.no-store',
-  noStoreCache,
-)
-
-export const publicConfigCachePlugin = createCachePlugin(
-  'cache.public-config',
-  publicConfigCache,
-)
-
-export const tokenCachePlugin = createCachePlugin('cache.token', tokenCache)
-
-export const lastfmMetadataCachePlugin = createCachePlugin(
-  'cache.lastfm-metadata',
-  lastfmMetadataCache,
-)
