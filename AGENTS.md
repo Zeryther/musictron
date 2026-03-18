@@ -144,3 +144,8 @@ pnpm clean
 ## Versioning
 
 Uses **Changesets** (`@changesets/cli`). When making user-facing changes, run `pnpm changeset` to create a changeset file before committing.
+
+## Git Workflow
+
+- Never amend commits unless the user explicitly requests it
+- Never force push unless the user explicitly requests it
