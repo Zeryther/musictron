@@ -5,7 +5,10 @@ import { SongRow } from '@/components/ui/song-row'
 import { useAuthStore } from '@/stores/auth-store'
 import { usePlayerStore } from '@/stores/player-store'
 import { useCharts, getChartData } from '@/hooks/use-charts'
-import { useRecommendations, useRecentlyPlayed } from '@/hooks/use-recommendations'
+import {
+  useRecommendations,
+  useRecentlyPlayed,
+} from '@/hooks/use-recommendations'
 import { getGreeting, extractAlbumIdFromUrl } from '@/lib/utils'
 import { ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -89,11 +92,11 @@ export function HomePage() {
               className="animate-fade-in-up stagger-2"
             >
               <div className="mb-4">
-                <h2 className="text-[20px] font-semibold tracking-tight">
+                <h2 className="text-[20px] font-semibold tracking-tight line-clamp-1">
                   {rec.attributes?.title?.stringForDisplay || 'For You'}
                 </h2>
                 {rec.attributes?.reason?.stringForDisplay && (
-                  <p className="text-[13px] text-muted-foreground mt-0.5">
+                  <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-1">
                     {rec.attributes.reason.stringForDisplay}
                   </p>
                 )}
@@ -150,7 +153,9 @@ export function HomePage() {
                     name={song.attributes?.name}
                     artistName={song.attributes?.artistName}
                     albumName={song.attributes?.albumName}
-                    albumId={extractAlbumIdFromUrl(song.attributes?.url as string | undefined)}
+                    albumId={extractAlbumIdFromUrl(
+                      song.attributes?.url as string | undefined,
+                    )}
                     artworkUrl={song.attributes?.artwork?.url}
                     duration={song.attributes?.durationInMillis || 0}
                     onClick={() => {

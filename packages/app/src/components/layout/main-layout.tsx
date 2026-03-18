@@ -29,7 +29,7 @@ export function MainLayout() {
       {showTitleBar && (
         <div className="flex items-center justify-between h-8 surface-glass border-b border-white/[0.06] drag-region shrink-0">
           <div className="flex items-center gap-2 px-4 no-drag">
-            <span className="text-[11px] font-medium text-muted-foreground/60">
+            <span className="text-[11px] font-medium text-muted-foreground">
               Musictron
             </span>
           </div>

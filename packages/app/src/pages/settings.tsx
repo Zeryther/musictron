@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/auth-store'
+import { useLastfmStore } from '@/stores/lastfm-store'
 import { useThemeStore, type Theme } from '@/stores/theme-store'
+
 import {
   Music2,
   Key,
@@ -19,6 +21,7 @@ import {
   Moon,
   Monitor,
   Palette,
+  Radio,
 } from 'lucide-react'
 
 export function SettingsPage() {
@@ -102,7 +105,7 @@ export function SettingsPage() {
             </div>
             <div className="flex-1">
               <h2 className="text-[16px] font-semibold">Musictron Server</h2>
-              <p className="text-[12px] text-muted-foreground/60">
+              <p className="text-[12px] text-muted-foreground">
                 Connects to a server that provides MusicKit tokens
               </p>
             </div>
@@ -122,12 +125,12 @@ export function SettingsPage() {
 
           <div className="space-y-2.5">
             <div className="flex items-center gap-2">
-              <Globe className="w-3.5 h-3.5 text-muted-foreground/40" />
+              <Globe className="w-3.5 h-3.5 text-muted-foreground" />
               <label htmlFor="server-url" className="text-[13px] font-medium">
                 Server URL
               </label>
             </div>
-            <p className="text-[12px] text-muted-foreground/50 leading-relaxed">
+            <p className="text-[12px] text-muted-foreground leading-relaxed">
               The official Musictron server is used by default. Self-hosters can
               point this to their own instance.
             </p>
@@ -180,7 +183,7 @@ export function SettingsPage() {
             </div>
             <div className="flex-1">
               <h2 className="text-[16px] font-semibold">Apple Music</h2>
-              <p className="text-[12px] text-muted-foreground/60">
+              <p className="text-[12px] text-muted-foreground">
                 {tokenSource === 'server'
                   ? 'Token provided by server'
                   : 'Connect your Apple Music account'}
@@ -198,7 +201,7 @@ export function SettingsPage() {
           {!serverConfigured && (
             <div className="space-y-2.5">
               <div className="flex items-center gap-2">
-                <Key className="w-3.5 h-3.5 text-muted-foreground/40" />
+                <Key className="w-3.5 h-3.5 text-muted-foreground" />
                 <label
                   htmlFor="developer-token"
                   className="text-[13px] font-medium"
@@ -206,7 +209,7 @@ export function SettingsPage() {
                   Developer Token (JWT)
                 </label>
               </div>
-              <p className="text-[12px] text-muted-foreground/50 leading-relaxed">
+              <p className="text-[12px] text-muted-foreground leading-relaxed">
                 If no server is available, you can provide your own MusicKit
                 developer token. Requires an{' '}
                 <a
@@ -248,7 +251,7 @@ export function SettingsPage() {
 
           {/* Server token info */}
           {serverConfigured && tokenSource === 'server' && developerToken && (
-            <div className="flex items-center gap-2 text-[12px] text-muted-foreground/50 bg-white/[0.03] rounded-lg p-3">
+            <div className="flex items-center gap-2 text-[12px] text-muted-foreground bg-white/[0.03] rounded-lg p-3">
               <Server className="w-3.5 h-3.5 flex-shrink-0" />
               Developer token is managed by the Musictron server. It will be
               refreshed automatically.
@@ -287,6 +290,9 @@ export function SettingsPage() {
           </div>
         </div>
 
+        {/* Last.fm */}
+        <LastfmSettings />
+
         {/* Appearance */}
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-5">
           <div className="flex items-center gap-3">
@@ -295,7 +301,7 @@ export function SettingsPage() {
             </div>
             <div>
               <h2 className="text-[16px] font-semibold">Appearance</h2>
-              <p className="text-[12px] text-muted-foreground/60">
+              <p className="text-[12px] text-muted-foreground">
                 Choose how Musictron looks
               </p>
             </div>
@@ -328,7 +334,7 @@ export function SettingsPage() {
         {/* About */}
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-2.5">
           <h2 className="text-[16px] font-semibold">About</h2>
-          <div className="space-y-1.5 text-[13px] text-muted-foreground/60">
+          <div className="space-y-1.5 text-[13px] text-muted-foreground">
             <p>
               <span className="font-medium text-foreground">Musictron</span>{' '}
               v1.0.0
@@ -352,7 +358,7 @@ export function SettingsPage() {
               ['Toggle Queue', 'Ctrl+Q'],
             ].map(([action, key]) => (
               <React.Fragment key={action}>
-                <span className="text-muted-foreground/60">{action}</span>
+                <span className="text-muted-foreground">{action}</span>
                 <span className="text-right">
                   <kbd className="font-mono text-[11px] bg-white/[0.06] text-muted-foreground px-2 py-0.5 rounded">
                     {key}
@@ -364,5 +370,197 @@ export function SettingsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// ─── Last.fm Settings ────────────────────────────────────────────────────────
+
+function LastfmSettings() {
+  const {
+    isConnected,
+    username,
+    serverConfigured,
+    scrobblingEnabled,
+    nowPlayingEnabled,
+    checkServer,
+    startAuth,
+    pollForSession,
+    disconnect,
+    setScrobblingEnabled,
+    setNowPlayingEnabled,
+  } = useLastfmStore()
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [isPolling, setIsPolling] = useState(false)
+
+  useEffect(() => {
+    checkServer()
+  }, [checkServer])
+
+  const handleConnect = async () => {
+    setIsLoading(true)
+    try {
+      const result = await startAuth()
+      if (!result) {
+        setIsLoading(false)
+        return
+      }
+
+      // Open Last.fm auth page in a centered popup (web) or new window
+      const width = 800
+      const height = 600
+      const left = Math.round(window.screenX + (window.outerWidth - width) / 2)
+      const top = Math.round(window.screenY + (window.outerHeight - height) / 2)
+      const popup = window.open(
+        result.url,
+        'lastfm-auth',
+        `width=${width},height=${height},left=${left},top=${top},popup=yes`,
+      )
+
+      // Start polling for the user to approve
+      setIsPolling(true)
+      setIsLoading(false)
+
+      const success = await pollForSession(result.token)
+      setIsPolling(false)
+
+      // Close the popup if it's still open after auth succeeds
+      if (success && popup && !popup.closed) {
+        popup.close()
+      }
+    } catch {
+      setIsLoading(false)
+      setIsPolling(false)
+    }
+  }
+
+  // Don't render if the server doesn't have Last.fm configured
+  if (serverConfigured === false) return null
+
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-5">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d51007] to-[#b90a00] flex items-center justify-center shadow-lg shadow-red-800/20">
+          <Radio className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1">
+          <h2 className="text-[16px] font-semibold">Last.fm</h2>
+          <p className="text-[12px] text-muted-foreground">
+            {isConnected
+              ? `Scrobbling as ${username}`
+              : 'Scrobble your listening history'}
+          </p>
+        </div>
+        {isConnected && (
+          <div className="flex items-center gap-1.5 text-green-500 text-[12px]">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Connected
+          </div>
+        )}
+      </div>
+
+      {isConnected ? (
+        <>
+          {/* Scrobbling toggle */}
+          <div className="space-y-3">
+            <SettingsToggle
+              label="Enable scrobbling"
+              description="Automatically scrobble tracks you listen to"
+              enabled={scrobblingEnabled}
+              onChange={setScrobblingEnabled}
+            />
+            <SettingsToggle
+              label="Update Now Playing"
+              description="Show what you're listening to on your Last.fm profile"
+              enabled={nowPlayingEnabled}
+              onChange={setNowPlayingEnabled}
+            />
+          </div>
+
+          {/* Profile link + disconnect */}
+          <div className="flex items-center gap-2.5">
+            <a
+              href={`https://www.last.fm/user/${username}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View profile
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/60" />
+            <Button
+              onClick={disconnect}
+              variant="ghost"
+              size="sm"
+              className="text-[12px] text-muted-foreground hover:text-destructive h-auto p-0"
+            >
+              Disconnect
+            </Button>
+          </div>
+        </>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex gap-2.5">
+            <Button
+              onClick={handleConnect}
+              disabled={isLoading || isPolling || serverConfigured === null}
+              className="gap-2"
+            >
+              {isLoading || isPolling ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <LogIn className="w-4 h-4" />
+              )}
+              {isPolling ? 'Waiting for approval...' : 'Connect to Last.fm'}
+            </Button>
+          </div>
+          {isPolling && (
+            <p className="text-[12px] text-muted-foreground">
+              Approve access in the Last.fm tab, then return here.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Toggle Component ────────────────────────────────────────────────────────
+
+interface SettingsToggleProps {
+  label: string
+  description: string
+  enabled: boolean
+  onChange: (enabled: boolean) => void
+}
+
+function SettingsToggle({
+  label,
+  description,
+  enabled,
+  onChange,
+}: SettingsToggleProps) {
+  return (
+    <button
+      onClick={() => onChange(!enabled)}
+      className="flex items-center gap-3 w-full text-left group"
+    >
+      <div
+        className={`relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 ${
+          enabled ? 'bg-primary' : 'bg-white/[0.1]'
+        }`}
+      >
+        <div
+          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+            enabled ? 'translate-x-[18px]' : 'translate-x-0.5'
+          }`}
+        />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[13px] font-medium">{label}</p>
+        <p className="text-[11px] text-muted-foreground">{description}</p>
+      </div>
+    </button>
   )
 }

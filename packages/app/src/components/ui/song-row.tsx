@@ -188,7 +188,7 @@ export function SongRow({
       {/* Album name */}
       {showAlbum && albumName && (
         <div className="hidden md:block flex-1 min-w-0 max-w-[200px]">
-          <p className="text-[12px] text-muted-foreground/70 line-clamp-1">
+          <p className="text-[12px] text-muted-foreground line-clamp-1">
             {albumId ? (
               <button
                 onClick={(e) => {
@@ -208,7 +208,7 @@ export function SongRow({
 
       {/* Duration */}
       <div className="w-11 text-right flex-shrink-0">
-        <span className="text-[12px] tabular-nums text-muted-foreground/70">
+        <span className="text-[12px] tabular-nums text-muted-foreground">
           {formatDuration(duration)}
         </span>
       </div>

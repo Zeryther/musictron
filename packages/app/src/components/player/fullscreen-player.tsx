@@ -57,7 +57,7 @@ export function FullscreenPlayer() {
         <Button
           variant="ghost"
           size="icon"
-          className="text-white/40 hover:text-white/80 hover:bg-white/[0.06]"
+          className="text-white/60 hover:text-white/90 hover:bg-white/[0.08]"
           onClick={toggleQueue}
         >
           <ListMusic className="w-5 h-5" />
@@ -65,7 +65,7 @@ export function FullscreenPlayer() {
         <Button
           variant="ghost"
           size="icon"
-          className="text-white/40 hover:text-white/80 hover:bg-white/[0.06]"
+          className="text-white/60 hover:text-white/90 hover:bg-white/[0.08]"
           onClick={() => setFullscreen(false)}
         >
           <Minimize2 className="w-5 h-5" />
@@ -86,17 +86,17 @@ export function FullscreenPlayer() {
 
       {/* Song info */}
       <div className="text-center mb-8 max-w-lg px-4">
-        <h2 className="text-[22px] font-bold text-white leading-tight mb-1">
+        <h2 className="text-[22px] font-bold text-white leading-tight mb-1 line-clamp-2">
           {nowPlaying.name}
         </h2>
-        <p className="text-[16px] text-white/50 font-medium">
+        <p className="text-[16px] text-white/70 font-medium line-clamp-1">
           {nowPlaying.artistId ? (
             <button
               onClick={() => {
                 setFullscreen(false)
                 navigate(`/artist/${nowPlaying.artistId}`)
               }}
-              className="hover:underline hover:text-white/70 transition-colors"
+              className="hover:underline hover:text-white/90 transition-colors"
             >
               {nowPlaying.artistName}
             </button>
@@ -105,14 +105,14 @@ export function FullscreenPlayer() {
           )}
         </p>
         {nowPlaying.albumName && (
-          <p className="text-[13px] text-white/30 mt-1">
+          <p className="text-[13px] text-white/50 mt-1 line-clamp-1">
             {nowPlaying.albumId ? (
               <button
                 onClick={() => {
                   setFullscreen(false)
                   navigate(`/album/${nowPlaying.albumId}`)
                 }}
-                className="hover:underline hover:text-white/50 transition-colors"
+                className="hover:underline hover:text-white/70 transition-colors"
               >
                 {nowPlaying.albumName}
               </button>
@@ -134,7 +134,7 @@ export function FullscreenPlayer() {
           rangeClassName="bg-white/80"
           thumbClassName="bg-white scale-100"
         />
-        <div className="flex justify-between mt-2 text-[11px] tabular-nums text-white/30">
+        <div className="flex justify-between mt-2 text-[12px] tabular-nums text-white/55">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
@@ -147,8 +147,8 @@ export function FullscreenPlayer() {
           size="icon"
           onClick={toggleShuffle}
           className={cn(
-            'text-white/30 hover:text-white/70 hover:bg-white/[0.06]',
-            shuffleMode !== 0 && 'text-white/80',
+            'text-white/50 hover:text-white/80 hover:bg-white/[0.08]',
+            shuffleMode !== 0 && 'text-white/90',
           )}
         >
           <Shuffle className="w-5 h-5" />
@@ -188,8 +188,8 @@ export function FullscreenPlayer() {
           size="icon"
           onClick={toggleRepeat}
           className={cn(
-            'text-white/30 hover:text-white/70 hover:bg-white/[0.06]',
-            repeatMode !== 0 && 'text-white/80',
+            'text-white/50 hover:text-white/80 hover:bg-white/[0.08]',
+            repeatMode !== 0 && 'text-white/90',
           )}
         >
           {repeatMode === 1 ? (
@@ -202,7 +202,7 @@ export function FullscreenPlayer() {
 
       {/* Volume */}
       <div className="flex items-center gap-2.5 mt-10">
-        <VolumeX className="w-3.5 h-3.5 text-white/25" />
+        <VolumeX className="w-3.5 h-3.5 text-white/50" />
         <Slider
           value={[volume]}
           max={1}
@@ -213,7 +213,7 @@ export function FullscreenPlayer() {
           rangeClassName="bg-white/50"
           thumbClassName="bg-white"
         />
-        <Volume2 className="w-3.5 h-3.5 text-white/25" />
+        <Volume2 className="w-3.5 h-3.5 text-white/50" />
       </div>
     </div>
   )

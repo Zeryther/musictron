@@ -10,7 +10,7 @@ export function useAlbumDetail(albumId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.albums.detail(albumId ?? ''),
     queryFn: async () => {
-      const isLibrary = albumId!.startsWith('l.')
+      const isLibrary = albumId?.startsWith('l.') ?? false
       const path = isLibrary
         ? `/v1/me/library/albums/${albumId}`
         : `/v1/catalog/{{storefrontId}}/albums/${albumId}`
