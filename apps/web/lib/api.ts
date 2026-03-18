@@ -3,6 +3,11 @@ import { cors } from '@elysiajs/cors'
 import { generateDeveloperToken, isConfigured } from './musickit-token'
 import { lastfmRoutes } from './lastfm-routes'
 import { isLastfmConfigured } from './lastfm'
+import {
+  noStoreCachePlugin,
+  publicConfigCachePlugin,
+  tokenCachePlugin,
+} from './cache'
 
 /**
  * Musictron API — powered by Elysia, mounted inside Next.js.
@@ -28,53 +33,59 @@ export const api = new Elysia({ prefix: '/api' })
   .use(lastfmRoutes)
 
   // ---------- Health ----------
-  .get('/health', () => ({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    configured: isConfigured(),
-    lastfmConfigured: isLastfmConfigured(),
-  }))
+  .group('', (app) =>
+    app.use(noStoreCachePlugin).get('/health', () => ({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      configured: isConfigured(),
+      lastfmConfigured: isLastfmConfigured(),
+    })),
+  )
 
   // ---------- Config ----------
-  .get('/config', () => ({
-    configured: isConfigured(),
-    lastfmConfigured: isLastfmConfigured(),
-    name: 'Musictron',
-    version: '1.0.0',
-  }))
+  .group('', (app) =>
+    app.use(publicConfigCachePlugin).get('/config', () => ({
+      configured: isConfigured(),
+      lastfmConfigured: isLastfmConfigured(),
+      name: 'Musictron',
+      version: '1.0.0',
+    })),
+  )
 
   // ---------- Token ----------
-  .get(
-    '/token',
-    async ({ status }) => {
-      if (!isConfigured()) {
-        return status(503, {
-          error: 'Server is not configured with MusicKit credentials',
-          hint: 'Set MUSICKIT_KEY_ID, MUSICKIT_TEAM_ID, and MUSICKIT_PRIVATE_KEY environment variables',
-        })
-      }
-
-      try {
-        const result = await generateDeveloperToken()
-        return {
-          token: result.token,
-          expiresAt: result.expiresAt,
+  .group('', (app) =>
+    app.use(tokenCachePlugin).get(
+      '/token',
+      async ({ status }) => {
+        if (!isConfigured()) {
+          return status(503, {
+            error: 'Server is not configured with MusicKit credentials',
+            hint: 'Set MUSICKIT_KEY_ID, MUSICKIT_TEAM_ID, and MUSICKIT_PRIVATE_KEY environment variables',
+          })
         }
-      } catch (err) {
-        console.error('[token] Failed to generate developer token:', err)
-        return status(500, {
-          error: 'Failed to generate developer token',
-          message: err instanceof Error ? err.message : 'Unknown error',
-        })
-      }
-    },
-    {
-      detail: {
-        summary: 'Get MusicKit developer token',
-        description:
-          'Returns a short-lived MusicKit developer token (ES256 JWT) for use with Apple Music API and MusicKit JS. The token is cached server-side and rotated automatically.',
+
+        try {
+          const result = await generateDeveloperToken()
+          return {
+            token: result.token,
+            expiresAt: result.expiresAt,
+          }
+        } catch (err) {
+          console.error('[token] Failed to generate developer token:', err)
+          return status(500, {
+            error: 'Failed to generate developer token',
+            message: err instanceof Error ? err.message : 'Unknown error',
+          })
+        }
       },
-    },
+      {
+        detail: {
+          summary: 'Get MusicKit developer token',
+          description:
+            'Returns a short-lived MusicKit developer token (ES256 JWT) for use with Apple Music API and MusicKit JS. The token is cached server-side and rotated automatically.',
+        },
+      },
+    ),
   )
 
 // Export the Elysia app type for Eden client type inference
