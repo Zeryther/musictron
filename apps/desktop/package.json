@@ -1,7 +1,7 @@
 {
   "name": "@musictron/desktop",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Musictron - Apple Music desktop client",
   "author": {
     "name": "Musictron",
