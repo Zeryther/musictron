@@ -13,11 +13,75 @@ function getEnvOrThrow(name: string): string {
   return value
 }
 
+function stripWrappingQuotes(value: string): string {
+  const trimmed = value.trim()
+  const first = trimmed.at(0)
+  const last = trimmed.at(-1)
+
+  if (
+    first &&
+    first === last &&
+    (first === '"' || first === "'" || first === '`')
+  ) {
+    if (first === '"') {
+      try {
+        const parsed: unknown = JSON.parse(trimmed)
+        if (typeof parsed === 'string') {
+          return parsed.trim()
+        }
+      } catch {
+        // Fall back to trimming the wrapping quotes below.
+      }
+    }
+
+    return trimmed.slice(1, -1).trim()
+  }
+
+  return trimmed
+}
+
+function wrapPkcs8PrivateKey(base64Body: string): string {
+  const lines = base64Body.match(/.{1,64}/g) ?? []
+
+  return [
+    '-----BEGIN PRIVATE KEY-----',
+    ...lines,
+    '-----END PRIVATE KEY-----',
+  ].join('\n')
+}
+
+function normalizePrivateKey(input: string): string {
+  const normalized = stripWrappingQuotes(input)
+    .replace(/\\r\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .trim()
+
+  if (normalized.includes('-----BEGIN PRIVATE KEY-----')) {
+    return normalized
+  }
+
+  const compact = normalized.replace(/\s/g, '')
+  if (/^[A-Za-z0-9+/=]+$/.test(compact)) {
+    const decoded = Buffer.from(compact, 'base64').toString('utf-8').trim()
+
+    if (decoded.includes('-----BEGIN PRIVATE KEY-----')) {
+      return decoded
+    }
+
+    return wrapPkcs8PrivateKey(compact)
+  }
+
+  return normalized
+}
+
 /**
  * Read the .p8 private key from the environment.
  *
  * The key can be provided as:
  *   - MUSICKIT_PRIVATE_KEY: the raw PEM string (with literal \n or actual newlines)
+ *   - MUSICKIT_PRIVATE_KEY: base64-encoded PEM, or the base64 body from the .p8
  *   - MUSICKIT_PRIVATE_KEY_PATH: path to the .p8 file on disk
  */
 async function getPrivateKey(): Promise<crypto.KeyObject> {
@@ -26,18 +90,28 @@ async function getPrivateKey(): Promise<crypto.KeyObject> {
   let pem: string
 
   if (process.env.MUSICKIT_PRIVATE_KEY) {
-    // Support escaped newlines from environment variables (e.g. Docker, Vercel)
-    pem = process.env.MUSICKIT_PRIVATE_KEY.replace(/\\n/g, '\n')
+    // Support common secret formats from hosts like Docker and Vercel:
+    // raw PEM, escaped-newline PEM, base64-encoded PEM, or .p8 base64 body.
+    pem = normalizePrivateKey(process.env.MUSICKIT_PRIVATE_KEY)
   } else if (process.env.MUSICKIT_PRIVATE_KEY_PATH) {
     const fs = await import('node:fs/promises')
-    pem = await fs.readFile(process.env.MUSICKIT_PRIVATE_KEY_PATH, 'utf-8')
+    pem = normalizePrivateKey(
+      await fs.readFile(process.env.MUSICKIT_PRIVATE_KEY_PATH, 'utf-8'),
+    )
   } else {
     throw new Error(
       'Either MUSICKIT_PRIVATE_KEY or MUSICKIT_PRIVATE_KEY_PATH must be set',
     )
   }
 
-  cachedKey = crypto.createPrivateKey(pem)
+  try {
+    cachedKey = crypto.createPrivateKey(pem)
+  } catch (cause) {
+    throw new Error(
+      'Invalid MUSICKIT_PRIVATE_KEY. Expected an Apple MusicKit .p8 PKCS#8 private key as PEM, escaped-newline PEM, base64-encoded PEM, or the .p8 base64 body.',
+      { cause },
+    )
+  }
   return cachedKey
 }
 
