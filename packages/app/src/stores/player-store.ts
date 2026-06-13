@@ -353,22 +353,58 @@ export const usePlayerStore = create<PlayerState>()(
   ),
 )
 
-// Set up MusicKit event listeners
+// Track the instance we've bound listeners to (plus the handler refs) so this
+// can run again after a token re-configure without double-binding every event.
+let boundInstance: MusicKit.MusicKitInstance | null = null
+let boundHandlers: {
+  nowPlayingItemDidChange: () => void
+  playbackStateDidChange: (event: { state?: number } | number) => void
+  queueItemsDidChange: () => void
+  queuePositionDidChange: () => void
+} | null = null
+
+// Set up MusicKit event listeners. Idempotent: a repeat call for the same
+// instance only refreshes the volume; for a new instance it detaches the old
+// listeners first.
 export function initializePlayerEvents() {
   const mk = getMusicKitInstance()
   if (!mk) return
 
-  mk.addEventListener('nowPlayingItemDidChange', () => {
-    // Defer sync slightly — MusicKit may not have updated nowPlayingItem yet
-    // when this event fires, causing stale reads
-    setTimeout(() => {
-      usePlayerStore.getState()._syncFromMusicKit()
-    }, 50)
-  })
+  // Already bound to this instance — nothing to re-wire.
+  if (boundInstance === mk) {
+    mk.volume = usePlayerStore.getState().volume
+    return
+  }
 
-  mk.addEventListener(
-    'playbackStateDidChange',
-    (event: { state?: number } | number) => {
+  // Bound to a previous instance — detach its listeners before re-binding.
+  if (boundInstance && boundHandlers) {
+    boundInstance.removeEventListener(
+      'nowPlayingItemDidChange',
+      boundHandlers.nowPlayingItemDidChange,
+    )
+    boundInstance.removeEventListener(
+      'playbackStateDidChange',
+      boundHandlers.playbackStateDidChange,
+    )
+    boundInstance.removeEventListener(
+      'queueItemsDidChange',
+      boundHandlers.queueItemsDidChange,
+    )
+    boundInstance.removeEventListener(
+      'queuePositionDidChange',
+      boundHandlers.queuePositionDidChange,
+    )
+  }
+
+  const handlers = {
+    nowPlayingItemDidChange: () => {
+      // Defer sync slightly — MusicKit may not have updated nowPlayingItem yet
+      // when this event fires, causing stale reads
+      setTimeout(() => {
+        usePlayerStore.getState()._syncFromMusicKit()
+      }, 50)
+    },
+    playbackStateDidChange: (event: { state?: number } | number) => {
       const state = typeof event === 'number' ? event : (event?.state ?? event)
       usePlayerStore.setState({
         isPlaying: state === 2,
@@ -380,15 +416,24 @@ export function initializePlayerEvents() {
         usePlayerStore.getState()._stopTimeUpdater()
       }
     },
+    queueItemsDidChange: () => {
+      usePlayerStore.getState()._syncFromMusicKit()
+    },
+    queuePositionDidChange: () => {
+      usePlayerStore.getState()._syncFromMusicKit()
+    },
+  }
+
+  mk.addEventListener(
+    'nowPlayingItemDidChange',
+    handlers.nowPlayingItemDidChange,
   )
+  mk.addEventListener('playbackStateDidChange', handlers.playbackStateDidChange)
+  mk.addEventListener('queueItemsDidChange', handlers.queueItemsDidChange)
+  mk.addEventListener('queuePositionDidChange', handlers.queuePositionDidChange)
 
-  mk.addEventListener('queueItemsDidChange', () => {
-    usePlayerStore.getState()._syncFromMusicKit()
-  })
-
-  mk.addEventListener('queuePositionDidChange', () => {
-    usePlayerStore.getState()._syncFromMusicKit()
-  })
+  boundInstance = mk
+  boundHandlers = handlers
 
   // Set initial volume
   mk.volume = usePlayerStore.getState().volume
