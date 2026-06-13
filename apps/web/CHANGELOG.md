@@ -1,5 +1,11 @@
 # @musictron/web
 
+## 1.0.2
+
+### Patch Changes
+
+- Handle more MusicKit private key secret formats in production token generation. ([#4](https://github.com/Zeryther/musictron/pull/4))
+
 ## 1.0.1
 
 ### Patch Changes
