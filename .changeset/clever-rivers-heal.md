@@ -3,7 +3,7 @@
 "@musictron/web": patch
 ---
 
-Restore short-lived MusicKit developer tokens and refresh them in place during playback so authorized streams do not fall back to previews or stop at token expiry.
+Refresh the MusicKit developer token in place during playback and detect preview-only fallbacks so authorized streams do not silently degrade.
 
 Treat Last.fm now-playing updates as best-effort telemetry so upstream Last.fm errors do not surface as playback failures.
 

@@ -115,27 +115,36 @@ async function getPrivateKey(): Promise<crypto.KeyObject> {
   return cachedKey
 }
 
-/** MusicKit JS playback has been reliable with short developer-token lifetimes. */
-const PLAYBACK_MAX_TTL_SECONDS = 3600
-/** Default lifetime when MUSICKIT_TOKEN_TTL_SECONDS is unset. */
-const DEFAULT_TTL_SECONDS = 3600
+/** Apple's documented maximum developer-token lifetime: ~6 months. */
+const APPLE_MAX_TTL_SECONDS = 15777000
+/**
+ * Default lifetime when MUSICKIT_TOKEN_TTL_SECONDS is unset: Apple's max.
+ *
+ * A long-lived token outlives any realistic listening session, so MusicKit JS
+ * never hits an expired developer token mid-playback. Short-lived (1h) tokens
+ * were tried previously but caused recurring MEDIA_LICENSE interruptions:
+ * MusicKit captures the developer token at configure() time for its DRM/license
+ * pipeline, and the client's in-place token rotation never reaches that
+ * pipeline — so the player kept using the original (now-expired) token and the
+ * next license fetch was rejected.
+ */
+const DEFAULT_TTL_SECONDS = APPLE_MAX_TTL_SECONDS
 /** Re-mint cached tokens before clients enter their refresh window. */
 const TOKEN_CACHE_REFRESH_BUFFER_SECONDS = 15 * 60
 
 /**
  * Resolve the developer-token lifetime (seconds) from the environment.
  *
- * Defaults to the previous known-good 1 hour lifetime. Long-lived tokens are
- * allowed by the API docs, but MusicKit JS playback has proven more reliable
- * with short-lived tokens that the client rotates before expiry, so overrides
- * are capped at 1 hour.
+ * Defaults to Apple's documented maximum (~6 months). A long lifetime keeps the
+ * token valid for the entire session so MusicKit JS playback never hits an
+ * expired developer token. Overrides are clamped to a 60s floor and Apple's max.
  */
 function resolveTtlSeconds(value?: number): number {
   const parsed =
     value ?? Number.parseInt(process.env.MUSICKIT_TOKEN_TTL_SECONDS ?? '', 10)
   const ttl =
     Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_TTL_SECONDS
-  return Math.min(Math.max(ttl, 60), PLAYBACK_MAX_TTL_SECONDS)
+  return Math.min(Math.max(ttl, 60), APPLE_MAX_TTL_SECONDS)
 }
 
 export interface TokenConfig {
@@ -144,8 +153,8 @@ export interface TokenConfig {
   /** Apple Developer Team ID */
   teamId: string
   /**
-   * Token lifetime in seconds. Defaults to MUSICKIT_TOKEN_TTL_SECONDS, or 3600
-   * when unset. Values above 3600 are capped for MusicKit JS playback.
+   * Token lifetime in seconds. Defaults to MUSICKIT_TOKEN_TTL_SECONDS, or
+   * 15777000 (~6 months) when unset. Max allowed by Apple: 15777000.
    */
   expiresInSeconds?: number
 }

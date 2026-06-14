@@ -235,9 +235,16 @@ function getMusicKitAuthErrorMessage(
 // ──────────────────────────────────────────────────────────────────────────
 // Proactive developer-token refresh
 //
-// The server mints short-lived tokens that are known to work for full MusicKit
-// playback. Refresh them before expiry and update the current MusicKit instance
-// in place, so continuous playback does not hit an expired developer token.
+// The server mints long-lived (~6 month) developer tokens, so the token does
+// not expire during a session and this refresh effectively never runs mid-use.
+// It stays as a backstop for sessions that outlive the token: re-fetch before
+// expiry and update the instance in place.
+//
+// IMPORTANT: the in-place update (applyToken) reaches catalog/library API calls
+// but NOT MusicKit's DRM/license pipeline, which captures the developer token
+// at configure() time. A true mid-session token swap would need a full
+// reconfigure — which previously broke auth — so we rely on long-lived tokens
+// to avoid mid-session expiry entirely rather than rotating during playback.
 // ──────────────────────────────────────────────────────────────────────────
 
 /** Refresh this far ahead of the token's expiry. */
