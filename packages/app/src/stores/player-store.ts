@@ -1,6 +1,11 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { getMusicKitInstance, musicAPI } from '@/lib/musickit'
+import {
+  getBrowserPlaybackSupport,
+  getMusicKitInstance,
+  logMusicKitDebug,
+  musicAPI,
+} from '@/lib/musickit'
 import { formatArtworkUrl } from '@/lib/utils'
 
 export interface NowPlayingItem {
@@ -19,6 +24,11 @@ export interface NowPlayingItem {
   }
 }
 
+export interface PlaybackError {
+  title: string
+  message: string
+}
+
 interface PlayerState {
   isPlaying: boolean
   currentTime: number
@@ -31,6 +41,7 @@ interface PlayerState {
   shuffleMode: number // 0=off, 1=on
   isQueueOpen: boolean
   isFullscreen: boolean
+  playbackError: PlaybackError | null
 
   // Actions
   play: () => Promise<void>
@@ -44,6 +55,7 @@ interface PlayerState {
   toggleShuffle: () => void
   toggleQueue: () => void
   setFullscreen: (value: boolean) => void
+  clearPlaybackError: () => void
 
   // Queue management
   playTrack: (
@@ -78,13 +90,27 @@ export const usePlayerStore = create<PlayerState>()(
       shuffleMode: 0,
       isQueueOpen: false,
       isFullscreen: false,
+      playbackError: null,
 
       play: async () => {
         const mk = getMusicKitInstance()
-        if (mk) {
+        if (!mk) {
+          set({
+            playbackError: {
+              title: 'Apple Music is not ready',
+              message:
+                'MusicKit has not finished loading yet. Try again in a moment.',
+            },
+          })
+          return
+        }
+
+        try {
           await mk.play()
-          set({ isPlaying: true })
+          set({ isPlaying: true, playbackError: null })
           get()._startTimeUpdater()
+        } catch (error) {
+          set({ playbackError: getPlaybackErrorMessage(error) })
         }
       },
 
@@ -168,57 +194,106 @@ export const usePlayerStore = create<PlayerState>()(
         set({ isFullscreen: value })
       },
 
+      clearPlaybackError: () => {
+        set({ playbackError: null })
+      },
+
       playTrack: async (
         trackId: string,
         options?: { startPlaying?: boolean },
       ) => {
         const mk = getMusicKitInstance()
         if (mk) {
-          await mk.setQueue({
-            song: trackId,
+          logMusicKitDebug('player.playTrack.before-setQueue', {
+            trackId,
             startPlaying: options?.startPlaying ?? true,
           })
-          get()._syncFromMusicKit()
-          get()._startTimeUpdater()
+          try {
+            set({ playbackError: null })
+            await mk.setQueue({
+              song: trackId,
+              startPlaying: options?.startPlaying ?? true,
+            })
+            logMusicKitDebug('player.playTrack.after-setQueue')
+            get()._syncFromMusicKit()
+            get()._startTimeUpdater()
+            schedulePreviewFallbackCheck()
+          } catch (error) {
+            set({ playbackError: getPlaybackErrorMessage(error) })
+          }
         }
       },
 
       playAlbum: async (albumId: string, startIndex: number = 0) => {
         const mk = getMusicKitInstance()
         if (mk) {
-          await mk.setQueue({
-            album: albumId,
-            startWith: startIndex,
-            startPlaying: true,
+          logMusicKitDebug('player.playAlbum.before-setQueue', {
+            albumId,
+            startIndex,
           })
-          get()._syncFromMusicKit()
-          get()._startTimeUpdater()
+          try {
+            set({ playbackError: null })
+            await mk.setQueue({
+              album: albumId,
+              startWith: startIndex,
+              startPlaying: true,
+            })
+            logMusicKitDebug('player.playAlbum.after-setQueue')
+            get()._syncFromMusicKit()
+            get()._startTimeUpdater()
+            schedulePreviewFallbackCheck()
+          } catch (error) {
+            set({ playbackError: getPlaybackErrorMessage(error) })
+          }
         }
       },
 
       playPlaylist: async (playlistId: string, startIndex: number = 0) => {
         const mk = getMusicKitInstance()
         if (mk) {
-          await mk.setQueue({
-            playlist: playlistId,
-            startWith: startIndex,
-            startPlaying: true,
+          logMusicKitDebug('player.playPlaylist.before-setQueue', {
+            playlistId,
+            startIndex,
           })
-          get()._syncFromMusicKit()
-          get()._startTimeUpdater()
+          try {
+            set({ playbackError: null })
+            await mk.setQueue({
+              playlist: playlistId,
+              startWith: startIndex,
+              startPlaying: true,
+            })
+            logMusicKitDebug('player.playPlaylist.after-setQueue')
+            get()._syncFromMusicKit()
+            get()._startTimeUpdater()
+            schedulePreviewFallbackCheck()
+          } catch (error) {
+            set({ playbackError: getPlaybackErrorMessage(error) })
+          }
         }
       },
 
       playSongs: async (songIds: string[], startIndex: number = 0) => {
         const mk = getMusicKitInstance()
         if (mk) {
-          await mk.setQueue({
-            songs: songIds,
-            startWith: startIndex,
-            startPlaying: true,
+          logMusicKitDebug('player.playSongs.before-setQueue', {
+            songCount: songIds.length,
+            firstSongId: songIds[0],
+            startIndex,
           })
-          get()._syncFromMusicKit()
-          get()._startTimeUpdater()
+          try {
+            set({ playbackError: null })
+            await mk.setQueue({
+              songs: songIds,
+              startWith: startIndex,
+              startPlaying: true,
+            })
+            logMusicKitDebug('player.playSongs.after-setQueue')
+            get()._syncFromMusicKit()
+            get()._startTimeUpdater()
+            schedulePreviewFallbackCheck()
+          } catch (error) {
+            set({ playbackError: getPlaybackErrorMessage(error) })
+          }
         }
       },
 
@@ -353,6 +428,145 @@ export const usePlayerStore = create<PlayerState>()(
   ),
 )
 
+let previewFallbackTimer: ReturnType<typeof setTimeout> | null = null
+
+function schedulePreviewFallbackCheck() {
+  if (previewFallbackTimer) clearTimeout(previewFallbackTimer)
+  previewFallbackTimer = setTimeout(() => {
+    previewFallbackTimer = null
+    void detectPreviewFallback()
+  }, 750)
+}
+
+async function detectPreviewFallback() {
+  const mk = getMusicKitInstance()
+  const item = mk?.nowPlayingItem
+  if (!mk || !item) return
+
+  const catalogDuration = (item.attributes.durationInMillis || 0) / 1000
+  const playbackDuration = mk.currentPlaybackDuration || 0
+
+  if (playbackDuration <= 0 || playbackDuration > 31 || catalogDuration <= 31) {
+    return
+  }
+
+  if (!mk.isAuthorized) {
+    usePlayerStore.setState({
+      playbackError: {
+        title: 'Sign in required',
+        message:
+          'Apple Music is playing previews because this session is not authorized.',
+      },
+    })
+    return
+  }
+
+  const support = await getBrowserPlaybackSupport()
+
+  if (!support.isSecureContext) {
+    usePlayerStore.setState({
+      playbackError: {
+        title: 'Protected playback is unavailable',
+        message:
+          'Full Apple Music playback requires a secure browser context. Use localhost or HTTPS.',
+      },
+    })
+    return
+  }
+
+  if (
+    !support.hasMediaKeySystemAccess ||
+    support.supportedKeySystems.length === 0
+  ) {
+    usePlayerStore.setState({
+      playbackError: {
+        title: 'DRM is not available',
+        message:
+          'This browser cannot play protected Apple Music streams, so only previews are available. Use Chrome, Edge, or Safari with protected content enabled.',
+      },
+    })
+    return
+  }
+
+  usePlayerStore.setState({
+    playbackError: {
+      title: 'Only previews are available',
+      message:
+        'Apple Music returned a preview stream for this account or track. Check your subscription, region, and protected content settings.',
+    },
+  })
+}
+
+function getPlaybackErrorMessage(error: unknown): PlaybackError {
+  const message =
+    error instanceof Error ? error.message : safeStringifyError(error)
+
+  if (
+    /musickit.*not.*(configured|initialized)|not.*configured/i.test(message)
+  ) {
+    return {
+      title: 'Apple Music is not ready',
+      message:
+        'MusicKit has not finished loading or configuring yet. Try again in a moment.',
+    }
+  }
+
+  if (
+    /setServerCertificate|key.?system|media.?key|widevine|drm/i.test(message)
+  ) {
+    return {
+      title: 'DRM playback failed',
+      message:
+        'Apple Music could not initialize protected playback. Check protected content or Widevine support in this browser.',
+    }
+  }
+
+  if (/unauthori[sz]ed|forbidden|401|403/i.test(message)) {
+    return {
+      title: 'Apple Music authorization failed',
+      message:
+        'Your Apple Music session was rejected. Sign out and sign in again, then retry playback.',
+    }
+  }
+
+  if (/network|fetch|load|timeout|proxy|certificate/i.test(message)) {
+    return {
+      title: 'Playback network error',
+      message:
+        'Apple Music could not load a required playback resource. Check proxy, VPN, and content-blocking settings.',
+    }
+  }
+
+  return {
+    title: 'Playback failed',
+    message: message || 'Apple Music could not start playback.',
+  }
+}
+
+function safeStringifyError(error: unknown): string {
+  try {
+    return JSON.stringify(error)
+  } catch {
+    return String(error)
+  }
+}
+
+function setMusicKitEventError(
+  title: string,
+  message: string,
+  event?: unknown,
+) {
+  logMusicKitDebug('player.playback-error-event', {
+    title,
+    message,
+    event: safeStringifyError(event),
+  })
+  usePlayerStore.setState({
+    isPlaying: false,
+    playbackError: { title, message },
+  })
+}
+
 // Track the instance we've bound listeners to (plus the handler refs) so this
 // can run again after a token re-configure without double-binding every event.
 let boundInstance: MusicKit.MusicKitInstance | null = null
@@ -361,6 +575,9 @@ let boundHandlers: {
   playbackStateDidChange: (event: { state?: number } | number) => void
   queueItemsDidChange: () => void
   queuePositionDidChange: () => void
+  mediaPlaybackError: (event?: unknown) => void
+  playbackLicenseError: (event?: unknown) => void
+  keySystemGenericError: (event?: unknown) => void
 } | null = null
 
 // Set up MusicKit event listeners. Idempotent: a repeat call for the same
@@ -394,6 +611,18 @@ export function initializePlayerEvents() {
       'queuePositionDidChange',
       boundHandlers.queuePositionDidChange,
     )
+    boundInstance.removeEventListener(
+      'mediaPlaybackError',
+      boundHandlers.mediaPlaybackError,
+    )
+    boundInstance.removeEventListener(
+      'playbackLicenseError',
+      boundHandlers.playbackLicenseError,
+    )
+    boundInstance.removeEventListener(
+      'keySystemGenericError',
+      boundHandlers.keySystemGenericError,
+    )
   }
 
   const handlers = {
@@ -422,6 +651,27 @@ export function initializePlayerEvents() {
     queuePositionDidChange: () => {
       usePlayerStore.getState()._syncFromMusicKit()
     },
+    mediaPlaybackError: (event?: unknown) => {
+      setMusicKitEventError(
+        'Playback failed',
+        'Apple Music could not continue playback for this track.',
+        event,
+      )
+    },
+    playbackLicenseError: (event?: unknown) => {
+      setMusicKitEventError(
+        'Playback license failed',
+        'Apple Music could not fetch a protected playback license. Check proxy, VPN, and content-blocking settings.',
+        event,
+      )
+    },
+    keySystemGenericError: (event?: unknown) => {
+      setMusicKitEventError(
+        'DRM playback failed',
+        'This browser could not initialize Apple Music protected playback. Enable protected content or use a browser with Widevine/FairPlay support.',
+        event,
+      )
+    },
   }
 
   mk.addEventListener(
@@ -431,6 +681,9 @@ export function initializePlayerEvents() {
   mk.addEventListener('playbackStateDidChange', handlers.playbackStateDidChange)
   mk.addEventListener('queueItemsDidChange', handlers.queueItemsDidChange)
   mk.addEventListener('queuePositionDidChange', handlers.queuePositionDidChange)
+  mk.addEventListener('mediaPlaybackError', handlers.mediaPlaybackError)
+  mk.addEventListener('playbackLicenseError', handlers.playbackLicenseError)
+  mk.addEventListener('keySystemGenericError', handlers.keySystemGenericError)
 
   boundInstance = mk
   boundHandlers = handlers

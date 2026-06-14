@@ -14,6 +14,29 @@ import crypto from 'node:crypto'
 
 const LASTFM_API_URL = 'https://ws.audioscrobbler.com/2.0/'
 
+interface LastfmApiErrorOptions {
+  status?: number
+  statusText?: string
+  code?: number
+  responseText?: string
+}
+
+export class LastfmApiError extends Error {
+  status?: number
+  statusText?: string
+  code?: number
+  responseText?: string
+
+  constructor(message: string, options: LastfmApiErrorOptions = {}) {
+    super(message)
+    this.name = 'LastfmApiError'
+    this.status = options.status
+    this.statusText = options.statusText
+    this.code = options.code
+    this.responseText = options.responseText
+  }
+}
+
 function getApiKey(): string {
   const key = process.env.LASTFM_API_KEY
   if (!key) throw new Error('Missing LASTFM_API_KEY environment variable')
@@ -94,18 +117,21 @@ export async function lastfmGet<T = Record<string, unknown>>(
   const res = await fetch(`${LASTFM_API_URL}?${query.toString()}`)
 
   if (!res.ok) {
-    throw new Error(`Last.fm API error: ${res.status} ${res.statusText}`)
+    throw new LastfmApiError(
+      `Last.fm API error: ${res.status} ${res.statusText}`,
+      { status: res.status, statusText: res.statusText },
+    )
   }
 
   const data = await res.json()
 
   // Last.fm returns error objects inside a 200 response
   if (data.error) {
-    const err = new Error(
-      data.message || `Last.fm error ${data.error}`,
-    ) as Error & { code: number }
-    err.code = data.error
-    throw err
+    throw new LastfmApiError(data.message || `Last.fm error ${data.error}`, {
+      status: res.status,
+      statusText: res.statusText,
+      code: data.error,
+    })
   }
 
   return data as T
@@ -148,17 +174,37 @@ export async function lastfmPost<T = Record<string, unknown>>(
   })
 
   if (!res.ok) {
-    throw new Error(`Last.fm API error: ${res.status} ${res.statusText}`)
+    const responseText = await res.text().catch(() => '')
+    let code: number | undefined
+    let message = `Last.fm API error: ${res.status} ${res.statusText}`
+
+    try {
+      const data = JSON.parse(responseText) as {
+        error?: number
+        message?: string
+      }
+      code = data.error
+      message = data.message || message
+    } catch {
+      // Keep the HTTP status message when Last.fm returns a non-JSON body.
+    }
+
+    throw new LastfmApiError(message, {
+      status: res.status,
+      statusText: res.statusText,
+      code,
+      responseText,
+    })
   }
 
   const data = await res.json()
 
   if (data.error) {
-    const err = new Error(
-      data.message || `Last.fm error ${data.error}`,
-    ) as Error & { code: number }
-    err.code = data.error
-    throw err
+    throw new LastfmApiError(data.message || `Last.fm error ${data.error}`, {
+      status: res.status,
+      statusText: res.statusText,
+      code: data.error,
+    })
   }
 
   return data as T
