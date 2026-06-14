@@ -1,5 +1,18 @@
 # @musictron/web
 
+## 1.0.3
+
+### Patch Changes
+
+- Restore short-lived MusicKit developer tokens and refresh them in place during playback so authorized streams do not fall back to previews or stop at token expiry. ([#6](https://github.com/Zeryther/musictron/pull/6))
+
+  Treat Last.fm now-playing updates as best-effort telemetry so upstream Last.fm errors do not surface as playback failures.
+
+  Show user-facing playback errors for MusicKit load, authorization, DRM, license, and preview-only fallback failures.
+
+- Updated dependencies [[`6475e39`](https://github.com/Zeryther/musictron/commit/6475e398fd9ce07ffba938c208039f969f5fbfe2)]:
+  - @musictron/app@1.0.2
+
 ## 1.0.2
 
 ### Patch Changes

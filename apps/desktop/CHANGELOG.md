@@ -1,5 +1,12 @@
 # @musictron/desktop
 
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`6475e39`](https://github.com/Zeryther/musictron/commit/6475e398fd9ce07ffba938c208039f969f5fbfe2)]:
+  - @musictron/app@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes
