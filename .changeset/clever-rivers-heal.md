@@ -1,5 +1,7 @@
+---
 "@musictron/app": patch
 "@musictron/web": patch
+---
 
 Restore short-lived MusicKit developer tokens and refresh them in place during playback so authorized streams do not fall back to previews or stop at token expiry.
 
