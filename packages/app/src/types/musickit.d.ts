@@ -8,6 +8,13 @@
 
 interface Window {
   MusicKit: typeof MusicKit
+  __musictronDebug?: () => unknown
+  __musictronAuthProbe?: () => Promise<unknown>
+  __musictronQueueProbe?: (
+    songId: string,
+    url?: string,
+  ) => Promise<Record<string, unknown>>
+  __musictronDrmProbe?: () => Promise<Record<string, unknown>>
 }
 
 declare namespace MusicKit {

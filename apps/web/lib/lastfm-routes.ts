@@ -11,6 +11,7 @@
 
 import { Elysia, t } from 'elysia'
 import {
+  LastfmApiError,
   isLastfmConfigured,
   getAuthToken,
   buildAuthUrl,
@@ -26,6 +27,22 @@ import {
   type LastfmNowPlayingResponse,
 } from './lastfm'
 import { applyCachePolicy, lastfmMetadataCache, noStoreCache } from './cache'
+
+function getLastfmErrorPayload(err: unknown) {
+  if (err instanceof LastfmApiError) {
+    return {
+      error: 'Last.fm request failed',
+      message: err.message,
+      status: err.status,
+      code: err.code,
+    }
+  }
+
+  return {
+    error: 'Last.fm request failed',
+    message: err instanceof Error ? err.message : 'Unknown error',
+  }
+}
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
@@ -310,10 +327,12 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
         })
         return data
       } catch (err) {
-        console.error('[lastfm] track.updateNowPlaying error:', err)
-        return status(500, {
-          error: 'Failed to update now playing',
-          message: err instanceof Error ? err.message : 'Unknown error',
+        const payload = getLastfmErrorPayload(err)
+        console.warn('[lastfm] track.updateNowPlaying failed:', payload)
+        return status(202, {
+          ok: false,
+          nonBlocking: true,
+          ...payload,
         })
       }
     },

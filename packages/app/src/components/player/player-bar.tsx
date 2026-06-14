@@ -21,6 +21,8 @@ import {
   ListMusic,
   Maximize2,
   Heart,
+  AlertTriangle,
+  X,
 } from 'lucide-react'
 
 export function PlayerBar() {
@@ -42,6 +44,8 @@ export function PlayerBar() {
     toggleShuffle,
     toggleQueue,
     setFullscreen,
+    playbackError,
+    clearPlaybackError,
   } = usePlayerStore()
   const navigate = useNavigate()
   const lastfmConnected = useLastfmStore((s) => s.isConnected)
@@ -182,12 +186,33 @@ export function PlayerBar() {
             </Button>
           </div>
 
-          {/* Time */}
-          <div className="flex items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
-            <span className="w-9 text-right">{formatTime(currentTime)}</span>
-            <span className="opacity-60">/</span>
-            <span className="w-9">{formatTime(duration)}</span>
-          </div>
+          {playbackError ? (
+            <div className="flex h-[17px] max-w-full items-center gap-1.5 text-[11px] text-amber-300">
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              <p className="min-w-0 truncate">
+                <span className="font-medium">{playbackError.title}</span>
+                <span className="text-amber-200/80">
+                  {' '}
+                  {playbackError.message}
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={clearPlaybackError}
+                className="shrink-0 rounded p-0.5 text-amber-200/70 hover:text-amber-100"
+                aria-label="Dismiss playback error"
+                title="Dismiss"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex h-[17px] items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
+              <span className="w-9 text-right">{formatTime(currentTime)}</span>
+              <span className="opacity-60">/</span>
+              <span className="w-9">{formatTime(duration)}</span>
+            </div>
+          )}
         </div>
 
         {/* Right controls */}

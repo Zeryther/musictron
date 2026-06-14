@@ -1,8 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { configureMusicKit, getMusicKitInstance } from '@/lib/musickit'
+import {
+  configureMusicKit,
+  getMusicKitInstance,
+  logMusicKitDebug,
+} from '@/lib/musickit'
 import { getAppConfig } from '@/lib/platform'
-import { initializePlayerEvents, usePlayerStore } from '@/stores/player-store'
+import { initializePlayerEvents } from '@/stores/player-store'
 
 interface AuthState {
   isAuthorized: boolean
@@ -124,6 +128,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const instance = await configureWithToken(token)
           const isAuthorized = instance.isAuthorized
+          logMusicKitDebug('auth.initialize.after-configure')
 
           set({
             developerToken: token,
@@ -138,10 +143,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           set({
             isLoading: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Failed to initialize MusicKit',
+            error: getMusicKitAuthErrorMessage(error, 'initialize'),
           })
         }
       },
@@ -149,10 +151,18 @@ export const useAuthStore = create<AuthState>()(
       authorize: async () => {
         try {
           set({ isLoading: true, error: null })
-          const instance = getMusicKitInstance()
+          let instance = getMusicKitInstance()
+          if (!instance) {
+            await get().initialize()
+            instance = getMusicKitInstance()
+          }
           if (!instance) throw new Error('MusicKit not initialized')
 
+          logMusicKitDebug('auth.authorize.before')
           const token = await instance.authorize()
+          logMusicKitDebug('auth.authorize.after', {
+            returnedMusicUserTokenLength: token.length,
+          })
           set({
             isAuthorized: true,
             musicUserToken: token,
@@ -161,8 +171,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           set({
             isLoading: false,
-            error:
-              error instanceof Error ? error.message : 'Authorization failed',
+            error: getMusicKitAuthErrorMessage(error, 'authorize'),
           })
         }
       },
@@ -170,15 +179,14 @@ export const useAuthStore = create<AuthState>()(
       signOut: async () => {
         try {
           const instance = getMusicKitInstance()
-          if (instance) {
-            await instance.unauthorize()
-          }
+          if (instance) await instance.unauthorize()
+        } catch (error) {
+          console.error('Sign out error:', error)
+        } finally {
           set({
             isAuthorized: false,
             musicUserToken: null,
           })
-        } catch (error) {
-          console.error('Sign out error:', error)
         }
       },
     }),
@@ -195,13 +203,41 @@ export const useAuthStore = create<AuthState>()(
   ),
 )
 
+function getMusicKitAuthErrorMessage(
+  error: unknown,
+  phase: 'initialize' | 'authorize',
+): string {
+  const message = error instanceof Error ? error.message : String(error)
+
+  if (/failed to load musickit/i.test(message)) {
+    return 'Failed to load MusicKit JS. Check your network, proxy, VPN, or content blocker access to js-cdn.music.apple.com.'
+  }
+
+  if (/musickit.*not.*initialized/i.test(message)) {
+    return 'MusicKit is not initialized yet. Check that the Musictron server is running and try signing in again.'
+  }
+
+  if (/network|fetch|timeout|proxy|407/i.test(message)) {
+    return 'Apple Music could not be reached. Check your network, proxy, VPN, or content blocker settings.'
+  }
+
+  if (/unauthori[sz]ed|forbidden|401|403/i.test(message)) {
+    return 'Apple Music rejected this session. Sign out, sign in again, and verify your Apple Music subscription.'
+  }
+
+  if (phase === 'initialize') {
+    return message || 'Failed to initialize MusicKit.'
+  }
+
+  return message || 'Authorization failed.'
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Proactive developer-token refresh
 //
-// The server now mints long-lived (~6 month) tokens, so mid-session expiry is
-// effectively impossible. As defense-in-depth for pathologically long sessions
-// we still refresh ahead of expiry — but only while playback is idle, so a
-// refresh (which re-runs MusicKit.configure) can never interrupt a song.
+// The server mints short-lived tokens that are known to work for full MusicKit
+// playback. Refresh them before expiry and update the current MusicKit instance
+// in place, so continuous playback does not hit an expired developer token.
 // ──────────────────────────────────────────────────────────────────────────
 
 /** Refresh this far ahead of the token's expiry. */
@@ -213,7 +249,6 @@ const REFRESH_RETRY_MS = 60 * 1000
 
 let refreshTimer: ReturnType<typeof setTimeout> | null = null
 let refreshTriggersAttached = false
-let pendingPlaybackUnsub: (() => void) | null = null
 
 // Dedupe concurrent/re-entrant configure calls. The App effect re-runs whenever
 // developerToken changes (which our own refresh does), so without this a refresh
@@ -299,7 +334,7 @@ function scheduleTokenRefresh() {
     if (expiresAt - Date.now() <= REFRESH_BUFFER_MS) {
       void refreshToken()
     } else {
-      // Long token: the clamped timer fired early — re-arm for the remainder.
+      // Clamped long delay fired early — re-arm for the remainder.
       scheduleTokenRefresh()
     }
   }, delay)
@@ -314,16 +349,7 @@ function maybeRefresh() {
   }
 }
 
-/** True while playback is active or transitioning — unsafe to reconfigure. */
-function isPlaybackBusy(): boolean {
-  if (usePlayerStore.getState().isPlaying) return true
-  const mk = getMusicKitInstance()
-  if (!mk) return false
-  // PlaybackStates: loading=1, playing=2, seeking=6, waiting=8, stalled=9.
-  return [1, 2, 6, 8, 9].includes(mk.playbackState)
-}
-
-/** Re-fetch the token and apply it as soon as it's safe to do so. */
+/** Re-fetch the token and apply it to MusicKit before the old token expires. */
 async function refreshToken() {
   const { serverUrl, tokenExpiresAt: current } = useAuthStore.getState()
   const result = await fetchTokenResponse(serverUrl)
@@ -332,9 +358,6 @@ async function refreshToken() {
     scheduleRetry()
     return
   }
-  // The server only re-mints ~60s before expiry, so for the buffer window it
-  // hands back the same not-yet-rolled-over token. Don't hot-loop re-applying
-  // it — wait and poll until a genuinely newer token is available.
   if (
     result.expiresAt != null &&
     current != null &&
@@ -343,45 +366,32 @@ async function refreshToken() {
     scheduleRetry()
     return
   }
-  applyTokenWhenSafe(result.token, result.expiresAt)
-}
-
-/** Apply a freshly fetched token now if idle, otherwise on the next pause. */
-function applyTokenWhenSafe(token: string, expiresAt: number | null) {
-  // Cancel any earlier pending application — only the freshest token matters.
-  if (pendingPlaybackUnsub) {
-    pendingPlaybackUnsub()
-    pendingPlaybackUnsub = null
-  }
-
-  if (!isPlaybackBusy()) {
-    void applyToken(token, expiresAt)
-    return
-  }
-
-  // Busy — wait for playback to settle, then apply without interrupting anything.
-  pendingPlaybackUnsub = usePlayerStore.subscribe((state) => {
-    if (state.isPlaying || isPlaybackBusy()) return
-    if (pendingPlaybackUnsub) {
-      pendingPlaybackUnsub()
-      pendingPlaybackUnsub = null
-    }
-    void applyToken(token, expiresAt)
-  })
+  void applyToken(result.token, result.expiresAt)
 }
 
 async function applyToken(token: string, expiresAt: number | null) {
-  try {
-    await configureWithToken(token)
-  } catch {
-    // Reconfigure failed — keep the old token and retry shortly.
-    scheduleRetry()
-    return
+  let instance = getMusicKitInstance()
+
+  if (instance) {
+    instance.developerToken = token
+    lastConfiguredToken = token
+    configurePromise = Promise.resolve(instance)
+    logMusicKitDebug('auth.refresh.applied-in-place')
+  } else {
+    try {
+      instance = await configureWithToken(token)
+      logMusicKitDebug('auth.refresh.configured')
+    } catch {
+      // Reconfigure failed — keep the old token and retry shortly.
+      scheduleRetry()
+      return
+    }
   }
-  // configureWithToken already set lastConfiguredToken = token, so the App
-  // effect's re-run (it depends on developerToken) reconfigures nothing.
+
   useAuthStore.setState({
     developerToken: token,
+    isAuthorized: instance.isAuthorized,
+    musicUserToken: instance.isAuthorized ? instance.musicUserToken : null,
     tokenSource: 'server',
     tokenExpiresAt: expiresAt,
   })

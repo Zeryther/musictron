@@ -26,15 +26,12 @@ export const publicConfigCache: CachePolicy = {
   vercel: 'public, s-maxage=3600, stale-while-revalidate=21600',
 }
 
-// The dev token is long-lived (~6 months), so the edge copy never needs to be
-// fresh to the minute. A 1h s-maxage avoids constant revalidation while staying
-// far under the token lifetime, so a key rotation (invalidateCache) still
-// propagates within ~1h. The browser must always revalidate — the in-app store,
-// not the HTTP cache, owns client-side token reuse and refresh.
+// Keep MusicKit developer tokens out of browser/CDN caches. The server keeps a
+// short-lived in-memory copy and re-mints it before clients need to refresh.
 export const tokenCache: CachePolicy = {
-  browser: 'public, max-age=0, must-revalidate',
-  cdn: 'public, s-maxage=3600, stale-while-revalidate=86400',
-  vercel: 'public, s-maxage=3600, stale-while-revalidate=86400',
+  browser: 'no-store',
+  cdn: 'no-store',
+  vercel: 'no-store',
 }
 
 export const noStoreCache: CachePolicy = {
