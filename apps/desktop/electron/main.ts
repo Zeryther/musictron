@@ -4,7 +4,6 @@ import {
   ipcMain,
   globalShortcut,
   shell,
-  nativeTheme,
 } from 'electron'
 import path from 'path'
 
@@ -82,10 +81,6 @@ app.on('window-all-closed', () => {
 
 // IPC handlers
 ipcMain.handle('get-platform', () => process.platform)
-
-ipcMain.handle('get-theme', () => {
-  return nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
-})
 
 ipcMain.on('set-title', (_event, title: string) => {
   if (mainWindow) {

@@ -21,6 +21,9 @@ export function SearchPage() {
     inputRef.current?.focus()
   }, [])
 
+  // Clear any pending debounce timer on unmount.
+  useEffect(() => () => clearTimeout(debounceRef.current), [])
+
   const { data: searchData, isLoading: loading } = useSearch(debouncedQuery)
   const { data: hintsData } = useSearchHints(debouncedQuery)
 

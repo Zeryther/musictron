@@ -37,8 +37,6 @@ interface SongRowProps {
   isPlaying?: boolean
   className?: string
   onClick?: () => void
-  onPlayNext?: () => void
-  onAddToQueue?: () => void
 }
 
 export function SongRow({
@@ -113,6 +111,7 @@ export function SongRow({
             </span>
             <button
               onClick={handlePlay}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
               className="hidden group-hover:flex items-center justify-center"
             >
               {isPlaying ? (
@@ -139,6 +138,7 @@ export function SongRow({
             ) : (
               <button
                 onClick={handlePlay}
+                aria-label="Play"
                 className="opacity-0 group-hover:opacity-100 transition-opacity duration-100"
               >
                 <Play className="w-3.5 h-3.5" fill="currentColor" />
@@ -217,7 +217,10 @@ export function SongRow({
       <div className="w-7 flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-100 p-1 rounded-md hover:bg-accent/60">
+            <button
+              aria-label="More actions"
+              className="opacity-0 group-hover:opacity-100 transition-opacity duration-100 p-1 rounded-md hover:bg-accent/60"
+            >
               <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>

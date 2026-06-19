@@ -57,6 +57,7 @@ export function FullscreenPlayer() {
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Toggle queue"
           className="text-white/60 hover:text-white/90 hover:bg-white/[0.08]"
           onClick={toggleQueue}
         >
@@ -65,6 +66,7 @@ export function FullscreenPlayer() {
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Exit fullscreen"
           className="text-white/60 hover:text-white/90 hover:bg-white/[0.08]"
           onClick={() => setFullscreen(false)}
         >
@@ -146,6 +148,7 @@ export function FullscreenPlayer() {
           variant="ghost"
           size="icon"
           onClick={toggleShuffle}
+          aria-label="Toggle shuffle"
           className={cn(
             'text-white/50 hover:text-white/80 hover:bg-white/[0.08]',
             shuffleMode !== 0 && 'text-white/90',
@@ -158,6 +161,7 @@ export function FullscreenPlayer() {
           variant="ghost"
           size="icon-lg"
           onClick={skipPrevious}
+          aria-label="Previous track"
           className="text-white/80 hover:text-white hover:bg-white/[0.06]"
         >
           <SkipBack className="w-7 h-7" fill="currentColor" />
@@ -165,6 +169,7 @@ export function FullscreenPlayer() {
 
         <button
           onClick={togglePlayPause}
+          aria-label={isPlaying ? 'Pause' : 'Play'}
           className="w-[60px] h-[60px] rounded-full bg-white flex items-center justify-center hover:scale-[1.04] active:scale-[0.96] transition-transform duration-100"
         >
           {isPlaying ? (
@@ -178,6 +183,7 @@ export function FullscreenPlayer() {
           variant="ghost"
           size="icon-lg"
           onClick={skipNext}
+          aria-label="Next track"
           className="text-white/80 hover:text-white hover:bg-white/[0.06]"
         >
           <SkipForward className="w-7 h-7" fill="currentColor" />
@@ -187,6 +193,7 @@ export function FullscreenPlayer() {
           variant="ghost"
           size="icon"
           onClick={toggleRepeat}
+          aria-label="Toggle repeat"
           className={cn(
             'text-white/50 hover:text-white/80 hover:bg-white/[0.08]',
             repeatMode !== 0 && 'text-white/90',

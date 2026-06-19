@@ -12,7 +12,7 @@ const genres = [
   { id: '34', name: 'Music', color: '#fc3c44' },
   { id: '20', name: 'Alternative', color: '#5856D6' },
   { id: '2', name: 'Blues', color: '#007AFF' },
-  { id: '21', name: 'Chinese', color: '#FF9500' },
+  { id: '1018', name: 'Chinese', color: '#FF9500' },
   { id: '1122', name: 'Classical', color: '#34C759' },
   { id: '3', name: 'Comedy', color: '#FF2D55' },
   { id: '6', name: 'Country', color: '#AF52DE' },

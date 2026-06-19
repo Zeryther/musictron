@@ -24,9 +24,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="apple-music-developer-token" content="" />
-        <meta name="apple-music-app-name" content="Musictron" />
-        <meta name="apple-music-app-build" content="1.0.0" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body
