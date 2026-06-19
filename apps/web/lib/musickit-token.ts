@@ -130,7 +130,7 @@ const TOKEN_CACHE_REFRESH_BUFFER_SECONDS = 15 * 60
  * with short-lived tokens that the client rotates before expiry, so overrides
  * are capped at 1 hour.
  */
-function resolveTtlSeconds(value?: number): number {
+export function resolveTtlSeconds(value?: number): number {
   const parsed =
     value ?? Number.parseInt(process.env.MUSICKIT_TOKEN_TTL_SECONDS ?? '', 10)
   const ttl =

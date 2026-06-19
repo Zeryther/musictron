@@ -68,6 +68,7 @@ export function MediaCard({
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200" />
         <button
           onClick={handlePlay}
+          aria-label={`Play ${name ?? 'item'}`}
           className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-white/90 text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 shadow-lg shadow-black/30 hover:bg-white hover:scale-105 active:scale-95"
         >
           <Play className="w-4 h-4 ml-0.5" fill="currentColor" />

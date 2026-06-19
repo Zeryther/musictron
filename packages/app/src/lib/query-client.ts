@@ -9,9 +9,9 @@ export function createQueryClient(): QueryClient {
         staleTime: 2 * 60 * 1000,
         // Cache unused queries for 5 minutes before garbage-collecting.
         gcTime: 5 * 60 * 1000,
-        // Don't retry on MusicKit errors (auth failures, 404s, etc.)
+        // Retry once before surfacing an error.
         retry: 1,
-        // Refetch when the window regains focus for up-to-date data.
+        // Don't refetch when the window regains focus.
         refetchOnWindowFocus: false,
       },
     },

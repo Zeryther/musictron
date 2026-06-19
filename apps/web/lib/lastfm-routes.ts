@@ -397,7 +397,7 @@ export const lastfmRoutes = new Elysia({ prefix: '/lastfm' })
         return status(500, {
           error: 'Failed to scrobble',
           message: err instanceof Error ? err.message : 'Unknown error',
-          retryable: code === 11 || code === 16,
+          retryable: code === 11 || code === 16 || code === 29,
         })
       }
     },

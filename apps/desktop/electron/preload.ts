@@ -2,7 +2,6 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getPlatform: () => ipcRenderer.invoke('get-platform'),
-  getTheme: () => ipcRenderer.invoke('get-theme'),
   setTitle: (title: string) => ipcRenderer.send('set-title', title),
   windowMinimize: () => ipcRenderer.invoke('window-minimize'),
   windowMaximize: () => ipcRenderer.invoke('window-maximize'),

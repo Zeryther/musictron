@@ -140,6 +140,7 @@ export function ArtistDetailPage() {
 
             <div className="flex gap-2.5">
               <Button
+                disabled={topSongs.length === 0}
                 onClick={() => {
                   if (topSongs.length > 0) {
                     playSongs(topSongs.map((s: MusicKit.Resource) => s.id))
@@ -152,6 +153,7 @@ export function ArtistDetailPage() {
               </Button>
               <Button
                 variant="outline"
+                disabled={topSongs.length === 0}
                 onClick={() => {
                   if (topSongs.length > 0) {
                     const ids = topSongs.map((s: MusicKit.Resource) => s.id)

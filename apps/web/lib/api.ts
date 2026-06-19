@@ -22,9 +22,11 @@ import {
 export const api = new Elysia({ prefix: '/api' })
   .use(
     cors({
-      // In production, restrict to your desktop app's origin.
-      // For development, allow everything.
-      origin: process.env.CORS_ORIGIN ?? true,
+      // In production, restrict to your desktop app's origin via CORS_ORIGIN.
+      // If unset: allow everything in development, deny cross-origin in production.
+      origin:
+        process.env.CORS_ORIGIN ??
+        (process.env.NODE_ENV === 'production' ? false : true),
       methods: ['GET', 'POST', 'OPTIONS'],
       credentials: false,
     }),

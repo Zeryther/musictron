@@ -109,6 +109,7 @@ export function PlayerBar() {
                   variant="player"
                   size="icon-sm"
                   disabled={isLoveLoading}
+                  aria-label={isLoved ? 'Unlove track' : 'Love track'}
                   onClick={() =>
                     sendLove({
                       artist: nowPlaying.artistName,
@@ -145,18 +146,25 @@ export function PlayerBar() {
               variant="player"
               size="icon-sm"
               onClick={toggleShuffle}
+              aria-label="Toggle shuffle"
               className={cn(shuffleMode !== 0 && 'text-primary')}
             >
               <Shuffle className="w-[15px] h-[15px]" />
             </Button>
 
-            <Button variant="player" size="icon" onClick={skipPrevious}>
+            <Button
+              variant="player"
+              size="icon"
+              onClick={skipPrevious}
+              aria-label="Previous track"
+            >
               <SkipBack className="w-[18px] h-[18px]" fill="currentColor" />
             </Button>
 
             <button
               className="w-9 h-9 rounded-full bg-foreground text-background flex items-center justify-center mx-0.5 hover:scale-105 active:scale-95 transition-transform duration-100"
               onClick={togglePlayPause}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
             >
               {isPlaying ? (
                 <Pause className="w-[16px] h-[16px]" fill="currentColor" />
@@ -168,7 +176,12 @@ export function PlayerBar() {
               )}
             </button>
 
-            <Button variant="player" size="icon" onClick={skipNext}>
+            <Button
+              variant="player"
+              size="icon"
+              onClick={skipNext}
+              aria-label="Next track"
+            >
               <SkipForward className="w-[18px] h-[18px]" fill="currentColor" />
             </Button>
 
@@ -176,6 +189,7 @@ export function PlayerBar() {
               variant="player"
               size="icon-sm"
               onClick={toggleRepeat}
+              aria-label="Toggle repeat"
               className={cn(repeatMode !== 0 && 'text-primary')}
             >
               {repeatMode === 1 ? (
@@ -221,6 +235,7 @@ export function PlayerBar() {
             variant="player"
             size="icon-sm"
             onClick={() => setVolume(volume === 0 ? 0.5 : 0)}
+            aria-label={volume === 0 ? 'Unmute' : 'Mute'}
           >
             {volume === 0 ? (
               <VolumeX className="w-[15px] h-[15px]" />
@@ -243,6 +258,7 @@ export function PlayerBar() {
             variant="player"
             size="icon-sm"
             onClick={toggleQueue}
+            aria-label="Toggle queue"
             className={cn(isQueueOpen && 'text-primary')}
           >
             <ListMusic className="w-[15px] h-[15px]" />
@@ -252,6 +268,7 @@ export function PlayerBar() {
             variant="player"
             size="icon-sm"
             onClick={() => setFullscreen(true)}
+            aria-label="Enter fullscreen"
           >
             <Maximize2 className="w-[15px] h-[15px]" />
           </Button>

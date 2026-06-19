@@ -3,7 +3,6 @@
 interface Window {
   electronAPI: {
     getPlatform: () => Promise<string>
-    getTheme: () => Promise<string>
     setTitle: (title: string) => void
     windowMinimize: () => Promise<void>
     windowMaximize: () => Promise<void>
