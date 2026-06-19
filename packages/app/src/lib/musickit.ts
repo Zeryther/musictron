@@ -348,7 +348,7 @@ function isMusictronDebugEnabled(): boolean {
   )
 }
 
-function decodeJwtPayload(token: string | undefined) {
+export function decodeJwtPayload(token: string | undefined) {
   if (!token) return null
 
   try {

@@ -203,7 +203,7 @@ export const useAuthStore = create<AuthState>()(
   ),
 )
 
-function getMusicKitAuthErrorMessage(
+export function getMusicKitAuthErrorMessage(
   error: unknown,
   phase: 'initialize' | 'authorize',
 ): string {

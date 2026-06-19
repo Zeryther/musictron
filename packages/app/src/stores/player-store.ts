@@ -497,7 +497,7 @@ async function detectPreviewFallback() {
   })
 }
 
-function getPlaybackErrorMessage(error: unknown): PlaybackError {
+export function getPlaybackErrorMessage(error: unknown): PlaybackError {
   const message =
     error instanceof Error ? error.message : safeStringifyError(error)
 

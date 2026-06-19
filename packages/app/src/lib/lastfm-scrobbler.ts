@@ -223,7 +223,7 @@ function scrobblePreviousTrackIfNeeded(): void {
   }
 }
 
-function shouldScrobble(duration: number, elapsed: number): boolean {
+export function shouldScrobble(duration: number, elapsed: number): boolean {
   // Track must be > 30 seconds
   if (duration <= MIN_TRACK_DURATION) return false
 
