@@ -149,3 +149,12 @@ Uses **Changesets** (`@changesets/cli`). When making user-facing changes, run `p
 
 - Never amend commits unless the user explicitly requests it
 - Never force push unless the user explicitly requests it
+
+## Cursor Cloud specific instructions
+
+- Node 22 and pnpm 10.28.0 are preinstalled; the startup update script runs `pnpm install`. Standard build/dev/test/lint/typecheck commands live in the "Build / Dev / Typecheck Commands" section above and in `package.json`.
+- **`apps/web` (Next.js host + Elysia API) is the practical end-to-end target in this headless environment.** It serves the SPA at `/` and the token API at `/api/*` on port **3000**. Run it with `pnpm --filter @musictron/web dev`. The Electron desktop app (`apps/desktop`) needs a GUI, so prefer the web app for interactive testing.
+- There is **no database, cache, or message broker** — the only external dependencies are Apple's Music API (network) and, optionally, Last.fm.
+- **Without MusicKit credentials the app still boots and is fully navigable, but cannot play/search real music.** `/api/token` returns HTTP 503 and `/api/health` reports `configured:false`; the UI shows a "Sign in to Apple Music" prompt. Real catalog/playback needs a paid Apple Developer MusicKit key (`MUSICKIT_TEAM_ID`, `MUSICKIT_KEY_ID`, and `MUSICKIT_PRIVATE_KEY`/`MUSICKIT_PRIVATE_KEY_PATH`) plus an Apple Music subscription (user auth via MusicKit JS loaded from Apple's CDN).
+- To exercise the token-minting endpoint locally without real Apple credentials, generate a self-signed ES256 `.p8` (`openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt`), point `MUSICKIT_PRIVATE_KEY_PATH` at it, and set dummy `MUSICKIT_TEAM_ID`/`MUSICKIT_KEY_ID` in `apps/web/.env.local`. `/api/token` then returns a structurally valid JWT (Apple will reject it for real playback). `.env.local` and `*.p8` are gitignored.
+- Next.js dev does **not** hot-reload `.env.local` for the server process — restart the web dev server after changing env vars.
