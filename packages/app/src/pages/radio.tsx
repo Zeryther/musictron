@@ -47,9 +47,7 @@ export function RadioPage() {
                 <Artwork
                   src={formatArtworkUrl(station.attributes?.artwork?.url, 400)}
                   alt={station.attributes?.name}
-                  size={300}
                   rounded="none"
-                  className="w-full !h-auto aspect-square"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 <div className="absolute bottom-0 left-0 p-4">
