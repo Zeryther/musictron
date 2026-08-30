@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Artwork } from '@/components/ui/artwork'
+import { Card } from '@/components/ui/card'
 import { SongRow } from '@/components/ui/song-row'
 import { MediaCard } from '@/components/ui/media-card'
 import { Button } from '@/components/ui/button'
@@ -53,7 +54,7 @@ export function ArtistDetailPage() {
 
   if (!artist) {
     return (
-      <div className="text-center py-24 text-muted-foreground text-[15px]">
+      <div className="text-center py-24 text-muted-foreground text-base">
         Artist not found
       </div>
     )
@@ -66,15 +67,9 @@ export function ArtistDetailPage() {
     <div className="animate-fade-in">
       {/* Artist header with gradient */}
       <div className="relative mb-10 -mx-8 -mt-6 px-8 pt-6">
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-primary/[0.08] to-transparent"
-          style={{ height: '280px' }}
-        />
+        <div className="absolute inset-0 h-[17.5rem] bg-gradient-to-b from-primary/[0.08] to-transparent" />
 
-        <div
-          className="relative flex items-end gap-7 pb-6"
-          style={{ minHeight: '220px' }}
-        >
+        <div className="relative flex items-end gap-7 pb-6 min-h-[13.75rem]">
           <Artwork
             src={artworkUrl}
             alt={attrs?.name}
@@ -83,10 +78,8 @@ export function ArtistDetailPage() {
             shadow
           />
           <div className="min-w-0 pb-1">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">
-              Artist
-            </p>
-            <h1 className="text-[36px] font-bold tracking-tight leading-tight mb-2 line-clamp-2">
+            <p className="eyebrow mb-1.5">Artist</p>
+            <h1 className="text-3xl font-bold tracking-tight leading-tight mb-2 line-clamp-2">
               {attrs?.name}
             </h1>
             {/* Genre tags — combine Apple Music genres with Last.fm tags */}
@@ -96,7 +89,7 @@ export function ArtistDetailPage() {
                 {attrs?.genreNames?.map((genre: string) => (
                   <span
                     key={genre}
-                    className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.08] text-muted-foreground"
+                    className="text-2xs px-2 py-0.5 rounded-full bg-foreground/[0.08] text-muted-foreground"
                   >
                     {genre}
                   </span>
@@ -112,7 +105,7 @@ export function ArtistDetailPage() {
                   .map((tag) => (
                     <span
                       key={tag}
-                      className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-muted-foreground/90"
+                      className="text-2xs px-2 py-0.5 rounded-full bg-foreground/[0.06] text-muted-foreground/90"
                     >
                       {tag}
                     </span>
@@ -122,7 +115,7 @@ export function ArtistDetailPage() {
 
             {/* Last.fm stats */}
             {lastfmArtist && (
-              <div className="flex items-center gap-3 text-[12px] text-muted-foreground mb-5">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mb-5">
                 {lastfmArtist.listeners != null && (
                   <span className="flex items-center gap-1">
                     <Users className="w-3 h-3" />
@@ -174,7 +167,7 @@ export function ArtistDetailPage() {
       {/* Top Songs */}
       {topSongs.length > 0 && (
         <section className="mb-10 animate-fade-in-up stagger-1">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+          <h2 className="text-xl font-semibold tracking-tight mb-4">
             Top Songs
           </h2>
           <div className="space-y-px">
@@ -203,10 +196,8 @@ export function ArtistDetailPage() {
       {/* Albums */}
       {albums.length > 0 && (
         <section className="mb-10 animate-fade-in-up stagger-2">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
-            Albums
-          </h2>
-          <div className="flex flex-wrap gap-5">
+          <h2 className="text-xl font-semibold tracking-tight mb-4">Albums</h2>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
             {albums.map((album: MusicKit.Resource) => (
               <MediaCard
                 key={album.id}
@@ -231,10 +222,10 @@ export function ArtistDetailPage() {
       {/* Featured Playlists */}
       {playlists.length > 0 && (
         <section className="mb-10 animate-fade-in-up stagger-3">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+          <h2 className="text-xl font-semibold tracking-tight mb-4">
             Featured Playlists
           </h2>
-          <div className="flex flex-wrap gap-5">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
             {playlists.map((playlist: MusicKit.Resource) => (
               <MediaCard
                 key={playlist.id}
@@ -253,7 +244,7 @@ export function ArtistDetailPage() {
       {/* Similar Artists (from Last.fm) */}
       {similarArtists.length > 0 && (
         <section className="mb-10 animate-fade-in-up stagger-4">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+          <h2 className="text-xl font-semibold tracking-tight mb-4">
             Similar Artists
           </h2>
           <div className="flex flex-wrap gap-4">
@@ -263,9 +254,9 @@ export function ArtistDetailPage() {
                 href={similar.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] transition-colors group"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-foreground/[0.05] hover:bg-foreground/[0.08] border border-foreground/[0.08] transition-colors group"
               >
-                <span className="text-[13px] font-medium group-hover:text-foreground text-muted-foreground truncate max-w-[200px]">
+                <span className="text-sm font-medium group-hover:text-foreground text-muted-foreground truncate max-w-[12.5rem]">
                   {similar.name}
                 </span>
                 <ExternalLink className="w-3 h-3 text-muted-foreground/60 group-hover:text-muted-foreground" />
@@ -278,12 +269,10 @@ export function ArtistDetailPage() {
       {/* Biography (from Last.fm) */}
       {lastfmArtist?.bio && (
         <section className="mb-10 animate-fade-in-up stagger-5">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
-            About
-          </h2>
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+          <h2 className="text-xl font-semibold tracking-tight mb-4">About</h2>
+          <Card className="p-5">
             <p
-              className={`text-[13px] text-muted-foreground leading-relaxed whitespace-pre-line ${
+              className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-line ${
                 !bioExpanded ? 'line-clamp-4' : ''
               }`}
             >
@@ -295,7 +284,7 @@ export function ArtistDetailPage() {
               (lastfmArtist.bio.summary?.length ?? 0) && (
               <button
                 onClick={() => setBioExpanded(!bioExpanded)}
-                className="flex items-center gap-1 text-[12px] text-primary hover:text-primary/80 mt-2 transition-colors"
+                className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 mt-2 transition-colors"
               >
                 {bioExpanded ? (
                   <>
@@ -312,12 +301,12 @@ export function ArtistDetailPage() {
               href={lastfmArtist.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/70 hover:text-muted-foreground mt-3 transition-colors"
+              className="inline-flex items-center gap-1 text-2xs text-muted-foreground/70 hover:text-muted-foreground mt-3 transition-colors"
             >
               Source: Last.fm
               <ExternalLink className="w-2.5 h-2.5" />
             </a>
-          </div>
+          </Card>
         </section>
       )}
     </div>

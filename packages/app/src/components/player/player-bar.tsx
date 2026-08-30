@@ -57,7 +57,7 @@ export function PlayerBar() {
   const isLoved = lastfmTrack?.userLoved ?? false
 
   return (
-    <div className="h-[84px] border-t border-white/[0.06] surface-glass-heavy flex flex-col shrink-0">
+    <div className="h-[5.25rem] border-t border-foreground/[0.06] surface-glass-heavy flex flex-col shrink-0">
       {/* Progress bar */}
       <div className="px-4 -mt-[6px]">
         <Slider
@@ -66,14 +66,14 @@ export function PlayerBar() {
           step={0.1}
           onValueChange={([val]) => seekTo(val)}
           className="h-3"
-          trackClassName="h-[2px] group-hover/slider:h-[4px] bg-white/[0.08]"
+          trackClassName="h-[2px] group-hover/slider:h-[4px] bg-foreground/[0.08]"
           rangeClassName="bg-foreground/50 group-hover/slider:bg-foreground"
         />
       </div>
 
       <div className="flex-1 flex items-center px-5 gap-4">
         {/* Now playing info — left */}
-        <div className="flex items-center gap-3 w-[260px] min-w-0 group/now-playing">
+        <div className="flex items-center gap-3 w-[16.25rem] min-w-0 group/now-playing">
           {nowPlaying ? (
             <>
               <Artwork
@@ -85,10 +85,10 @@ export function PlayerBar() {
                 className="cursor-pointer shadow-lg shadow-black/30"
               />
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-medium line-clamp-1 leading-tight">
+                <p className="text-sm font-medium line-clamp-1 leading-tight">
                   {nowPlaying.name}
                 </p>
-                <p className="text-[12px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
+                <p className="text-xs text-muted-foreground line-clamp-1 leading-tight mt-0.5">
                   {nowPlaying.artistId ? (
                     <button
                       onClick={(e) => {
@@ -125,7 +125,7 @@ export function PlayerBar() {
                   )}
                 >
                   <Heart
-                    className="w-[14px] h-[14px]"
+                    className="w-[0.875rem] h-[0.875rem]"
                     fill={isLoved ? 'currentColor' : 'none'}
                   />
                 </Button>
@@ -134,7 +134,7 @@ export function PlayerBar() {
           ) : (
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded bg-muted/60" />
-              <p className="text-[13px] text-muted-foreground">Not Playing</p>
+              <p className="text-sm text-muted-foreground">Not Playing</p>
             </div>
           )}
         </div>
@@ -149,7 +149,7 @@ export function PlayerBar() {
               aria-label="Toggle shuffle"
               className={cn(shuffleMode !== 0 && 'text-primary')}
             >
-              <Shuffle className="w-[15px] h-[15px]" />
+              <Shuffle className="w-[0.9375rem] h-[0.9375rem]" />
             </Button>
 
             <Button
@@ -158,7 +158,10 @@ export function PlayerBar() {
               onClick={skipPrevious}
               aria-label="Previous track"
             >
-              <SkipBack className="w-[18px] h-[18px]" fill="currentColor" />
+              <SkipBack
+                className="w-[1.125rem] h-[1.125rem]"
+                fill="currentColor"
+              />
             </Button>
 
             <button
@@ -167,10 +170,10 @@ export function PlayerBar() {
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
               {isPlaying ? (
-                <Pause className="w-[16px] h-[16px]" fill="currentColor" />
+                <Pause className="w-[1rem] h-[1rem]" fill="currentColor" />
               ) : (
                 <Play
-                  className="w-[16px] h-[16px] ml-[1px]"
+                  className="w-[1rem] h-[1rem] ml-[1px]"
                   fill="currentColor"
                 />
               )}
@@ -182,7 +185,10 @@ export function PlayerBar() {
               onClick={skipNext}
               aria-label="Next track"
             >
-              <SkipForward className="w-[18px] h-[18px]" fill="currentColor" />
+              <SkipForward
+                className="w-[1.125rem] h-[1.125rem]"
+                fill="currentColor"
+              />
             </Button>
 
             <Button
@@ -193,15 +199,15 @@ export function PlayerBar() {
               className={cn(repeatMode !== 0 && 'text-primary')}
             >
               {repeatMode === 1 ? (
-                <Repeat1 className="w-[15px] h-[15px]" />
+                <Repeat1 className="w-[0.9375rem] h-[0.9375rem]" />
               ) : (
-                <Repeat className="w-[15px] h-[15px]" />
+                <Repeat className="w-[0.9375rem] h-[0.9375rem]" />
               )}
             </Button>
           </div>
 
           {playbackError ? (
-            <div className="flex h-[17px] max-w-full items-center gap-1.5 text-[11px] text-amber-300">
+            <div className="flex h-[1.0625rem] max-w-full items-center gap-1.5 text-2xs text-amber-300">
               <AlertTriangle className="h-3 w-3 shrink-0" />
               <p className="min-w-0 truncate">
                 <span className="font-medium">{playbackError.title}</span>
@@ -221,7 +227,7 @@ export function PlayerBar() {
               </button>
             </div>
           ) : (
-            <div className="flex h-[17px] items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
+            <div className="flex h-[1.0625rem] items-center gap-2 text-2xs tabular-nums text-muted-foreground">
               <span className="w-9 text-right">{formatTime(currentTime)}</span>
               <span className="opacity-60">/</span>
               <span className="w-9">{formatTime(duration)}</span>
@@ -230,7 +236,7 @@ export function PlayerBar() {
         </div>
 
         {/* Right controls */}
-        <div className="flex items-center gap-1.5 w-[200px] justify-end">
+        <div className="flex items-center gap-1.5 w-[12.5rem] justify-end">
           <Button
             variant="player"
             size="icon-sm"
@@ -238,11 +244,11 @@ export function PlayerBar() {
             aria-label={volume === 0 ? 'Unmute' : 'Mute'}
           >
             {volume === 0 ? (
-              <VolumeX className="w-[15px] h-[15px]" />
+              <VolumeX className="w-[0.9375rem] h-[0.9375rem]" />
             ) : volume < 0.5 ? (
-              <Volume1 className="w-[15px] h-[15px]" />
+              <Volume1 className="w-[0.9375rem] h-[0.9375rem]" />
             ) : (
-              <Volume2 className="w-[15px] h-[15px]" />
+              <Volume2 className="w-[0.9375rem] h-[0.9375rem]" />
             )}
           </Button>
 
@@ -251,7 +257,7 @@ export function PlayerBar() {
             max={1}
             step={0.01}
             onValueChange={([val]) => setVolume(val)}
-            className="w-[88px]"
+            className="w-[5.5rem]"
           />
 
           <Button
@@ -261,7 +267,7 @@ export function PlayerBar() {
             aria-label="Toggle queue"
             className={cn(isQueueOpen && 'text-primary')}
           >
-            <ListMusic className="w-[15px] h-[15px]" />
+            <ListMusic className="w-[0.9375rem] h-[0.9375rem]" />
           </Button>
 
           <Button
@@ -270,7 +276,7 @@ export function PlayerBar() {
             onClick={() => setFullscreen(true)}
             aria-label="Enter fullscreen"
           >
-            <Maximize2 className="w-[15px] h-[15px]" />
+            <Maximize2 className="w-[0.9375rem] h-[0.9375rem]" />
           </Button>
         </div>
       </div>

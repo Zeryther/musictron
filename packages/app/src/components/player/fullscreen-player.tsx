@@ -88,10 +88,10 @@ export function FullscreenPlayer() {
 
       {/* Song info */}
       <div className="text-center mb-8 max-w-lg px-4">
-        <h2 className="text-[22px] font-bold text-white leading-tight mb-1 line-clamp-2">
+        <h2 className="text-2xl font-bold text-white leading-tight mb-1 line-clamp-2">
           {nowPlaying.name}
         </h2>
-        <p className="text-[16px] text-white/70 font-medium line-clamp-1">
+        <p className="text-lg text-white/70 font-medium line-clamp-1">
           {nowPlaying.artistId ? (
             <button
               onClick={() => {
@@ -107,7 +107,7 @@ export function FullscreenPlayer() {
           )}
         </p>
         {nowPlaying.albumName && (
-          <p className="text-[13px] text-white/50 mt-1 line-clamp-1">
+          <p className="text-sm text-white/50 mt-1 line-clamp-1">
             {nowPlaying.albumId ? (
               <button
                 onClick={() => {
@@ -136,7 +136,7 @@ export function FullscreenPlayer() {
           rangeClassName="bg-white/80"
           thumbClassName="bg-white scale-100"
         />
-        <div className="flex justify-between mt-2 text-[12px] tabular-nums text-white/55">
+        <div className="flex justify-between mt-2 text-xs tabular-nums text-white/55">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
@@ -170,7 +170,7 @@ export function FullscreenPlayer() {
         <button
           onClick={togglePlayPause}
           aria-label={isPlaying ? 'Pause' : 'Play'}
-          className="w-[60px] h-[60px] rounded-full bg-white flex items-center justify-center hover:scale-[1.04] active:scale-[0.96] transition-transform duration-100"
+          className="w-[3.75rem] h-[3.75rem] rounded-full bg-white flex items-center justify-center hover:scale-[1.04] active:scale-[0.96] transition-transform duration-100"
         >
           {isPlaying ? (
             <Pause className="w-7 h-7 text-black" fill="currentColor" />
@@ -215,7 +215,7 @@ export function FullscreenPlayer() {
           max={1}
           step={0.01}
           onValueChange={([val]) => setVolume(val)}
-          className="w-[120px]"
+          className="w-[7.5rem]"
           trackClassName="bg-white/[0.12]"
           rangeClassName="bg-white/50"
           thumbClassName="bg-white"

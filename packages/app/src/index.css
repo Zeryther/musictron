@@ -92,6 +92,13 @@
   }
 }
 
+@layer components {
+  /* Uppercase section label used above nav groups, queue sections, and detail pages */
+  .eyebrow {
+    @apply text-2xs font-semibold uppercase tracking-widest text-muted-foreground;
+  }
+}
+
 @layer utilities {
   .drag-region {
     -webkit-app-region: drag;
@@ -163,33 +170,33 @@
 @keyframes eq-bar-1 {
   0%,
   100% {
-    height: 3px;
+    height: 0.1875rem;
   }
   50% {
-    height: 12px;
+    height: 0.75rem;
   }
 }
 @keyframes eq-bar-2 {
   0%,
   100% {
-    height: 8px;
+    height: 0.5rem;
   }
   50% {
-    height: 4px;
+    height: 0.25rem;
   }
 }
 @keyframes eq-bar-3 {
   0%,
   100% {
-    height: 5px;
+    height: 0.3125rem;
   }
   50% {
-    height: 14px;
+    height: 0.875rem;
   }
 }
 
 .eq-bar {
-  width: 2.5px;
+  width: 0.15625rem;
   border-radius: 1px;
   background: hsl(var(--primary));
   transform-origin: bottom;
@@ -278,21 +285,4 @@
 }
 .stagger-5 {
   animation-delay: 250ms;
-}
-
-/* ── Player progress bar (native range input) ── */
-.progress-bar::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: hsl(var(--foreground));
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.progress-bar:hover::-webkit-slider-thumb {
-  width: 10px;
-  height: 10px;
 }

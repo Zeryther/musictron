@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { MediaCard } from '@/components/ui/media-card'
 import { SongRow } from '@/components/ui/song-row'
 import { Artwork } from '@/components/ui/artwork'
+import { Card } from '@/components/ui/card'
 import { useSearch, useSearchHints } from '@/hooks/use-search'
 import { usePlayerStore } from '@/stores/player-store'
 import { formatArtworkUrl, extractAlbumIdFromUrl } from '@/lib/utils'
@@ -64,7 +65,7 @@ export function SearchPage() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-[28px] font-bold tracking-tight mb-5">Search</h1>
+      <h1 className="text-3xl font-bold tracking-tight mb-5">Search</h1>
 
       {/* Search input */}
       <div className="relative max-w-lg mb-2">
@@ -74,7 +75,7 @@ export function SearchPage() {
           value={query}
           onChange={handleInputChange}
           placeholder="Artists, songs, albums, playlists..."
-          className="pl-9 pr-9 h-10 bg-white/[0.06] border-white/[0.06] rounded-xl text-[13px] placeholder:text-muted-foreground/70 focus-visible:ring-primary/30"
+          className="pl-9 pr-9 h-10 bg-foreground/[0.06] border-foreground/[0.06] rounded-xl text-sm placeholder:text-muted-foreground/70 focus-visible:ring-primary/30"
         />
         {query && (
           <button
@@ -93,7 +94,7 @@ export function SearchPage() {
             <button
               key={hint}
               onClick={() => handleHintClick(hint)}
-              className="px-3 py-1 rounded-full text-[12px] bg-white/[0.06] hover:bg-white/[0.1] text-muted-foreground transition-colors duration-100"
+              className="px-3 py-1 rounded-full text-xs bg-foreground/[0.06] hover:bg-foreground/[0.08] text-muted-foreground transition-colors duration-100"
             >
               {hint}
             </button>
@@ -110,19 +111,17 @@ export function SearchPage() {
       {!loading && !hasResults && debouncedQuery && (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
           <SearchIcon className="w-10 h-10 mb-3" />
-          <p className="text-[15px] font-medium text-muted-foreground">
+          <p className="text-base font-medium text-muted-foreground">
             No results found
           </p>
-          <p className="text-[13px] mt-0.5">Try a different search term</p>
+          <p className="text-sm mt-0.5">Try a different search term</p>
         </div>
       )}
 
       {!loading && !debouncedQuery && (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
           <SearchIcon className="w-10 h-10 mb-3" />
-          <p className="text-[15px] text-muted-foreground">
-            Search Apple Music
-          </p>
+          <p className="text-base text-muted-foreground">Search Apple Music</p>
         </div>
       )}
 
@@ -132,12 +131,12 @@ export function SearchPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {(artists.length > 0 || albums.length > 0) && (
               <section className="animate-fade-in-up">
-                <h2 className="text-[17px] font-semibold tracking-tight mb-3">
+                <h2 className="text-lg font-semibold tracking-tight mb-3">
                   Top Result
                 </h2>
                 {artists.length > 0 ? (
-                  <div
-                    className="p-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.06] transition-colors duration-150 cursor-pointer"
+                  <Card
+                    className="p-5 border-transparent bg-foreground/[0.04] hover:bg-foreground/[0.06] transition-colors duration-150 cursor-pointer"
                     onClick={() => navigate(`/artist/${artists[0].id}`)}
                     role="button"
                     tabIndex={0}
@@ -158,16 +157,16 @@ export function SearchPage() {
                       rounded="full"
                       className="mb-3"
                     />
-                    <h3 className="text-[22px] font-bold leading-tight line-clamp-1">
+                    <h3 className="text-2xl font-bold leading-tight line-clamp-1">
                       {artists[0].attributes?.name}
                     </h3>
-                    <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-1">
+                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
                       Artist
                     </p>
-                  </div>
+                  </Card>
                 ) : (
-                  <div
-                    className="p-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.06] transition-colors duration-150 cursor-pointer"
+                  <Card
+                    className="p-5 border-transparent bg-foreground/[0.04] hover:bg-foreground/[0.06] transition-colors duration-150 cursor-pointer"
                     onClick={() => navigate(`/album/${albums[0].id}`)}
                     role="button"
                     tabIndex={0}
@@ -188,20 +187,20 @@ export function SearchPage() {
                       rounded="md"
                       className="mb-3"
                     />
-                    <h3 className="text-[22px] font-bold leading-tight line-clamp-1">
+                    <h3 className="text-2xl font-bold leading-tight line-clamp-1">
                       {albums[0].attributes?.name}
                     </h3>
-                    <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-1">
+                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
                       {albums[0].attributes?.artistName}
                     </p>
-                  </div>
+                  </Card>
                 )}
               </section>
             )}
 
             {songs.length > 0 && (
               <section className="animate-fade-in-up stagger-1">
-                <h2 className="text-[17px] font-semibold tracking-tight mb-3">
+                <h2 className="text-lg font-semibold tracking-tight mb-3">
                   Songs
                 </h2>
                 <div className="space-y-px">
@@ -233,7 +232,7 @@ export function SearchPage() {
           {/* Artists */}
           {artists.length > 1 && (
             <section className="animate-fade-in-up stagger-2">
-              <h2 className="text-[17px] font-semibold tracking-tight mb-3">
+              <h2 className="text-lg font-semibold tracking-tight mb-3">
                 Artists
               </h2>
               <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
@@ -260,7 +259,7 @@ export function SearchPage() {
                       size={128}
                       rounded="full"
                     />
-                    <p className="text-[13px] font-medium text-center line-clamp-1 w-[128px]">
+                    <p className="text-sm font-medium text-center line-clamp-1 w-[8rem]">
                       {artist.attributes?.name}
                     </p>
                   </div>
@@ -272,10 +271,10 @@ export function SearchPage() {
           {/* Albums */}
           {albums.length > 0 && (
             <section className="animate-fade-in-up stagger-3">
-              <h2 className="text-[17px] font-semibold tracking-tight mb-3">
+              <h2 className="text-lg font-semibold tracking-tight mb-3">
                 Albums
               </h2>
-              <div className="flex flex-wrap gap-5">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
                 {albums.map((album: MusicKit.Resource) => (
                   <MediaCard
                     key={album.id}
@@ -294,10 +293,10 @@ export function SearchPage() {
           {/* Playlists */}
           {playlists.length > 0 && (
             <section className="animate-fade-in-up stagger-4">
-              <h2 className="text-[17px] font-semibold tracking-tight mb-3">
+              <h2 className="text-lg font-semibold tracking-tight mb-3">
                 Playlists
               </h2>
-              <div className="flex flex-wrap gap-5">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
                 {playlists.map((playlist: MusicKit.Resource) => (
                   <MediaCard
                     key={playlist.id}

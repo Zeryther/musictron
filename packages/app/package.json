@@ -7,7 +7,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./styles.css": "./src/index.css"
+    "./styles.css": "./src/index.css",
+    "./tailwind-preset": "./tailwind-preset.js"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

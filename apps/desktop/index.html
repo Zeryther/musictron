@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -10,13 +10,22 @@
     <script>
       // Apply theme before first paint to avoid flash
       try {
-        var s = JSON.parse(localStorage.getItem('musictron-theme') || '{}');
-        var t = (s.state && s.state.theme) || 'system';
-        var d = t === 'system'
-          ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-          : t;
-        document.documentElement.classList.add(d);
-      } catch(e) { document.documentElement.classList.add('dark'); }
+        var s = JSON.parse(localStorage.getItem('musictron-theme') || '{}')
+        var t = (s.state && s.state.theme) || 'system'
+        var d =
+          t === 'system'
+            ? window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+            : t
+        document.documentElement.classList.add(d)
+        var z = s.state && s.state.uiScale
+        if (typeof z === 'number' && isFinite(z) && z !== 1) {
+          document.documentElement.style.fontSize = z * 100 + '%'
+        }
+      } catch (e) {
+        document.documentElement.classList.add('dark')
+      }
     </script>
   </head>
   <body class="bg-background text-foreground">

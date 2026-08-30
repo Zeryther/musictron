@@ -54,13 +54,15 @@ export function Sidebar({ platform }: { platform: string }) {
   }
 
   return (
-    <div className="w-[240px] h-full flex flex-col border-r border-white/[0.06] surface-glass-heavy">
-      {/* Drag region / title area */}
+    <div className="w-60 h-full flex flex-col border-r border-foreground/[0.06] surface-glass-heavy">
+      {/* Drag region / title area. Height and offset stay in px — they must
+          align with Electron's trafficLightPosition (OS pixels, unaffected by
+          root font-size / UI scale). */}
       {platform === 'darwin' ? (
         <div className="h-[52px] drag-region flex items-center px-5 shrink-0">
-          <div className="no-drag flex items-center gap-2 ml-16">
-            <Music2 className="w-[18px] h-[18px] text-primary" />
-            <span className="font-semibold text-[13px] tracking-tight">
+          <div className="no-drag flex items-center gap-2 ml-[64px]">
+            <Music2 className="w-[1.125rem] h-[1.125rem] text-primary" />
+            <span className="font-semibold text-sm tracking-tight">
               Musictron
             </span>
           </div>
@@ -68,8 +70,8 @@ export function Sidebar({ platform }: { platform: string }) {
       ) : (
         <div className="h-11 flex items-center px-5 shrink-0">
           <div className="flex items-center gap-2">
-            <Music2 className="w-[18px] h-[18px] text-primary" />
-            <span className="font-semibold text-[13px] tracking-tight">
+            <Music2 className="w-[1.125rem] h-[1.125rem] text-primary" />
+            <span className="font-semibold text-sm tracking-tight">
               Musictron
             </span>
           </div>
@@ -85,14 +87,14 @@ export function Sidebar({ platform }: { platform: string }) {
             end={item.to === '/'}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-colors duration-100 no-drag',
+                'flex items-center gap-3 px-3 py-[7px] rounded-lg text-sm font-medium transition-colors duration-100 no-drag',
                 isActive
-                  ? 'bg-white/[0.08] text-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.04]',
+                  ? 'bg-foreground/[0.08] text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06]',
               )
             }
           >
-            <item.icon className="w-[18px] h-[18px]" />
+            <item.icon className="w-[1.125rem] h-[1.125rem]" />
             {item.label}
           </NavLink>
         ))}
@@ -102,9 +104,7 @@ export function Sidebar({ platform }: { platform: string }) {
       {isAuthorized && (
         <>
           <div className="px-6 pt-5 pb-1.5">
-            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-              Library
-            </h3>
+            <h3 className="eyebrow">Library</h3>
           </div>
           <nav className="px-3 space-y-px">
             {libraryNavItems.map((item) => (
@@ -113,14 +113,14 @@ export function Sidebar({ platform }: { platform: string }) {
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-colors duration-100 no-drag',
+                    'flex items-center gap-3 px-3 py-[7px] rounded-lg text-sm font-medium transition-colors duration-100 no-drag',
                     isActive
-                      ? 'bg-white/[0.08] text-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.04]',
+                      ? 'bg-foreground/[0.08] text-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06]',
                   )
                 }
               >
-                <item.icon className="w-[18px] h-[18px]" />
+                <item.icon className="w-[1.125rem] h-[1.125rem]" />
                 {item.label}
               </NavLink>
             ))}
@@ -128,9 +128,7 @@ export function Sidebar({ platform }: { platform: string }) {
 
           {/* Playlists */}
           <div className="px-3 pt-5 pb-1.5 flex items-center justify-between">
-            <h3 className="px-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-              Playlists
-            </h3>
+            <h3 className="eyebrow px-3">Playlists</h3>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -147,9 +145,9 @@ export function Sidebar({ platform }: { platform: string }) {
                 <button
                   key={playlist.id}
                   onClick={() => navigate(`/playlist/${playlist.id}`)}
-                  className="w-full flex items-center gap-3 px-3 py-[6px] rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors duration-100 text-left no-drag"
+                  className="w-full flex items-center gap-3 px-3 py-[6px] rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors duration-100 text-left no-drag"
                 >
-                  <ListMusic className="w-[16px] h-[16px] flex-shrink-0 opacity-50" />
+                  <ListMusic className="w-[1rem] h-[1rem] flex-shrink-0 opacity-50" />
                   <span className="line-clamp-1">{playlist.name}</span>
                 </button>
               ))}
@@ -162,11 +160,11 @@ export function Sidebar({ platform }: { platform: string }) {
       {!isAuthorized && <div className="flex-1" />}
 
       {/* Bottom section */}
-      <div className="p-3 border-t border-white/[0.06]">
+      <div className="p-3 border-t border-foreground/[0.06]">
         {isAuthorized ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center gap-2 px-3 py-[7px] rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors duration-100 no-drag">
+              <button className="w-full flex items-center gap-2 px-3 py-[7px] rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors duration-100 no-drag">
                 <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">
                   <User className="w-3.5 h-3.5" />
                 </div>

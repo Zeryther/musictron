@@ -14,10 +14,10 @@ export function QueuePanel() {
   const upNext = queue.slice(queuePosition + 1)
 
   return (
-    <div className="w-[300px] border-l border-white/[0.06] flex flex-col surface-glass-heavy animate-slide-in-right">
+    <div className="w-[18.75rem] border-l border-foreground/[0.06] flex flex-col surface-glass-heavy animate-slide-in-right">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
-        <h3 className="font-semibold text-[13px]">Queue</h3>
+      <div className="flex items-center justify-between px-5 py-3 border-b border-foreground/[0.06]">
+        <h3 className="font-semibold text-sm">Queue</h3>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -33,9 +33,7 @@ export function QueuePanel() {
           {/* Now Playing */}
           {nowPlaying && (
             <div className="mb-5">
-              <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-2 mb-2">
-                Now Playing
-              </h4>
+              <h4 className="eyebrow px-2 mb-2">Now Playing</h4>
               <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-primary/[0.06]">
                 <Artwork
                   src={nowPlaying.artworkUrl}
@@ -44,10 +42,10 @@ export function QueuePanel() {
                   rounded="sm"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium line-clamp-1 text-primary leading-tight">
+                  <p className="text-sm font-medium line-clamp-1 text-primary leading-tight">
                     {nowPlaying.name}
                   </p>
-                  <p className="text-[11px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
+                  <p className="text-2xs text-muted-foreground line-clamp-1 leading-tight mt-0.5">
                     {nowPlaying.artistId ? (
                       <button
                         onClick={() =>
@@ -62,7 +60,7 @@ export function QueuePanel() {
                     )}
                   </p>
                 </div>
-                <span className="text-[11px] tabular-nums text-muted-foreground">
+                <span className="text-2xs tabular-nums text-muted-foreground">
                   {formatTime(nowPlaying.duration)}
                 </span>
               </div>
@@ -71,22 +69,22 @@ export function QueuePanel() {
 
           {/* Up Next */}
           <div>
-            <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-2 mb-2">
+            <h4 className="eyebrow px-2 mb-2">
               Up Next{upNext.length > 0 && ` (${upNext.length})`}
             </h4>
             {upNext.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/70">
                 <Music className="w-7 h-7 mb-2" />
-                <p className="text-[13px]">Queue is empty</p>
+                <p className="text-sm">Queue is empty</p>
               </div>
             ) : (
               <div className="space-y-px">
                 {upNext.map((item, index) => (
                   <div
                     key={`${item.id}-${index}`}
-                    className="flex items-center gap-3 px-2 py-[6px] rounded-lg hover:bg-white/[0.04] transition-colors duration-100 cursor-pointer"
+                    className="flex items-center gap-3 px-2 py-[6px] rounded-lg hover:bg-foreground/[0.06] transition-colors duration-100 cursor-pointer"
                   >
-                    <span className="text-[11px] tabular-nums text-muted-foreground/70 w-4 text-right">
+                    <span className="text-2xs tabular-nums text-muted-foreground/70 w-4 text-right">
                       {index + 1}
                     </span>
                     <Artwork
@@ -96,14 +94,14 @@ export function QueuePanel() {
                       rounded="sm"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] line-clamp-1 leading-tight">
+                      <p className="text-sm line-clamp-1 leading-tight">
                         {item.name}
                       </p>
-                      <p className="text-[11px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
+                      <p className="text-2xs text-muted-foreground line-clamp-1 leading-tight mt-0.5">
                         {item.artistName}
                       </p>
                     </div>
-                    <span className="text-[11px] tabular-nums text-muted-foreground/70">
+                    <span className="text-2xs tabular-nums text-muted-foreground/70">
                       {formatTime(item.duration)}
                     </span>
                   </div>

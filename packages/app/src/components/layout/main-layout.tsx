@@ -27,9 +27,9 @@ export function MainLayout() {
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
       {/* Windows/Linux: custom title bar */}
       {showTitleBar && (
-        <div className="flex items-center justify-between h-8 surface-glass border-b border-white/[0.06] drag-region shrink-0">
+        <div className="flex items-center justify-between h-8 surface-glass border-b border-foreground/[0.06] drag-region shrink-0">
           <div className="flex items-center gap-2 px-4 no-drag">
-            <span className="text-[11px] font-medium text-muted-foreground">
+            <span className="text-2xs font-medium text-muted-foreground">
               Musictron
             </span>
           </div>

@@ -5,6 +5,7 @@ import { Music } from 'lucide-react'
 interface ArtworkProps {
   src?: string
   alt?: string
+  /** Size in px at 100% UI scale; omit to fill the parent (w-full aspect-square). */
   size?: number
   className?: string
   rounded?: 'sm' | 'md' | 'lg' | 'full' | 'none'
@@ -15,7 +16,7 @@ interface ArtworkProps {
 export function Artwork({
   src,
   alt = 'Artwork',
-  size = 200,
+  size,
   className,
   rounded = 'md',
   shadow = false,
@@ -36,12 +37,18 @@ export function Artwork({
     <div
       className={cn(
         'relative overflow-hidden bg-muted/80 flex-shrink-0',
+        size === undefined && 'w-full aspect-square',
         roundedClasses[rounded],
         shadow && 'shadow-xl shadow-black/40',
         onClick && 'cursor-pointer group/artwork',
         className,
       )}
-      style={{ width: size, height: size }}
+      // rem so the artwork follows the user's UI scale (dynamic value → inline style)
+      style={
+        size !== undefined
+          ? { width: `${size / 16}rem`, height: `${size / 16}rem` }
+          : undefined
+      }
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
