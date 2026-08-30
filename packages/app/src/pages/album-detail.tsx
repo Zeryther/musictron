@@ -81,9 +81,7 @@ export function AlbumDetailPage() {
           shadow
         />
         <div className="flex flex-col justify-end min-w-0">
-          <p className="eyebrow mb-1.5">
-            Album
-          </p>
+          <p className="eyebrow mb-1.5">Album</p>
           <h1 className="text-3xl font-bold tracking-tight mb-1 line-clamp-2 leading-tight">
             {attrs?.name}
           </h1>

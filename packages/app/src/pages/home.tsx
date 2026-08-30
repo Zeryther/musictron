@@ -106,7 +106,7 @@ export function HomePage() {
               <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
                 {items.slice(0, 8).map((item: MusicKit.Resource) => (
                   <MediaCard
-                  size="md"
+                    size="md"
                     key={item.id}
                     id={item.id}
                     type={item.type === 'albums' ? 'album' : 'playlist'}

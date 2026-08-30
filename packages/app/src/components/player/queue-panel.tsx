@@ -33,9 +33,7 @@ export function QueuePanel() {
           {/* Now Playing */}
           {nowPlaying && (
             <div className="mb-5">
-              <h4 className="eyebrow px-2 mb-2">
-                Now Playing
-              </h4>
+              <h4 className="eyebrow px-2 mb-2">Now Playing</h4>
               <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-primary/[0.06]">
                 <Artwork
                   src={nowPlaying.artworkUrl}

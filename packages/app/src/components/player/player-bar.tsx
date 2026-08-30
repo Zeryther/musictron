@@ -158,7 +158,10 @@ export function PlayerBar() {
               onClick={skipPrevious}
               aria-label="Previous track"
             >
-              <SkipBack className="w-[1.125rem] h-[1.125rem]" fill="currentColor" />
+              <SkipBack
+                className="w-[1.125rem] h-[1.125rem]"
+                fill="currentColor"
+              />
             </Button>
 
             <button
@@ -182,7 +185,10 @@ export function PlayerBar() {
               onClick={skipNext}
               aria-label="Next track"
             >
-              <SkipForward className="w-[1.125rem] h-[1.125rem]" fill="currentColor" />
+              <SkipForward
+                className="w-[1.125rem] h-[1.125rem]"
+                fill="currentColor"
+              />
             </Button>
 
             <Button

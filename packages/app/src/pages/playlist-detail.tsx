@@ -147,9 +147,7 @@ export function PlaylistDetailPage() {
           shadow
         />
         <div className="flex flex-col justify-end min-w-0">
-          <p className="eyebrow mb-1.5">
-            Playlist
-          </p>
+          <p className="eyebrow mb-1.5">Playlist</p>
           <h1 className="text-3xl font-bold tracking-tight mb-1 line-clamp-2 leading-tight">
             {attrs?.name}
           </h1>

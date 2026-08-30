@@ -46,15 +46,42 @@ export default {
         ring: 'hsl(var(--ring))',
       },
       fontSize: {
-        '2xs': ['clamp(0.6875rem, 0.5625rem + 0.15625vw, 0.75rem)', { lineHeight: '1.35' }], // 11px → 12px
-        xs: ['clamp(0.75rem, 0.625rem + 0.15625vw, 0.8125rem)', { lineHeight: '1.35' }], // 12px → 13px
-        sm: ['clamp(0.8125rem, 0.625rem + 0.234375vw, 0.90625rem)', { lineHeight: '1.4' }], // 13px → 14.5px
-        base: ['clamp(0.9375rem, 0.75rem + 0.234375vw, 1.03125rem)', { lineHeight: '1.45' }], // 15px → 16.5px
-        lg: ['clamp(1.0625rem, 0.875rem + 0.234375vw, 1.15625rem)', { lineHeight: '1.4' }], // 17px → 18.5px
-        xl: ['clamp(1.25rem, 1rem + 0.3125vw, 1.375rem)', { lineHeight: '1.3' }], // 20px → 22px
-        '2xl': ['clamp(1.375rem, 1.0625rem + 0.390625vw, 1.53125rem)', { lineHeight: '1.25' }], // 22px → 24.5px
-        '3xl': ['clamp(1.75rem, 1.3125rem + 0.546875vw, 1.96875rem)', { lineHeight: '1.2' }], // 28px → 31.5px
-        '4xl': ['clamp(2.25rem, 1.625rem + 0.78125vw, 2.5625rem)', { lineHeight: '1.1' }], // 36px → 41px
+        '2xs': [
+          'clamp(0.6875rem, 0.5625rem + 0.15625vw, 0.75rem)',
+          { lineHeight: '1.35' },
+        ], // 11px → 12px
+        xs: [
+          'clamp(0.75rem, 0.625rem + 0.15625vw, 0.8125rem)',
+          { lineHeight: '1.35' },
+        ], // 12px → 13px
+        sm: [
+          'clamp(0.8125rem, 0.625rem + 0.234375vw, 0.90625rem)',
+          { lineHeight: '1.4' },
+        ], // 13px → 14.5px
+        base: [
+          'clamp(0.9375rem, 0.75rem + 0.234375vw, 1.03125rem)',
+          { lineHeight: '1.45' },
+        ], // 15px → 16.5px
+        lg: [
+          'clamp(1.0625rem, 0.875rem + 0.234375vw, 1.15625rem)',
+          { lineHeight: '1.4' },
+        ], // 17px → 18.5px
+        xl: [
+          'clamp(1.25rem, 1rem + 0.3125vw, 1.375rem)',
+          { lineHeight: '1.3' },
+        ], // 20px → 22px
+        '2xl': [
+          'clamp(1.375rem, 1.0625rem + 0.390625vw, 1.53125rem)',
+          { lineHeight: '1.25' },
+        ], // 22px → 24.5px
+        '3xl': [
+          'clamp(1.75rem, 1.3125rem + 0.546875vw, 1.96875rem)',
+          { lineHeight: '1.2' },
+        ], // 28px → 31.5px
+        '4xl': [
+          'clamp(2.25rem, 1.625rem + 0.78125vw, 2.5625rem)',
+          { lineHeight: '1.1' },
+        ], // 36px → 41px
       },
       borderRadius: {
         lg: 'var(--radius)',

@@ -87,9 +87,7 @@ export function MediaCard({
         </button>
       </div>
       <div className="min-w-0 px-0.5">
-        <p className="text-sm font-medium line-clamp-1 leading-tight">
-          {name}
-        </p>
+        <p className="text-sm font-medium line-clamp-1 leading-tight">{name}</p>
         {subtitle && (
           <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5 leading-tight">
             {subtitle}

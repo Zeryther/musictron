@@ -121,9 +121,7 @@ export function SearchPage() {
       {!loading && !debouncedQuery && (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
           <SearchIcon className="w-10 h-10 mb-3" />
-          <p className="text-base text-muted-foreground">
-            Search Apple Music
-          </p>
+          <p className="text-base text-muted-foreground">Search Apple Music</p>
         </div>
       )}
 

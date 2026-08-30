@@ -78,9 +78,7 @@ export function ArtistDetailPage() {
             shadow
           />
           <div className="min-w-0 pb-1">
-            <p className="eyebrow mb-1.5">
-              Artist
-            </p>
+            <p className="eyebrow mb-1.5">Artist</p>
             <h1 className="text-3xl font-bold tracking-tight leading-tight mb-2 line-clamp-2">
               {attrs?.name}
             </h1>
@@ -198,9 +196,7 @@ export function ArtistDetailPage() {
       {/* Albums */}
       {albums.length > 0 && (
         <section className="mb-10 animate-fade-in-up stagger-2">
-          <h2 className="text-xl font-semibold tracking-tight mb-4">
-            Albums
-          </h2>
+          <h2 className="text-xl font-semibold tracking-tight mb-4">Albums</h2>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
             {albums.map((album: MusicKit.Resource) => (
               <MediaCard
@@ -273,9 +269,7 @@ export function ArtistDetailPage() {
       {/* Biography (from Last.fm) */}
       {lastfmArtist?.bio && (
         <section className="mb-10 animate-fade-in-up stagger-5">
-          <h2 className="text-xl font-semibold tracking-tight mb-4">
-            About
-          </h2>
+          <h2 className="text-xl font-semibold tracking-tight mb-4">About</h2>
           <Card className="p-5">
             <p
               className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-line ${
