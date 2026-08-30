@@ -27,14 +27,14 @@ export function WindowControls() {
     <div className="flex items-center no-drag">
       <button
         onClick={() => adapter.windowMinimize?.()}
-        className="inline-flex items-center justify-center w-[46px] h-8 hover:bg-foreground/10 transition-colors"
+        className="inline-flex items-center justify-center w-[2.875rem] h-8 hover:bg-foreground/10 transition-colors"
         aria-label="Minimize"
       >
         <Minus className="w-4 h-4 text-foreground/80" />
       </button>
       <button
         onClick={() => adapter.windowMaximize?.()}
-        className="inline-flex items-center justify-center w-[46px] h-8 hover:bg-foreground/10 transition-colors"
+        className="inline-flex items-center justify-center w-[2.875rem] h-8 hover:bg-foreground/10 transition-colors"
         aria-label={isMaximized ? 'Restore' : 'Maximize'}
       >
         {isMaximized ? (
@@ -45,7 +45,7 @@ export function WindowControls() {
       </button>
       <button
         onClick={() => adapter.windowClose?.()}
-        className="inline-flex items-center justify-center w-[46px] h-8 hover:bg-red-500 transition-colors"
+        className="inline-flex items-center justify-center w-[2.875rem] h-8 hover:bg-red-500 transition-colors"
         aria-label="Close"
       >
         <X className="w-4 h-4 text-foreground/80" />
