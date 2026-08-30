@@ -1,6 +1,7 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Artwork } from '@/components/ui/artwork'
+import { Card } from '@/components/ui/card'
 import { SongRow } from '@/components/ui/song-row'
 import { Button } from '@/components/ui/button'
 import { useAlbumDetail } from '@/hooks/use-albums'
@@ -45,7 +46,7 @@ export function AlbumDetailPage() {
 
   if (!album) {
     return (
-      <div className="text-center py-24 text-muted-foreground text-[15px]">
+      <div className="text-center py-24 text-muted-foreground text-base">
         Album not found
       </div>
     )
@@ -64,7 +65,7 @@ export function AlbumDetailPage() {
       {/* Back */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors duration-100 mb-5"
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors duration-100 mb-5"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
@@ -80,13 +81,13 @@ export function AlbumDetailPage() {
           shadow
         />
         <div className="flex flex-col justify-end min-w-0">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">
+          <p className="eyebrow mb-1.5">
             Album
           </p>
-          <h1 className="text-[28px] font-bold tracking-tight mb-1 line-clamp-2 leading-tight">
+          <h1 className="text-3xl font-bold tracking-tight mb-1 line-clamp-2 leading-tight">
             {attrs?.name}
           </h1>
-          <p className="text-[16px] text-muted-foreground mb-1.5 line-clamp-1">
+          <p className="text-lg text-muted-foreground mb-1.5 line-clamp-1">
             {primaryArtistId ? (
               <button
                 onClick={() => navigate(`/artist/${primaryArtistId}`)}
@@ -98,7 +99,7 @@ export function AlbumDetailPage() {
               attrs?.artistName
             )}
           </p>
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground mb-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
             {attrs?.genreNames?.[0] && <span>{attrs.genreNames[0]}</span>}
             {attrs?.releaseDate && (
               <>
@@ -118,7 +119,7 @@ export function AlbumDetailPage() {
               {lastfmAlbum?.tags.slice(0, 5).map((tag) => (
                 <span
                   key={tag}
-                  className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-muted-foreground/90"
+                  className="text-2xs px-2 py-0.5 rounded-full bg-foreground/[0.06] text-muted-foreground/90"
                 >
                   {tag}
                 </span>
@@ -128,7 +129,7 @@ export function AlbumDetailPage() {
 
           {/* Last.fm stats */}
           {lastfmAlbum && (
-            <div className="flex items-center gap-3 text-[12px] text-muted-foreground mb-5">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-5">
               {lastfmAlbum.listeners != null && (
                 <span className="flex items-center gap-1">
                   <Users className="w-3 h-3" />
@@ -156,7 +157,7 @@ export function AlbumDetailPage() {
           {!lastfmAlbum && <div className="mb-3" />}
 
           {attrs?.editorialNotes?.short && (
-            <p className="text-[13px] text-muted-foreground line-clamp-2 mb-5 max-w-md leading-relaxed">
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-5 max-w-md leading-relaxed">
               {attrs.editorialNotes.short}
             </p>
           )}
@@ -212,20 +213,20 @@ export function AlbumDetailPage() {
 
       {/* Last.fm wiki (shown if no Apple editorial notes) */}
       {!attrs?.editorialNotes?.short && lastfmAlbum?.wiki && (
-        <div className="mt-8 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-          <p className="text-[13px] text-muted-foreground leading-relaxed line-clamp-4">
+        <Card className="mt-8 p-5">
+          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
             {lastfmAlbum.wiki.summary}
           </p>
           <a
             href={lastfmAlbum.url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/70 hover:text-muted-foreground mt-3 transition-colors"
+            className="inline-flex items-center gap-1 text-2xs text-muted-foreground/70 hover:text-muted-foreground mt-3 transition-colors"
           >
             Source: Last.fm
             <ExternalLink className="w-2.5 h-2.5" />
           </a>
-        </div>
+        </Card>
       )}
     </div>
   )

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Card } from '@/components/ui/card'
 import { MediaCard } from '@/components/ui/media-card'
 import { SongRow } from '@/components/ui/song-row'
 import { useAuthStore } from '@/stores/auth-store'
@@ -33,7 +34,7 @@ export function HomePage() {
         <div className="flex gap-5">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="space-y-2.5">
-              <div className="w-[180px] h-[180px] bg-muted/50 rounded-xl animate-pulse" />
+              <div className="w-[11.25rem] h-[11.25rem] bg-muted/50 rounded-xl animate-pulse" />
               <div className="h-3.5 w-32 bg-muted/50 rounded animate-pulse" />
               <div className="h-3 w-24 bg-muted/40 rounded animate-pulse" />
             </div>
@@ -46,7 +47,7 @@ export function HomePage() {
   return (
     <div className="animate-fade-in">
       {/* Greeting */}
-      <h1 className="text-[28px] font-bold tracking-tight mb-8">
+      <h1 className="text-3xl font-bold tracking-tight mb-8">
         {getGreeting()}
       </h1>
 
@@ -54,12 +55,13 @@ export function HomePage() {
         {/* Recently Played */}
         {recentlyPlayed.length > 0 && (
           <section className="animate-fade-in-up stagger-1">
-            <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+            <h2 className="text-xl font-semibold tracking-tight mb-4">
               Recently Played
             </h2>
             <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
               {recentlyPlayed.map((item: MusicKit.Resource) => (
                 <MediaCard
+                  size="md"
                   key={item.id}
                   id={item.id}
                   type={item.type === 'albums' ? 'album' : 'playlist'}
@@ -92,11 +94,11 @@ export function HomePage() {
               className="animate-fade-in-up stagger-2"
             >
               <div className="mb-4">
-                <h2 className="text-[20px] font-semibold tracking-tight line-clamp-1">
+                <h2 className="text-xl font-semibold tracking-tight line-clamp-1">
                   {rec.attributes?.title?.stringForDisplay || 'For You'}
                 </h2>
                 {rec.attributes?.reason?.stringForDisplay && (
-                  <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-1">
+                  <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
                     {rec.attributes.reason.stringForDisplay}
                   </p>
                 )}
@@ -104,6 +106,7 @@ export function HomePage() {
               <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
                 {items.slice(0, 8).map((item: MusicKit.Resource) => (
                   <MediaCard
+                  size="md"
                     key={item.id}
                     id={item.id}
                     type={item.type === 'albums' ? 'album' : 'playlist'}
@@ -131,13 +134,13 @@ export function HomePage() {
         {topSongs.length > 0 && (
           <section className="animate-fade-in-up stagger-3">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[20px] font-semibold tracking-tight">
+              <h2 className="text-xl font-semibold tracking-tight">
                 Top Songs
               </h2>
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-primary text-[13px] gap-0.5"
+                className="text-primary text-sm gap-0.5"
                 onClick={() => navigate('/browse')}
               >
                 See All <ChevronRight className="w-3.5 h-3.5" />
@@ -172,13 +175,13 @@ export function HomePage() {
         {topAlbums.length > 0 && (
           <section className="animate-fade-in-up stagger-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[20px] font-semibold tracking-tight">
+              <h2 className="text-xl font-semibold tracking-tight">
                 Top Albums
               </h2>
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-primary text-[13px] gap-0.5"
+                className="text-primary text-sm gap-0.5"
                 onClick={() => navigate('/browse')}
               >
                 See All <ChevronRight className="w-3.5 h-3.5" />
@@ -187,6 +190,7 @@ export function HomePage() {
             <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
               {topAlbums.slice(0, 8).map((album: MusicKit.Resource) => (
                 <MediaCard
+                  size="md"
                   key={album.id}
                   id={album.id}
                   type="album"
@@ -203,12 +207,13 @@ export function HomePage() {
         {/* Featured Playlists */}
         {topPlaylists.length > 0 && (
           <section className="animate-fade-in-up stagger-5">
-            <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+            <h2 className="text-xl font-semibold tracking-tight mb-4">
               Featured Playlists
             </h2>
             <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-none -mx-8 px-8">
               {topPlaylists.slice(0, 8).map((playlist: MusicKit.Resource) => (
                 <MediaCard
+                  size="md"
                   key={playlist.id}
                   id={playlist.id}
                   type="playlist"
@@ -225,17 +230,17 @@ export function HomePage() {
         {/* Not authorized */}
         {!isAuthorized && !loading && (
           <section className="animate-fade-in-up stagger-2">
-            <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10">
-              <h3 className="text-[17px] font-semibold mb-1.5">
+            <Card className="p-8 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/10">
+              <h3 className="text-lg font-semibold mb-1.5">
                 Sign in to Apple Music
               </h3>
-              <p className="text-[13px] text-muted-foreground mb-5 max-w-sm">
+              <p className="text-sm text-muted-foreground mb-5 max-w-sm">
                 Get personalized recommendations, access your library, and more.
               </p>
               <Button onClick={() => navigate('/settings')}>
                 Set Up Apple Music
               </Button>
-            </div>
+            </Card>
           </section>
         )}
       </div>

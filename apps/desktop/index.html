@@ -16,6 +16,10 @@
           ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
           : t;
         document.documentElement.classList.add(d);
+        var z = s.state && s.state.uiScale;
+        if (typeof z === 'number' && isFinite(z) && z !== 1) {
+          document.documentElement.style.fontSize = (z * 100) + '%';
+        }
       } catch(e) { document.documentElement.classList.add('dark'); }
     </script>
   </head>

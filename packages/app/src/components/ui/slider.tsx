@@ -24,13 +24,13 @@ const Slider = React.forwardRef<
     >
       <SliderPrimitive.Track
         className={cn(
-          'relative h-[3px] w-full grow overflow-hidden rounded-full bg-white/[0.08] transition-[height] duration-150 group-hover/slider:h-1',
+          'relative h-[3px] w-full grow overflow-hidden rounded-full bg-foreground/[0.08] transition-[height] duration-150 group-hover/slider:h-1',
           trackClassName,
         )}
       >
         <SliderPrimitive.Range
           className={cn(
-            'absolute h-full bg-white/60 transition-colors duration-150 group-hover/slider:bg-foreground',
+            'absolute h-full bg-foreground/60 transition-colors duration-150 group-hover/slider:bg-foreground',
             rangeClassName,
           )}
         />

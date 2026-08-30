@@ -44,7 +44,7 @@ export function BrowsePage() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-[28px] font-bold tracking-tight mb-6">Browse</h1>
+      <h1 className="text-3xl font-bold tracking-tight mb-6">Browse</h1>
 
       <Tabs defaultValue="charts" className="space-y-6">
         <TabsList>
@@ -61,7 +61,7 @@ export function BrowsePage() {
             <div className="space-y-10">
               {topSongs.length > 0 && (
                 <section className="animate-fade-in-up stagger-1">
-                  <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+                  <h2 className="text-xl font-semibold tracking-tight mb-4">
                     Top Songs
                   </h2>
                   <div className="space-y-px">
@@ -91,10 +91,10 @@ export function BrowsePage() {
 
               {topAlbums.length > 0 && (
                 <section className="animate-fade-in-up stagger-2">
-                  <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+                  <h2 className="text-xl font-semibold tracking-tight mb-4">
                     Top Albums
                   </h2>
-                  <div className="flex flex-wrap gap-5">
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
                     {topAlbums.map((album: MusicKit.Resource) => (
                       <MediaCard
                         key={album.id}
@@ -112,10 +112,10 @@ export function BrowsePage() {
 
               {topPlaylists.length > 0 && (
                 <section className="animate-fade-in-up stagger-3">
-                  <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+                  <h2 className="text-xl font-semibold tracking-tight mb-4">
                     Top Playlists
                   </h2>
-                  <div className="flex flex-wrap gap-5">
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
                     {topPlaylists.map((playlist: MusicKit.Resource) => (
                       <MediaCard
                         key={playlist.id}
@@ -145,7 +145,7 @@ export function BrowsePage() {
                       selectedGenre === genre.id ? null : genre.id,
                     )
                   }
-                  className={`relative px-4 py-3 rounded-xl text-white font-semibold text-[13px] text-left overflow-hidden transition-all duration-150 hover:brightness-110 active:scale-[0.98] ${
+                  className={`relative px-4 py-3 rounded-xl text-white font-semibold text-sm text-left overflow-hidden transition-all duration-150 hover:brightness-110 active:scale-[0.98] ${
                     selectedGenre === genre.id
                       ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-background scale-[0.98]'
                       : ''
@@ -170,7 +170,7 @@ export function BrowsePage() {
                       if (!genreSongs.length) return null
                       return (
                         <section>
-                          <h3 className="text-[17px] font-semibold tracking-tight mb-3">
+                          <h3 className="text-lg font-semibold tracking-tight mb-3">
                             Top Songs
                           </h3>
                           <div className="space-y-px">
@@ -209,10 +209,10 @@ export function BrowsePage() {
                       if (!genreAlbums.length) return null
                       return (
                         <section>
-                          <h3 className="text-[17px] font-semibold tracking-tight mb-3">
+                          <h3 className="text-lg font-semibold tracking-tight mb-3">
                             Top Albums
                           </h3>
-                          <div className="flex flex-wrap gap-5">
+                          <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
                             {genreAlbums
                               .slice(0, 10)
                               .map((album: MusicKit.Resource) => (

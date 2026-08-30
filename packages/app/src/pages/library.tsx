@@ -89,10 +89,10 @@ export function LibraryPage() {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
         <Music className="w-12 h-12 mb-3" />
-        <h2 className="text-[17px] font-semibold text-foreground mb-1">
+        <h2 className="text-lg font-semibold text-foreground mb-1">
           Sign in to Apple Music
         </h2>
-        <p className="text-[13px] text-muted-foreground mb-5">
+        <p className="text-sm text-muted-foreground mb-5">
           Access your library by signing in with your Apple Music account.
         </p>
         <Button onClick={() => navigate('/settings')}>Set Up</Button>
@@ -136,7 +136,7 @@ export function LibraryPage() {
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-[28px] font-bold tracking-tight">
+        <h1 className="text-3xl font-bold tracking-tight">
           {sectionTitles[section as LibrarySection]}
         </h1>
         <div className="flex gap-2">
@@ -216,7 +216,7 @@ export function LibraryPage() {
 
           {/* Albums / Recently Added */}
           {(section === 'albums' || section === 'recently-added') && (
-            <div className="flex flex-wrap gap-5">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
               {items.map((item: MusicKit.Resource) => (
                 <MediaCard
                   key={item.id}
@@ -266,7 +266,7 @@ export function LibraryPage() {
                       size={148}
                       rounded="full"
                     />
-                    <p className="text-[13px] font-medium text-center w-[148px] line-clamp-1">
+                    <p className="text-sm font-medium text-center w-[9.25rem] line-clamp-1">
                       {artist.name}
                     </p>
                   </div>
@@ -286,7 +286,7 @@ export function LibraryPage() {
 
           {/* Playlists */}
           {section === 'playlists' && (
-            <div className="flex flex-wrap gap-5">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
               {playlists.map((playlist) => (
                 <MediaCard
                   key={playlist.id}
@@ -306,7 +306,7 @@ export function LibraryPage() {
             items.length === 0 && (
               <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
                 <Music className="w-10 h-10 mb-3" />
-                <p className="text-[15px] text-muted-foreground">
+                <p className="text-base text-muted-foreground">
                   No items in your library
                 </p>
               </div>
@@ -315,7 +315,7 @@ export function LibraryPage() {
           {section === 'artists' && artists.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
               <Music className="w-10 h-10 mb-3" />
-              <p className="text-[15px] text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 No artists in your library
               </p>
             </div>
@@ -324,10 +324,10 @@ export function LibraryPage() {
           {section === 'playlists' && playlists.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
               <Music className="w-10 h-10 mb-3" />
-              <p className="text-[15px] text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 No playlists yet
               </p>
-              <p className="text-[13px] mt-0.5">Create one to get started</p>
+              <p className="text-sm mt-0.5">Create one to get started</p>
             </div>
           )}
         </>

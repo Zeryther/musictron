@@ -11,7 +11,8 @@ interface MediaCardProps {
   subtitle?: string
   artworkUrl?: string
   className?: string
-  size?: 'sm' | 'md' | 'lg'
+  /** Fixed rem widths for carousels; 'fluid' fills the grid cell. */
+  size?: 'sm' | 'md' | 'lg' | 'fluid'
   onClick?: () => void
 }
 
@@ -22,15 +23,24 @@ export function MediaCard({
   subtitle,
   artworkUrl,
   className,
-  size = 'md',
+  size = 'fluid',
   onClick,
 }: MediaCardProps) {
   const { playAlbum, playPlaylist } = usePlayerStore()
 
-  const sizeMap = {
-    sm: 148,
-    md: 180,
-    lg: 220,
+  const widthClasses = {
+    sm: 'w-[9.25rem]',
+    md: 'w-[11.25rem]',
+    lg: 'w-[13.75rem]',
+    fluid: 'w-full',
+  }
+
+  // Only used to request an appropriately sized image from the artwork CDN
+  const artworkResolution = {
+    sm: 296,
+    md: 360,
+    lg: 440,
+    fluid: 440,
   }
 
   const handlePlay = (e: React.MouseEvent) => {
@@ -44,8 +54,11 @@ export function MediaCard({
 
   return (
     <div
-      className={cn('group cursor-pointer flex flex-col gap-2 shrink-0', className)}
-      style={{ width: sizeMap[size] }}
+      className={cn(
+        'group cursor-pointer flex flex-col gap-2 shrink-0',
+        widthClasses[size],
+        className,
+      )}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -58,9 +71,8 @@ export function MediaCard({
     >
       <div className="relative rounded-xl overflow-hidden">
         <Artwork
-          src={formatArtworkUrl(artworkUrl, sizeMap[size] * 2)}
+          src={formatArtworkUrl(artworkUrl, artworkResolution[size])}
           alt={name}
-          size={sizeMap[size]}
           rounded="none"
           shadow
         />
@@ -75,11 +87,11 @@ export function MediaCard({
         </button>
       </div>
       <div className="min-w-0 px-0.5">
-        <p className="text-[13px] font-medium line-clamp-1 leading-tight">
+        <p className="text-sm font-medium line-clamp-1 leading-tight">
           {name}
         </p>
         {subtitle && (
-          <p className="text-[12px] text-muted-foreground line-clamp-1 mt-0.5 leading-tight">
+          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5 leading-tight">
             {subtitle}
           </p>
         )}

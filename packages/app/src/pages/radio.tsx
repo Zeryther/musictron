@@ -26,8 +26,8 @@ export function RadioPage() {
   return (
     <div className="animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-[28px] font-bold tracking-tight">Radio</h1>
-        <p className="text-[13px] text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold tracking-tight">Radio</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Live and on-demand radio stations
         </p>
       </div>
@@ -35,7 +35,7 @@ export function RadioPage() {
       {/* Stations */}
       {stations.length > 0 && (
         <section className="mb-10 animate-fade-in-up stagger-1">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+          <h2 className="text-xl font-semibold tracking-tight mb-4">
             Stations
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -53,10 +53,10 @@ export function RadioPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 <div className="absolute bottom-0 left-0 p-4">
-                  <p className="text-white font-semibold text-[13px] leading-tight line-clamp-1">
+                  <p className="text-white font-semibold text-sm leading-tight line-clamp-1">
                     {station.attributes?.name}
                   </p>
-                  <p className="text-white/70 text-[12px] mt-0.5 line-clamp-1">
+                  <p className="text-white/70 text-xs mt-0.5 line-clamp-1">
                     {station.attributes?.editorialNotes?.short ||
                       'Radio Station'}
                   </p>
@@ -70,10 +70,10 @@ export function RadioPage() {
       {/* Featured Mixes fallback */}
       {stations.length === 0 && featuredPlaylists.length > 0 && (
         <section className="animate-fade-in-up stagger-1">
-          <h2 className="text-[20px] font-semibold tracking-tight mb-4">
+          <h2 className="text-xl font-semibold tracking-tight mb-4">
             Featured Mixes
           </h2>
-          <div className="flex flex-wrap gap-5">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-5">
             {featuredPlaylists.map((playlist: MusicKit.Resource) => (
               <MediaCard
                 key={playlist.id}
@@ -93,10 +93,10 @@ export function RadioPage() {
       {stations.length === 0 && featuredPlaylists.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground/70">
           <RadioIcon className="w-12 h-12 mb-3" />
-          <p className="text-[15px] text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             No radio stations available
           </p>
-          <p className="text-[13px] mt-0.5">Browse for music instead</p>
+          <p className="text-sm mt-0.5">Browse for music instead</p>
         </div>
       )}
     </div>

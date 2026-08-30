@@ -111,7 +111,7 @@ export function PlaylistDetailPage() {
 
   if (!playlist) {
     return (
-      <div className="text-center py-24 text-muted-foreground text-[15px]">
+      <div className="text-center py-24 text-muted-foreground text-base">
         Playlist not found
       </div>
     )
@@ -131,7 +131,7 @@ export function PlaylistDetailPage() {
       {/* Back */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors duration-100 mb-5"
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors duration-100 mb-5"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
@@ -147,18 +147,18 @@ export function PlaylistDetailPage() {
           shadow
         />
         <div className="flex flex-col justify-end min-w-0">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">
+          <p className="eyebrow mb-1.5">
             Playlist
           </p>
-          <h1 className="text-[28px] font-bold tracking-tight mb-1 line-clamp-2 leading-tight">
+          <h1 className="text-3xl font-bold tracking-tight mb-1 line-clamp-2 leading-tight">
             {attrs?.name}
           </h1>
           {attrs?.curatorName && (
-            <p className="text-[16px] text-muted-foreground mb-1.5 line-clamp-1">
+            <p className="text-lg text-muted-foreground mb-1.5 line-clamp-1">
               {attrs.curatorName}
             </p>
           )}
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground mb-5">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-5">
             <span>
               {tracks.length}
               {hasNextPage ? '+' : ''} songs
@@ -167,7 +167,7 @@ export function PlaylistDetailPage() {
           </div>
 
           {attrs?.description?.short && (
-            <p className="text-[13px] text-muted-foreground line-clamp-2 mb-5 max-w-md leading-relaxed">
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-5 max-w-md leading-relaxed">
               {attrs.description.short}
             </p>
           )}
@@ -263,8 +263,8 @@ export function PlaylistDetailPage() {
 
       {tracks.length === 0 && (
         <div className="text-center py-20 text-muted-foreground">
-          <p className="text-[15px]">This playlist is empty</p>
-          <p className="text-[13px] mt-0.5">Search for songs to add</p>
+          <p className="text-base">This playlist is empty</p>
+          <p className="text-sm mt-0.5">Search for songs to add</p>
         </div>
       )}
 

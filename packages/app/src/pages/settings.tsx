@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/auth-store'
 import { useLastfmStore } from '@/stores/lastfm-store'
-import { useThemeStore, type Theme } from '@/stores/theme-store'
+import {
+  useThemeStore,
+  UI_SCALE_OPTIONS,
+  type Theme,
+} from '@/stores/theme-store'
 
 import {
   Music2,
@@ -42,7 +47,7 @@ export function SettingsPage() {
     fetchTokenFromServer,
   } = useAuthStore()
 
-  const { theme, setTheme } = useThemeStore()
+  const { theme, setTheme, uiScale, setUiScale } = useThemeStore()
 
   const [tokenInput, setTokenInput] = useState(
     tokenSource === 'manual' ? developerToken : '',
@@ -94,29 +99,29 @@ export function SettingsPage() {
 
   return (
     <div className="max-w-2xl animate-fade-in">
-      <h1 className="text-[28px] font-bold tracking-tight mb-8">Settings</h1>
+      <h1 className="text-3xl font-bold tracking-tight mb-8">Settings</h1>
 
       <div className="space-y-5">
         {/* Server Connection */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-5">
+        <Card className="space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
               <Server className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <h2 className="text-[16px] font-semibold">Musictron Server</h2>
-              <p className="text-[12px] text-muted-foreground">
+              <h2 className="text-lg font-semibold">Musictron Server</h2>
+              <p className="text-xs text-muted-foreground">
                 Connects to a server that provides MusicKit tokens
               </p>
             </div>
             {serverConfigured === true && (
-              <div className="flex items-center gap-1.5 text-green-500 text-[12px]">
+              <div className="flex items-center gap-1.5 text-green-500 text-xs">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Ready
               </div>
             )}
             {serverConfigured === false && (
-              <div className="flex items-center gap-1.5 text-yellow-500 text-[12px]">
+              <div className="flex items-center gap-1.5 text-yellow-500 text-xs">
                 <AlertCircle className="w-3.5 h-3.5" />
                 Unavailable
               </div>
@@ -126,11 +131,11 @@ export function SettingsPage() {
           <div className="space-y-2.5">
             <div className="flex items-center gap-2">
               <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-              <label htmlFor="server-url" className="text-[13px] font-medium">
+              <label htmlFor="server-url" className="text-sm font-medium">
                 Server URL
               </label>
             </div>
-            <p className="text-[12px] text-muted-foreground leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               The official Musictron server is used by default. Self-hosters can
               point this to their own instance.
             </p>
@@ -140,7 +145,7 @@ export function SettingsPage() {
                 value={serverInput}
                 onChange={(e) => setServerInput(e.target.value)}
                 placeholder="https://musictron.example.com"
-                className="font-mono text-[12px] bg-white/[0.04] border-white/[0.06]"
+                className="font-mono text-xs bg-foreground/[0.04] border-foreground/[0.06]"
               />
               <Button
                 onClick={handleSaveServer}
@@ -173,24 +178,24 @@ export function SettingsPage() {
               Fetch Token from Server
             </Button>
           )}
-        </div>
+        </Card>
 
         {/* Apple Music */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-5">
+        <Card className="space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#fc3c44] to-[#d32f3a] flex items-center justify-center shadow-lg shadow-red-500/20">
               <Music2 className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <h2 className="text-[16px] font-semibold">Apple Music</h2>
-              <p className="text-[12px] text-muted-foreground">
+              <h2 className="text-lg font-semibold">Apple Music</h2>
+              <p className="text-xs text-muted-foreground">
                 {tokenSource === 'server'
                   ? 'Token provided by server'
                   : 'Connect your Apple Music account'}
               </p>
             </div>
             {isAuthorized && (
-              <div className="flex items-center gap-1.5 text-green-500 text-[12px]">
+              <div className="flex items-center gap-1.5 text-green-500 text-xs">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Connected
               </div>
@@ -204,12 +209,12 @@ export function SettingsPage() {
                 <Key className="w-3.5 h-3.5 text-muted-foreground" />
                 <label
                   htmlFor="developer-token"
-                  className="text-[13px] font-medium"
+                  className="text-sm font-medium"
                 >
                   Developer Token (JWT)
                 </label>
               </div>
-              <p className="text-[12px] text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 If no server is available, you can provide your own MusicKit
                 developer token. Requires an{' '}
                 <a
@@ -230,7 +235,7 @@ export function SettingsPage() {
                   value={tokenInput}
                   onChange={(e) => setTokenInput(e.target.value)}
                   placeholder="eyJhbGciOiJFUzI1NiIs..."
-                  className="font-mono text-[12px] bg-white/[0.04] border-white/[0.06]"
+                  className="font-mono text-xs bg-foreground/[0.04] border-foreground/[0.06]"
                 />
                 <Button
                   onClick={handleSaveToken}
@@ -251,7 +256,7 @@ export function SettingsPage() {
 
           {/* Server token info */}
           {serverConfigured && tokenSource === 'server' && developerToken && (
-            <div className="flex items-center gap-2 text-[12px] text-muted-foreground bg-white/[0.03] rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-foreground/[0.03] rounded-lg p-3">
               <Server className="w-3.5 h-3.5 flex-shrink-0" />
               Developer token is managed by the Musictron server. It will be
               refreshed automatically.
@@ -260,7 +265,7 @@ export function SettingsPage() {
 
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 text-[12px] text-destructive bg-destructive/10 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 rounded-lg p-3">
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
               {error}
             </div>
@@ -288,20 +293,20 @@ export function SettingsPage() {
               </Button>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Last.fm */}
         <LastfmSettings />
 
         {/* Appearance */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-5">
+        <Card className="space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
               <Palette className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-[16px] font-semibold">Appearance</h2>
-              <p className="text-[12px] text-muted-foreground">
+              <h2 className="text-lg font-semibold">Appearance</h2>
+              <p className="text-xs text-muted-foreground">
                 Choose how Musictron looks
               </p>
             </div>
@@ -325,16 +330,40 @@ export function SettingsPage() {
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="text-[13px] font-medium">{label}</span>
+                <span className="text-sm font-medium">{label}</span>
               </button>
             ))}
           </div>
-        </div>
+
+          <div className="space-y-2.5">
+            <div>
+              <h3 className="text-sm font-medium">UI Scale</h3>
+              <p className="text-xs text-muted-foreground">
+                Adjust the size of the entire interface
+              </p>
+            </div>
+            <div className="grid grid-cols-4 gap-2.5">
+              {UI_SCALE_OPTIONS.map((scale) => (
+                <button
+                  key={scale}
+                  onClick={() => setUiScale(scale)}
+                  className={`p-3 rounded-xl border text-sm font-medium transition-all duration-150 ${
+                    uiScale === scale
+                      ? 'border-primary bg-primary/[0.08] text-foreground'
+                      : 'border-border text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+                  }`}
+                >
+                  {Math.round(scale * 100)}%
+                </button>
+              ))}
+            </div>
+          </div>
+        </Card>
 
         {/* About */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-2.5">
-          <h2 className="text-[16px] font-semibold">About</h2>
-          <div className="space-y-1.5 text-[13px] text-muted-foreground">
+        <Card className="space-y-2.5">
+          <h2 className="text-lg font-semibold">About</h2>
+          <div className="space-y-1.5 text-sm text-muted-foreground">
             <p>
               <span className="font-medium text-foreground">Musictron</span>{' '}
               v1.0.0
@@ -343,12 +372,12 @@ export function SettingsPage() {
               A beautiful Apple Music client built with React and MusicKit JS.
             </p>
           </div>
-        </div>
+        </Card>
 
         {/* Keyboard Shortcuts */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-3">
-          <h2 className="text-[16px] font-semibold">Keyboard Shortcuts</h2>
-          <div className="grid grid-cols-2 gap-y-2.5 text-[13px]">
+        <Card className="space-y-3">
+          <h2 className="text-lg font-semibold">Keyboard Shortcuts</h2>
+          <div className="grid grid-cols-2 gap-y-2.5 text-sm">
             {[
               ['Play/Pause', 'Space'],
               ['Next Track', 'Ctrl+Right'],
@@ -360,14 +389,14 @@ export function SettingsPage() {
               <React.Fragment key={action}>
                 <span className="text-muted-foreground">{action}</span>
                 <span className="text-right">
-                  <kbd className="font-mono text-[11px] bg-white/[0.06] text-muted-foreground px-2 py-0.5 rounded">
+                  <kbd className="font-mono text-2xs bg-foreground/[0.06] text-muted-foreground px-2 py-0.5 rounded">
                     {key}
                   </kbd>
                 </span>
               </React.Fragment>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   )
@@ -438,21 +467,21 @@ function LastfmSettings() {
   if (serverConfigured === false) return null
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-5">
+    <Card className="space-y-5">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d51007] to-[#b90a00] flex items-center justify-center shadow-lg shadow-red-800/20">
           <Radio className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1">
-          <h2 className="text-[16px] font-semibold">Last.fm</h2>
-          <p className="text-[12px] text-muted-foreground">
+          <h2 className="text-lg font-semibold">Last.fm</h2>
+          <p className="text-xs text-muted-foreground">
             {isConnected
               ? `Scrobbling as ${username}`
               : 'Scrobble your listening history'}
           </p>
         </div>
         {isConnected && (
-          <div className="flex items-center gap-1.5 text-green-500 text-[12px]">
+          <div className="flex items-center gap-1.5 text-green-500 text-xs">
             <CheckCircle2 className="w-3.5 h-3.5" />
             Connected
           </div>
@@ -483,7 +512,7 @@ function LastfmSettings() {
               href={`https://www.last.fm/user/${username}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               View profile
               <ExternalLink className="w-3 h-3" />
@@ -493,7 +522,7 @@ function LastfmSettings() {
               onClick={disconnect}
               variant="ghost"
               size="sm"
-              className="text-[12px] text-muted-foreground hover:text-destructive h-auto p-0"
+              className="text-xs text-muted-foreground hover:text-destructive h-auto p-0"
             >
               Disconnect
             </Button>
@@ -516,13 +545,13 @@ function LastfmSettings() {
             </Button>
           </div>
           {isPolling && (
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Approve access in the Last.fm tab, then return here.
             </p>
           )}
         </div>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -548,18 +577,18 @@ function SettingsToggle({
     >
       <div
         className={`relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 ${
-          enabled ? 'bg-primary' : 'bg-white/[0.1]'
+          enabled ? 'bg-primary' : 'bg-foreground/[0.1]'
         }`}
       >
         <div
           className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-            enabled ? 'translate-x-[18px]' : 'translate-x-0.5'
+            enabled ? 'translate-x-[1.125rem]' : 'translate-x-0.5'
           }`}
         />
       </div>
       <div className="min-w-0">
-        <p className="text-[13px] font-medium">{label}</p>
-        <p className="text-[11px] text-muted-foreground">{description}</p>
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-2xs text-muted-foreground">{description}</p>
       </div>
     </button>
   )

@@ -90,7 +90,7 @@ export function SongRow({
     <div
       className={cn(
         'group flex items-center gap-3 px-3 py-[7px] rounded-lg transition-colors duration-100 cursor-pointer min-w-0',
-        isActive ? 'bg-primary/[0.08]' : 'hover:bg-white/[0.04]',
+        isActive ? 'bg-primary/[0.08]' : 'hover:bg-foreground/[0.06]',
         className,
       )}
       onDoubleClick={handlePlay}
@@ -103,7 +103,7 @@ export function SongRow({
           <>
             <span
               className={cn(
-                'text-[13px] tabular-nums text-muted-foreground group-hover:hidden',
+                'text-sm tabular-nums text-muted-foreground group-hover:hidden',
                 isActive && 'text-primary',
               )}
             >
@@ -130,7 +130,7 @@ export function SongRow({
         ) : (
           <>
             {isActive && isPlaying ? (
-              <div className="flex items-end gap-[2px] h-[14px]">
+              <div className="flex items-end gap-[2px] h-[0.875rem]">
                 <div className="eq-bar eq-bar-1" />
                 <div className="eq-bar eq-bar-2" />
                 <div className="eq-bar eq-bar-3" />
@@ -162,13 +162,13 @@ export function SongRow({
       <div className="flex-1 min-w-0">
         <p
           className={cn(
-            'text-[13px] font-medium line-clamp-1 leading-tight',
+            'text-sm font-medium line-clamp-1 leading-tight',
             isActive && 'text-primary',
           )}
         >
           {name}
         </p>
-        <p className="text-[12px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
+        <p className="text-xs text-muted-foreground line-clamp-1 leading-tight mt-0.5">
           {artistId ? (
             <button
               onClick={(e) => {
@@ -187,8 +187,8 @@ export function SongRow({
 
       {/* Album name */}
       {showAlbum && albumName && (
-        <div className="hidden md:block flex-1 min-w-0 max-w-[200px]">
-          <p className="text-[12px] text-muted-foreground line-clamp-1">
+        <div className="hidden md:block flex-1 min-w-0 max-w-[12.5rem]">
+          <p className="text-xs text-muted-foreground line-clamp-1">
             {albumId ? (
               <button
                 onClick={(e) => {
@@ -208,7 +208,7 @@ export function SongRow({
 
       {/* Duration */}
       <div className="w-11 text-right flex-shrink-0">
-        <span className="text-[12px] tabular-nums text-muted-foreground">
+        <span className="text-xs tabular-nums text-muted-foreground">
           {formatDuration(duration)}
         </span>
       </div>
