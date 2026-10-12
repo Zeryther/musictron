@@ -427,7 +427,8 @@ export async function isUserTokenRejected(): Promise<boolean> {
   const instance = getMusicKitInstance()
   if (!instance?.isAuthorized) return false
   try {
-    await instance.api.music('/v1/me/library/songs', { limit: 1 })
+    // Needs nothing but a valid user token (no subscription or library).
+    await instance.api.music('/v1/me/storefront')
     return false
   } catch (error) {
     // MusicKit attaches the failed Response as `data`. 403 is a rejected user

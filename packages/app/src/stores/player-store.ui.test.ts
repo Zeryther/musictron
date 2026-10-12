@@ -281,9 +281,7 @@ describe('usePlayerStore library playback and sign-in', () => {
 
     await usePlayerStore.getState().playSongs(ids(3), 1)
 
-    expect(instance.api.music).toHaveBeenCalledWith('/v1/me/library/songs', {
-      limit: 1,
-    })
+    expect(instance.api.music).toHaveBeenCalledWith('/v1/me/storefront')
     expect(instance.unauthorize).toHaveBeenCalled()
     expect(usePlayerStore.getState().playbackError).toMatchObject({
       title: 'Apple Music session expired',
@@ -326,5 +324,58 @@ describe('usePlayerStore library playback and sign-in', () => {
       title: 'Playback failed',
       message: 'boom',
     })
+  })
+
+  it('signs in once and plays the latest request when clicked again meanwhile', async () => {
+    const { instance } = stubQueue()
+    instance.isAuthorized = false
+    let finishSignIn = () => {}
+    const signIn = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finishSignIn = () => {
+            instance.isAuthorized = true
+            resolve()
+          }
+        }),
+    )
+    setSignInHandler(signIn)
+
+    await usePlayerStore.getState().playSongs(['i.a', 'i.b'], 0)
+    await usePlayerStore.getState().playSongs(['i.c', 'i.d'], 1)
+    finishSignIn()
+    await vi.waitFor(() => expect(instance.setQueue).toHaveBeenCalled())
+
+    expect(signIn).toHaveBeenCalledTimes(1)
+    expect(instance.setQueue).toHaveBeenCalledTimes(1)
+    expect(instance.setQueue).toHaveBeenCalledWith(
+      expect.objectContaining({ songs: ['i.c', 'i.d'] }),
+    )
+  })
+
+  it('does not replay a request after something else was played', async () => {
+    const { instance } = stubQueue()
+    instance.isAuthorized = false
+    let finishSignIn = () => {}
+    setSignInHandler(
+      () =>
+        new Promise<void>((resolve) => {
+          finishSignIn = () => {
+            instance.isAuthorized = true
+            resolve()
+          }
+        }),
+    )
+
+    await usePlayerStore.getState().playSongs(['i.a'], 0)
+    await usePlayerStore.getState().playTrack('1440857781')
+    finishSignIn()
+    // Let the finished sign-in run whatever it would retry.
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(instance.setQueue).toHaveBeenCalledTimes(1)
+    expect(instance.setQueue).toHaveBeenCalledWith(
+      expect.objectContaining({ song: '1440857781' }),
+    )
   })
 })
