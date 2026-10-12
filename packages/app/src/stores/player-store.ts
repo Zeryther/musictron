@@ -282,12 +282,38 @@ export const usePlayerStore = create<PlayerState>()(
           })
           try {
             set({ playbackError: null })
-            await mk.setQueue({
+            // Don't let MusicKit start playback by position: it silently drops
+            // songs it can't play (e.g. unavailable in the storefront), which
+            // shifts every later index so `startWith` lands on the wrong song.
+            const queue = await mk.setQueue({
               songs: songIds,
               startWith: startIndex,
-              startPlaying: true,
+              startPlaying: false,
             })
             logMusicKitDebug('player.playSongs.after-setQueue')
+
+            const targetIndex = findQueueIndex(
+              (queue ?? mk.queue)?.items ?? [],
+              songIds[startIndex],
+              startIndex,
+            )
+            if (targetIndex === -1) {
+              set({
+                playbackError: {
+                  title: 'Song unavailable',
+                  message:
+                    'This song is not available to play in your Apple Music region.',
+                },
+              })
+              get()._syncFromMusicKit()
+              return
+            }
+
+            if (mk.queue?.position === targetIndex) {
+              await mk.play()
+            } else {
+              await mk.changeToMediaAtIndex(targetIndex)
+            }
             get()._syncFromMusicKit()
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
@@ -495,6 +521,31 @@ async function detectPreviewFallback() {
         'Apple Music returned a preview stream for this account or track. Check your subscription, region, and protected content settings.',
     },
   })
+}
+
+/**
+ * Find a song's position in a MusicKit queue. MusicKit drops unplayable songs
+ * when building a queue, so the index the UI passed (`hint`) can only be at or
+ * past the real one. Prefer the closest match at or before `hint` so duplicate
+ * songs in a list resolve to the occurrence that was clicked.
+ */
+export function findQueueIndex(
+  items: MusicKit.MediaItem[],
+  songId: string | undefined,
+  hint: number,
+): number {
+  if (!songId) return -1
+
+  let match = -1
+  items.forEach((item, index) => {
+    const playParams = item.attributes?.playParams
+    const matches =
+      item.id === songId ||
+      playParams?.id === songId ||
+      playParams?.catalogId === songId
+    if (matches && (match === -1 || index <= hint)) match = index
+  })
+  return match
 }
 
 export function getPlaybackErrorMessage(error: unknown): PlaybackError {

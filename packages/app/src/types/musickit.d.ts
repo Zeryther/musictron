@@ -51,6 +51,7 @@ declare namespace MusicKit {
     skipToNextItem(): Promise<void>
     skipToPreviousItem(): Promise<void>
     seekToTime(time: number): Promise<void>
+    changeToMediaAtIndex(index: number): Promise<void>
     setQueue(options: SetQueueOptions): Promise<Queue>
     api: API
     addEventListener(event: string, callback: (...args: any[]) => void): void
