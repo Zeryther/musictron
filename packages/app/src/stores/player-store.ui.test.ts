@@ -8,11 +8,41 @@ autoResetStores(usePlayerStore)
 const ids = (count: number) =>
   Array.from({ length: count }, (_, i) => `i.song${i}`)
 
+function queueOf(ids: string[], position = 0): MusicKit.Queue {
+  return {
+    items: ids.map(
+      (id) => ({ id, type: 'songs', attributes: {} }) as MusicKit.MediaItem,
+    ),
+    position,
+    length: ids.length,
+    isEmpty: ids.length === 0,
+    nextPlayableItem: null,
+    previousPlayableItem: null,
+  }
+}
+
+/**
+ * Stub MusicKit so `setQueue` builds a queue from the requested songs, minus
+ * any `unplayable` ids (MusicKit drops those), positioned at `startWith`.
+ */
+function stubQueue(unplayable: string[] = []) {
+  const stub = stubMusicKit()
+  vi.mocked(stub.instance.setQueue).mockImplementation(async (options) => {
+    const songs = (options.songs ?? []).filter(
+      (id) => !unplayable.includes(id),
+    )
+    stub.instance.queue = queueOf(songs, options.startWith ?? 0)
+    return stub.instance.queue
+  })
+  return stub
+}
+
 beforeEach(() => {
   vi.useFakeTimers()
 })
 
 afterEach(() => {
+  usePlayerStore.getState()._stopTimeUpdater()
   vi.clearAllTimers()
   vi.useRealTimers()
   clearMusicKit()
@@ -20,7 +50,7 @@ afterEach(() => {
 
 describe('usePlayerStore.playSongs', () => {
   it('queues short lists in a single request', async () => {
-    const { instance } = stubMusicKit()
+    const { instance } = stubQueue()
     const songIds = ids(10)
 
     await usePlayerStore.getState().playSongs(songIds, 3)
@@ -28,13 +58,15 @@ describe('usePlayerStore.playSongs', () => {
     expect(instance.setQueue).toHaveBeenCalledWith({
       songs: songIds,
       startWith: 3,
-      startPlaying: true,
+      startPlaying: false,
     })
+    expect(instance.play).toHaveBeenCalled()
+    expect(instance.changeToMediaAtIndex).not.toHaveBeenCalled()
     expect(instance.playLater).not.toHaveBeenCalled()
   })
 
   it('splits long lists into batches starting at the selected song', async () => {
-    const { instance } = stubMusicKit()
+    const { instance } = stubQueue()
     const songIds = ids(100)
 
     await usePlayerStore.getState().playSongs(songIds, 10)
@@ -42,8 +74,9 @@ describe('usePlayerStore.playSongs', () => {
     expect(instance.setQueue).toHaveBeenCalledWith({
       songs: songIds.slice(10, 35),
       startWith: 0,
-      startPlaying: true,
+      startPlaying: false,
     })
+    expect(instance.play).toHaveBeenCalled()
     expect(vi.mocked(instance.playLater).mock.calls).toEqual([
       [{ songs: songIds.slice(35, 60) }],
       [{ songs: songIds.slice(60, 85) }],
@@ -52,7 +85,7 @@ describe('usePlayerStore.playSongs', () => {
   })
 
   it('stops appending batches once a newer queue is set', async () => {
-    const { instance } = stubMusicKit()
+    const { instance } = stubQueue()
     vi.mocked(instance.playLater).mockImplementationOnce(async () => {
       await usePlayerStore.getState().playTrack('other-song')
     })
@@ -63,7 +96,7 @@ describe('usePlayerStore.playSongs', () => {
   })
 
   it('surfaces a playback error when the first batch fails', async () => {
-    const { instance } = stubMusicKit()
+    const { instance } = stubQueue()
     vi.mocked(instance.setQueue).mockRejectedValueOnce(
       new Error('Unable to read body as JSON'),
     )
@@ -74,5 +107,41 @@ describe('usePlayerStore.playSongs', () => {
       'Playback failed',
     )
     expect(instance.playLater).not.toHaveBeenCalled()
+  })
+
+  it('plays the clicked song even if MusicKit dropped an earlier one', async () => {
+    // "x" is unplayable, so MusicKit builds the queue without it and the
+    // requested start position now points one song too far.
+    const { instance } = stubQueue(['x'])
+
+    await usePlayerStore.getState().playSongs(['x', 'a', 'b'], 1)
+
+    expect(instance.changeToMediaAtIndex).toHaveBeenCalledWith(0)
+    expect(instance.play).not.toHaveBeenCalled()
+  })
+
+  it('reports an error instead of playing a different song', async () => {
+    const { instance } = stubQueue(['x'])
+
+    await usePlayerStore.getState().playSongs(['x', 'a', 'b'], 0)
+
+    expect(instance.play).not.toHaveBeenCalled()
+    expect(instance.changeToMediaAtIndex).not.toHaveBeenCalled()
+    expect(usePlayerStore.getState().playbackError?.title).toBe(
+      'Song unavailable',
+    )
+  })
+
+  it('does not append later batches when the clicked song is unavailable', async () => {
+    const songIds = ids(100)
+    const { instance } = stubQueue([songIds[10]])
+
+    await usePlayerStore.getState().playSongs(songIds, 10)
+
+    expect(instance.play).not.toHaveBeenCalled()
+    expect(instance.playLater).not.toHaveBeenCalled()
+    expect(usePlayerStore.getState().playbackError?.title).toBe(
+      'Song unavailable',
+    )
   })
 })

@@ -38,6 +38,7 @@ export function createMusicKitInstance(
     skipToNextItem: vi.fn(async () => {}),
     skipToPreviousItem: vi.fn(async () => {}),
     seekToTime: vi.fn(async () => {}),
+    changeToMediaAtIndex: vi.fn(async () => {}),
     setQueue: vi.fn(async () => queue),
     playLater: vi.fn(async () => {}),
     api: { music: vi.fn(async () => ({ data: {} })) },
