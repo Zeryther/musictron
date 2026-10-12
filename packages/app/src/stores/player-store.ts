@@ -8,7 +8,19 @@ import {
   logMusicKitDebug,
   musicAPI,
 } from '@/lib/musickit'
+import {
+  isAudioProcessingActive,
+  resumeAudioProcessing,
+  setProcessingGains,
+  setStableVolumeCompression,
+  startAudioProcessing,
+} from '@/lib/audio-processing'
 import { formatArtworkUrl } from '@/lib/utils'
+import { normalizeNowPlaying } from '@/lib/volume-normalization'
+import {
+  selectNormalizationGain,
+  useVolumeNormalizationStore,
+} from '@/stores/volume-normalization-store'
 
 export interface NowPlayingItem {
   id: string
@@ -154,6 +166,7 @@ export const usePlayerStore = create<PlayerState>()(
       playbackError: null,
 
       play: async () => {
+        resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (!mk) {
           set({
@@ -224,8 +237,8 @@ export const usePlayerStore = create<PlayerState>()(
       setVolume: (volume: number) => {
         const mk = getMusicKitInstance()
         if (mk) {
-          mk.volume = volume
           set({ volume })
+          applyMusicKitVolume(mk)
         }
       },
 
@@ -287,6 +300,7 @@ export const usePlayerStore = create<PlayerState>()(
         trackId: string,
         options?: { startPlaying?: boolean },
       ) => {
+        resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
           if (
@@ -324,6 +338,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       playAlbum: async (albumId: string, startIndex: number = 0) => {
+        resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
           if (
@@ -362,6 +377,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       playPlaylist: async (playlistId: string, startIndex: number = 0) => {
+        resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
           if (
@@ -404,6 +420,7 @@ export const usePlayerStore = create<PlayerState>()(
         startIndex: number = 0,
         contextKey?: string,
       ) => {
+        resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
           if (
@@ -615,6 +632,7 @@ export const usePlayerStore = create<PlayerState>()(
               })
           }
         }
+        syncVolumeNormalization(mk)
 
         // Sync queue
         const queueItems: NowPlayingItem[] = (mk.queue?.items || []).map(
@@ -635,7 +653,6 @@ export const usePlayerStore = create<PlayerState>()(
           queuePosition: mk.queue?.position || 0,
           isPlaying: mk.playbackState === 2, // playing
           duration: mk.currentPlaybackDuration || 0,
-          volume: mk.volume,
         })
       },
 
@@ -679,6 +696,112 @@ export const usePlayerStore = create<PlayerState>()(
     },
   ),
 )
+
+const VOLUME_RAMP_MS = 400
+const VOLUME_RAMP_STEPS = 10
+let volumeRampTimer: ReturnType<typeof setInterval> | null = null
+
+/**
+ * Write the user's volume, scaled by the current track's normalization gain,
+ * to MusicKit. With `ramp`, fade to it so a gain change isn't an audible jump.
+ */
+function applyMusicKitVolume(
+  mk: MusicKit.MusicKitInstance,
+  { ramp = false }: { ramp?: boolean } = {},
+) {
+  if (volumeRampTimer) {
+    clearInterval(volumeRampTimer)
+    volumeRampTimer = null
+  }
+
+  const { volume } = usePlayerStore.getState()
+  const gain = selectNormalizationGain(useVolumeNormalizationStore.getState())
+
+  // Stable volume routes the audio through Web Audio: MusicKit stays at full
+  // volume and the graph applies both gains around the compressor. The graph
+  // is kept current even while inactive so a newly captured element starts
+  // at the right level.
+  setProcessingGains(gain, volume, { fade: ramp })
+  if (isAudioProcessingActive()) {
+    // Always write it: MusicKit re-applies its remembered volume to the
+    // element on every new item, and capturing set only the element to 1.
+    mk.volume = 1
+    return
+  }
+
+  const target = volume * gain
+  const start = mk.volume
+  if (!ramp || Math.abs(target - start) < 0.001) {
+    mk.volume = target
+    return
+  }
+
+  let step = 0
+  const timer = setInterval(() => {
+    step++
+    if (step >= VOLUME_RAMP_STEPS) {
+      mk.volume = target
+      clearInterval(timer)
+      if (volumeRampTimer === timer) volumeRampTimer = null
+    } else {
+      mk.volume = start + ((target - start) * step) / VOLUME_RAMP_STEPS
+    }
+  }, VOLUME_RAMP_MS / VOLUME_RAMP_STEPS)
+  volumeRampTimer = timer
+}
+
+function syncVolumeNormalization(mk: MusicKit.MusicKitInstance) {
+  const items = mk.queue?.items ?? []
+  const position = mk.queue?.position ?? 0
+  normalizeNowPlaying(mk.nowPlayingItem, items.slice(position + 1))
+}
+
+/** Start or bypass the experimental stable-volume audio processing. */
+function syncStableVolume() {
+  const { stableVolume } = useVolumeNormalizationStore.getState()
+  if (!stableVolume) {
+    setStableVolumeCompression(false)
+    return
+  }
+  const started = startAudioProcessing({
+    onActiveChange: () => {
+      const mk = getMusicKitInstance()
+      if (mk) applyMusicKitVolume(mk)
+    },
+    onSilence: () => {
+      useVolumeNormalizationStore.getState().markStableVolumeFailed()
+      usePlayerStore.setState({
+        playbackError: {
+          title: 'Stable volume is not supported here',
+          message:
+            'This browser mutes Apple Music audio when it is processed, so stable volume has been turned off. Reload Musictron to restore sound.',
+        },
+      })
+    },
+  })
+  if (!started) {
+    // No Web Audio, or it already failed this session.
+    useVolumeNormalizationStore.setState({ stableVolume: false })
+    return
+  }
+  const mk = getMusicKitInstance()
+  if (mk) applyMusicKitVolume(mk)
+}
+
+// Re-apply the volume whenever the normalization gain changes (new track
+// measured, setting toggled, target level changed).
+useVolumeNormalizationStore.subscribe((state, previous) => {
+  if (state.stableVolume !== previous.stableVolume) syncStableVolume()
+  const mk = getMusicKitInstance()
+  if (!mk) return
+  if (state.enabled && !previous.enabled) syncVolumeNormalization(mk)
+  if (selectNormalizationGain(state) !== selectNormalizationGain(previous)) {
+    // A new track starts at its own level; fade only when the level changes
+    // mid-track (measurement finished, setting changed).
+    const sameTrack = state.track?.songId === previous.track?.songId
+    applyMusicKitVolume(mk, { ramp: sameTrack })
+  }
+})
 
 let previewFallbackTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -945,6 +1068,7 @@ function setMusicKitEventError(
 // can run again after a token re-configure without double-binding every event.
 let boundInstance: MusicKit.MusicKitInstance | null = null
 let boundHandlers: {
+  nowPlayingItemWillChange: (event?: { item?: MusicKit.MediaItem }) => void
   nowPlayingItemDidChange: () => void
   playbackStateDidChange: (event: { state?: number } | number) => void
   queueItemsDidChange: () => void
@@ -963,12 +1087,16 @@ export function initializePlayerEvents() {
 
   // Already bound to this instance — nothing to re-wire.
   if (boundInstance === mk) {
-    mk.volume = usePlayerStore.getState().volume
+    applyMusicKitVolume(mk)
     return
   }
 
   // Bound to a previous instance — detach its listeners before re-binding.
   if (boundInstance && boundHandlers) {
+    boundInstance.removeEventListener(
+      'nowPlayingItemWillChange',
+      boundHandlers.nowPlayingItemWillChange,
+    )
     boundInstance.removeEventListener(
       'nowPlayingItemDidChange',
       boundHandlers.nowPlayingItemDidChange,
@@ -1000,6 +1128,11 @@ export function initializePlayerEvents() {
   }
 
   const handlers = {
+    // Fires synchronously before the switch: set the next track's level now
+    // so a loud song doesn't start at the previous song's level.
+    nowPlayingItemWillChange: (event?: { item?: MusicKit.MediaItem }) => {
+      if (event?.item) normalizeNowPlaying(event.item)
+    },
     nowPlayingItemDidChange: () => {
       // Defer sync slightly — MusicKit may not have updated nowPlayingItem yet
       // when this event fires, causing stale reads
@@ -1049,6 +1182,10 @@ export function initializePlayerEvents() {
   }
 
   mk.addEventListener(
+    'nowPlayingItemWillChange',
+    handlers.nowPlayingItemWillChange,
+  )
+  mk.addEventListener(
     'nowPlayingItemDidChange',
     handlers.nowPlayingItemDidChange,
   )
@@ -1063,5 +1200,6 @@ export function initializePlayerEvents() {
   boundHandlers = handlers
 
   // Set initial volume
-  mk.volume = usePlayerStore.getState().volume
+  applyMusicKitVolume(mk)
+  syncStableVolume()
 }

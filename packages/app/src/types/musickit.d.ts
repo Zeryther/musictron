@@ -15,6 +15,7 @@ interface Window {
     url?: string,
   ) => Promise<Record<string, unknown>>
   __musictronDrmProbe?: () => Promise<Record<string, unknown>>
+  __musictronAudioProbe?: () => Record<string, unknown>
 }
 
 declare namespace MusicKit {
@@ -96,6 +97,7 @@ declare namespace MusicKit {
       genreNames?: string[]
       isrc?: string
       url?: string
+      previews?: Array<{ url: string }>
     }
     relationships?: Record<string, any>
   }
