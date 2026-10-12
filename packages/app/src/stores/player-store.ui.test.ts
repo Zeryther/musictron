@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { usePlayerStore } from '@/stores/player-store'
+import { setSignInHandler, usePlayerStore } from '@/stores/player-store'
 import { clearMusicKit, stubMusicKit } from '@/test/musickit'
 import { autoResetStores } from '@/test/store'
 
@@ -60,6 +60,7 @@ afterEach(() => {
   vi.clearAllTimers()
   vi.useRealTimers()
   clearMusicKit()
+  setSignInHandler(null)
 })
 
 describe('usePlayerStore.playSongs', () => {
@@ -213,36 +214,70 @@ describe('usePlayerStore.playSongs with repeated songs', () => {
   })
 })
 
+/** Sign-in handler that signs `instance` in, or does nothing if cancelled. */
+function stubSignIn(instance: MusicKit.MusicKitInstance, succeeds = true) {
+  const signIn = vi.fn(async () => {
+    if (succeeds) instance.isAuthorized = true
+  })
+  setSignInHandler(signIn)
+  return signIn
+}
+
 describe('usePlayerStore library playback and sign-in', () => {
-  it('asks to sign in instead of queueing library songs while signed out', async () => {
-    const { instance } = stubMusicKit({ isAuthorized: false })
+  it('signs in first, then plays, when a library song is clicked signed out', async () => {
+    const { instance } = stubQueue()
+    instance.isAuthorized = false
+    const signIn = stubSignIn(instance)
 
     await usePlayerStore.getState().playSongs(ids(3), 1)
+    await vi.waitFor(() => expect(instance.setQueue).toHaveBeenCalled())
+
+    expect(signIn).toHaveBeenCalledTimes(1)
+    expect(signIn.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(instance.setQueue).mock.invocationCallOrder[0],
+    )
+    expect(usePlayerStore.getState().playbackError).toBeNull()
+  })
+
+  it('asks to sign in if the sign-in is cancelled', async () => {
+    const { instance } = stubQueue()
+    instance.isAuthorized = false
+    stubSignIn(instance, false)
+
+    await usePlayerStore.getState().playSongs(ids(3), 1)
+    await vi.waitFor(() =>
+      expect(usePlayerStore.getState().playbackError?.title).toBe(
+        'Sign in required',
+      ),
+    )
 
     expect(instance.setQueue).not.toHaveBeenCalled()
-    expect(usePlayerStore.getState().playbackError?.title).toBe(
-      'Sign in required',
-    )
+    expect(usePlayerStore.getState().playbackError?.canSignIn).toBe(true)
   })
 
   it('still queues catalog songs while signed out', async () => {
     const { instance } = stubMusicKit({ isAuthorized: false })
+    const signIn = stubSignIn(instance)
 
     await usePlayerStore.getState().playTrack('1440857781')
 
+    expect(signIn).not.toHaveBeenCalled()
     expect(instance.setQueue).toHaveBeenCalled()
     expect(usePlayerStore.getState().playbackError).toBeNull()
   })
 
-  it('reports an expired session and signs out when Apple rejects the token', async () => {
+  it('clears a rejected session and retries after signing in again', async () => {
     const { instance } = stubQueue()
-    // What MusicKit throws when a library request comes back 401.
+    // What MusicKit throws when a library request comes back 403.
     vi.mocked(instance.setQueue).mockRejectedValueOnce(
       new TypeError("undefined is not an object (evaluating 'e.id')"),
     )
     vi.mocked(instance.api.music).mockRejectedValueOnce(
-      Object.assign(new Error('Unauthorized'), { data: { status: 401 } }),
+      Object.assign(new Error('Forbidden'), { data: { status: 403 } }),
     )
+    vi.mocked(instance.unauthorize).mockImplementation(async () => {
+      instance.isAuthorized = false
+    })
 
     await usePlayerStore.getState().playSongs(ids(3), 1)
 
@@ -250,9 +285,34 @@ describe('usePlayerStore library playback and sign-in', () => {
       limit: 1,
     })
     expect(instance.unauthorize).toHaveBeenCalled()
-    expect(usePlayerStore.getState().playbackError?.title).toBe(
-      'Apple Music session expired',
+    expect(usePlayerStore.getState().playbackError).toMatchObject({
+      title: 'Apple Music session expired',
+      canSignIn: true,
+    })
+
+    const signIn = stubSignIn(instance)
+    await usePlayerStore.getState().signInAndRetry()
+
+    expect(signIn).toHaveBeenCalledTimes(1)
+    expect(instance.setQueue).toHaveBeenCalledTimes(2)
+    expect(instance.play).toHaveBeenCalled()
+    expect(usePlayerStore.getState().playbackError).toBeNull()
+  })
+
+  it('does not sign out over a rejected developer token', async () => {
+    const { instance } = stubQueue()
+    vi.mocked(instance.setQueue).mockRejectedValueOnce(new Error('boom'))
+    vi.mocked(instance.api.music).mockRejectedValueOnce(
+      Object.assign(new Error('Unauthorized'), { data: { status: 401 } }),
     )
+
+    await usePlayerStore.getState().playSongs(ids(3), 1)
+
+    expect(instance.unauthorize).not.toHaveBeenCalled()
+    expect(usePlayerStore.getState().playbackError).toEqual({
+      title: 'Playback failed',
+      message: 'boom',
+    })
   })
 
   it('keeps the original error when the session is still valid', async () => {

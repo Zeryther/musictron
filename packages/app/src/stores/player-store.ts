@@ -1,10 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import {
+  clearRejectedSession,
   getBrowserPlaybackSupport,
   getMusicKitInstance,
   isLibraryId,
-  isUserTokenRejected,
   logMusicKitDebug,
   musicAPI,
 } from '@/lib/musickit'
@@ -40,6 +40,8 @@ export interface PlayContext {
 export interface PlaybackError {
   title: string
   message: string
+  /** Signing in again may fix it; the UI offers `signInAndRetry`. */
+  canSignIn?: boolean
 }
 
 interface PlayerState {
@@ -70,6 +72,8 @@ interface PlayerState {
   toggleQueue: () => void
   setFullscreen: (value: boolean) => void
   clearPlaybackError: () => void
+  /** Sign in to Apple Music, then retry the request that needed it. */
+  signInAndRetry: () => Promise<void>
 
   // Queue management
   playTrack: (
@@ -96,6 +100,16 @@ let timeUpdateInterval: ReturnType<typeof setInterval> | null = null
 
 /** Max ids MusicKit is asked to resolve per queue request. */
 const QUEUE_BATCH_SIZE = 25
+
+/** Signs the user in to Apple Music; registered by the auth store. */
+let signInHandler: (() => Promise<void>) | null = null
+
+export function setSignInHandler(handler: (() => Promise<void>) | null) {
+  signInHandler = handler
+}
+
+/** The play request that failed for lack of a valid sign-in. */
+let retryAfterSignIn: (() => Promise<void>) | null = null
 
 /** Incremented on every new queue so stale batch appends can bail out. */
 let queueGeneration = 0
@@ -239,7 +253,23 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       clearPlaybackError: () => {
+        retryAfterSignIn = null
         set({ playbackError: null })
+      },
+
+      signInAndRetry: async () => {
+        const retry = retryAfterSignIn
+        retryAfterSignIn = null
+        set({ playbackError: null })
+        // Called straight from a click, so MusicKit's sign-in popup isn't
+        // blocked: nothing may be awaited before the handler runs.
+        await signInHandler?.()
+        if (!getMusicKitInstance()?.isAuthorized) {
+          retryAfterSignIn = retry
+          set({ playbackError: SIGN_IN_REQUIRED })
+          return
+        }
+        await retry?.()
       },
 
       playTrack: async (
@@ -248,7 +278,12 @@ export const usePlayerStore = create<PlayerState>()(
       ) => {
         const mk = getMusicKitInstance()
         if (mk) {
-          if (blockedBySignIn(mk, [trackId])) return
+          if (
+            blockedBySignIn(mk, [trackId], () =>
+              get().playTrack(trackId, options),
+            )
+          )
+            return
           queueGeneration++
           logMusicKitDebug('player.playTrack.before-setQueue', {
             trackId,
@@ -266,7 +301,11 @@ export const usePlayerStore = create<PlayerState>()(
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
           } catch (error) {
-            set({ playbackError: await getQueueErrorMessage(error, [trackId]) })
+            set({
+              playbackError: await getQueueErrorMessage(error, [trackId], () =>
+                get().playTrack(trackId, options),
+              ),
+            })
           }
         }
       },
@@ -274,7 +313,12 @@ export const usePlayerStore = create<PlayerState>()(
       playAlbum: async (albumId: string, startIndex: number = 0) => {
         const mk = getMusicKitInstance()
         if (mk) {
-          if (blockedBySignIn(mk, [albumId])) return
+          if (
+            blockedBySignIn(mk, [albumId], () =>
+              get().playAlbum(albumId, startIndex),
+            )
+          )
+            return
           queueGeneration++
           logMusicKitDebug('player.playAlbum.before-setQueue', {
             albumId,
@@ -293,7 +337,11 @@ export const usePlayerStore = create<PlayerState>()(
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
           } catch (error) {
-            set({ playbackError: await getQueueErrorMessage(error, [albumId]) })
+            set({
+              playbackError: await getQueueErrorMessage(error, [albumId], () =>
+                get().playAlbum(albumId, startIndex),
+              ),
+            })
           }
         }
       },
@@ -301,7 +349,12 @@ export const usePlayerStore = create<PlayerState>()(
       playPlaylist: async (playlistId: string, startIndex: number = 0) => {
         const mk = getMusicKitInstance()
         if (mk) {
-          if (blockedBySignIn(mk, [playlistId])) return
+          if (
+            blockedBySignIn(mk, [playlistId], () =>
+              get().playPlaylist(playlistId, startIndex),
+            )
+          )
+            return
           queueGeneration++
           logMusicKitDebug('player.playPlaylist.before-setQueue', {
             playlistId,
@@ -321,7 +374,11 @@ export const usePlayerStore = create<PlayerState>()(
             schedulePreviewFallbackCheck()
           } catch (error) {
             set({
-              playbackError: await getQueueErrorMessage(error, [playlistId]),
+              playbackError: await getQueueErrorMessage(
+                error,
+                [playlistId],
+                () => get().playPlaylist(playlistId, startIndex),
+              ),
             })
           }
         }
@@ -334,7 +391,12 @@ export const usePlayerStore = create<PlayerState>()(
       ) => {
         const mk = getMusicKitInstance()
         if (mk) {
-          if (blockedBySignIn(mk, songIds)) return
+          if (
+            blockedBySignIn(mk, songIds, () =>
+              get().playSongs(songIds, startIndex, contextKey),
+            )
+          )
+            return
           const generation = ++queueGeneration
           // MusicKit resolves every queued id in a single
           // `/v1/me/library/songs?ids=…` (or catalog) request, which Apple
@@ -420,7 +482,11 @@ export const usePlayerStore = create<PlayerState>()(
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
           } catch (error) {
-            const playbackError = await getQueueErrorMessage(error, songIds)
+            const playbackError = await getQueueErrorMessage(
+              error,
+              songIds,
+              () => get().playSongs(songIds, startIndex, contextKey),
+            )
             // A newer queue request owns the error state now.
             if (generation === queueGeneration) set({ playbackError })
             return
@@ -714,42 +780,44 @@ export function findPlayingTrackIndex(
 const SIGN_IN_REQUIRED: PlaybackError = {
   title: 'Sign in required',
   message: 'Sign in to Apple Music to play songs from your library.',
+  canSignIn: true,
 }
 
 const SESSION_EXPIRED: PlaybackError = {
   title: 'Apple Music session expired',
-  message:
-    'Apple Music no longer accepts your sign-in. Sign in again to play songs from your library.',
+  message: 'Sign in again to play songs from your library.',
+  canSignIn: true,
 }
 
 /**
- * Show a sign-in prompt instead of queueing library items while signed out:
- * MusicKit can't load them and fails with a cryptic error.
+ * Library items can't be loaded while signed out (MusicKit fails with a
+ * cryptic error), so sign in first and play once that succeeds. Runs in the
+ * click that started playback, which lets MusicKit open its sign-in popup.
  */
 function blockedBySignIn(
   mk: MusicKit.MusicKitInstance,
   ids: string[],
+  retry: () => Promise<void>,
 ): boolean {
   if (mk.isAuthorized || !ids.some(isLibraryId)) return false
-  usePlayerStore.setState({ playbackError: SIGN_IN_REQUIRED })
+  retryAfterSignIn = retry
+  void usePlayerStore.getState().signInAndRetry()
   return true
 }
 
 /**
  * Error to show when MusicKit failed to queue `ids`. If Apple has stopped
  * accepting the user's token, MusicKit crashes on the error response instead
- * of reporting it; sign out so the app offers to sign in again.
+ * of reporting it; that session is cleared so the user can sign in again.
+ * The popup can't open here (the click is long past), so the error offers it.
  */
 async function getQueueErrorMessage(
   error: unknown,
   ids: string[],
+  retry: () => Promise<void>,
 ): Promise<PlaybackError> {
-  if (ids.some(isLibraryId) && (await isUserTokenRejected())) {
-    try {
-      await getMusicKitInstance()?.unauthorize()
-    } catch {
-      // The token is already unusable; the error below still applies.
-    }
+  if (ids.some(isLibraryId) && (await clearRejectedSession())) {
+    retryAfterSignIn = retry
     return SESSION_EXPIRED
   }
   return getPlaybackErrorMessage(error)

@@ -46,6 +46,7 @@ export function PlayerBar() {
     setFullscreen,
     playbackError,
     clearPlaybackError,
+    signInAndRetry,
   } = usePlayerStore()
   const navigate = useNavigate()
   const lastfmConnected = useLastfmStore((s) => s.isConnected)
@@ -216,6 +217,15 @@ export function PlayerBar() {
                   {playbackError.message}
                 </span>
               </p>
+              {playbackError.canSignIn && (
+                <button
+                  type="button"
+                  onClick={() => void signInAndRetry()}
+                  className="shrink-0 rounded px-1 font-medium text-amber-100 underline-offset-2 hover:underline"
+                >
+                  Sign in
+                </button>
+              )}
               <button
                 type="button"
                 onClick={clearPlaybackError}

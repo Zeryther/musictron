@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import {
+  clearRejectedSession,
   configureMusicKit,
   getMusicKitInstance,
   logMusicKitDebug,
 } from '@/lib/musickit'
 import { getAppConfig } from '@/lib/platform'
-import { initializePlayerEvents } from '@/stores/player-store'
+import { initializePlayerEvents, setSignInHandler } from '@/stores/player-store'
 
 interface AuthState {
   isAuthorized: boolean
@@ -430,11 +431,35 @@ async function applyToken(token: string, expiresAt: number | null) {
 function attachRefreshTriggers() {
   if (refreshTriggersAttached || typeof window === 'undefined') return
   refreshTriggersAttached = true
-  window.addEventListener('focus', maybeRefresh)
+  window.addEventListener('focus', handleFocus)
   window.addEventListener('online', maybeRefresh)
   document.addEventListener('visibilitychange', handleVisibilityChange)
 }
 
-function handleVisibilityChange() {
-  if (document.visibilityState === 'visible') maybeRefresh()
+function handleFocus() {
+  maybeRefresh()
+  void maybeVerifySession()
 }
+
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') handleFocus()
+}
+
+/** Minimum time between checks that Apple still accepts the user token. */
+const SESSION_CHECK_INTERVAL_MS = 5 * 60 * 1000
+let lastSessionCheck = 0
+
+/**
+ * Clear a sign-in Apple stopped accepting while the app was in the background,
+ * so the next library click signs in again instead of failing.
+ */
+async function maybeVerifySession() {
+  if (Date.now() - lastSessionCheck < SESSION_CHECK_INTERVAL_MS) return
+  lastSessionCheck = Date.now()
+  if (await clearRejectedSession()) {
+    logMusicKitDebug('auth.session.rejected-token-cleared')
+  }
+}
+
+// Lets playback sign in on demand (e.g. clicking a library song while signed out).
+setSignInHandler(() => useAuthStore.getState().authorize())
