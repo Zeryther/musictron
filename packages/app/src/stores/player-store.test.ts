@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { findQueueIndex, getPlaybackErrorMessage } from '@/stores/player-store'
+import {
+  findPlayingTrackIndex,
+  findQueueIndex,
+  getPlaybackErrorMessage,
+  type NowPlayingItem,
+  type PlayContext,
+} from '@/stores/player-store'
 
 describe('getPlaybackErrorMessage', () => {
   it('maps "not configured" errors', () => {
@@ -92,5 +98,61 @@ describe('findQueueIndex', () => {
     expect(findQueueIndex(items, 'a', 2)).toBe(2)
     // One earlier song dropped: clicked index 3 is now at 2.
     expect(findQueueIndex(items, 'a', 3)).toBe(2)
+  })
+})
+
+describe('findPlayingTrackIndex', () => {
+  const item = (id: string) => ({ id }) as NowPlayingItem
+
+  function state(
+    queueIds: string[],
+    queuePosition: number,
+    playContext: PlayContext | null,
+  ) {
+    return {
+      nowPlaying: item(queueIds[queuePosition]),
+      queue: queueIds.map(item),
+      queuePosition,
+      playContext,
+      shuffleMode: 0,
+    }
+  }
+
+  const tracks = ['a', 'b', 'a', 'c']
+  const context = { key: 'playlist:1', offset: 0 }
+
+  it('highlights only the occurrence the queue is on', () => {
+    expect(
+      findPlayingTrackIndex(tracks, 'playlist:1', state(tracks, 0, context)),
+    ).toBe(0)
+    expect(
+      findPlayingTrackIndex(tracks, 'playlist:1', state(tracks, 2, context)),
+    ).toBe(2)
+  })
+
+  it('accounts for the queue starting partway through the list', () => {
+    const queued = state(['a', 'c'], 0, { key: 'playlist:1', offset: 2 })
+    expect(findPlayingTrackIndex(tracks, 'playlist:1', queued)).toBe(2)
+  })
+
+  it('accounts for songs MusicKit dropped from the queue', () => {
+    // "b" was unplayable, so the queue is [a, a, c].
+    const queued = state(['a', 'a', 'c'], 1, context)
+    expect(findPlayingTrackIndex(tracks, 'playlist:1', queued)).toBe(2)
+  })
+
+  it('falls back to the first occurrence for other lists', () => {
+    expect(
+      findPlayingTrackIndex(tracks, 'playlist:2', state(tracks, 2, context)),
+    ).toBe(0)
+    expect(
+      findPlayingTrackIndex(tracks, 'playlist:1', state(tracks, 2, null)),
+    ).toBe(0)
+  })
+
+  it('returns -1 when nothing from the list is playing', () => {
+    expect(
+      findPlayingTrackIndex(tracks, 'playlist:1', state(['x'], 0, null)),
+    ).toBe(-1)
   })
 })

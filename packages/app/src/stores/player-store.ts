@@ -36,6 +36,17 @@ export interface NowPlayingItem {
   }
 }
 
+/**
+ * The list a queue was started from. Lets that list's rows tell which
+ * occurrence of a repeated song is playing.
+ */
+export interface PlayContext {
+  /** Caller-chosen id of the list, e.g. `playlist:<id>`. */
+  key: string
+  /** Index in the list of the first song MusicKit was asked to queue. */
+  offset: number
+}
+
 export interface PlaybackError {
   title: string
   message: string
@@ -49,6 +60,7 @@ interface PlayerState {
   nowPlaying: NowPlayingItem | null
   queue: NowPlayingItem[]
   queuePosition: number
+  playContext: PlayContext | null
   repeatMode: number // 0=none, 1=one, 2=all
   shuffleMode: number // 0=off, 1=on
   isQueueOpen: boolean
@@ -76,7 +88,11 @@ interface PlayerState {
   ) => Promise<void>
   playAlbum: (albumId: string, startIndex?: number) => Promise<void>
   playPlaylist: (playlistId: string, startIndex?: number) => Promise<void>
-  playSongs: (songIds: string[], startIndex?: number) => Promise<void>
+  playSongs: (
+    songIds: string[],
+    startIndex?: number,
+    contextKey?: string,
+  ) => Promise<void>
   addToQueue: (songId: string) => Promise<void>
   playNext: (songId: string) => Promise<void>
 
@@ -94,12 +110,23 @@ const QUEUE_BATCH_SIZE = 25
 /** Incremented on every new queue so stale batch appends can bail out. */
 let queueGeneration = 0
 
-function chunkIds(ids: string[], size: number): string[][] {
-  const chunks: string[][] = []
-  for (let i = 0; i < ids.length; i += size) {
-    chunks.push(ids.slice(i, i + size))
+/**
+ * Split ids into queue requests of at most `size` songs. MusicKit resolves a
+ * request's ids through a map keyed by id, so a song repeated within one
+ * request collapses into its last occurrence; a repeat starts a new batch.
+ */
+function batchQueueIds(ids: string[], size: number): string[][] {
+  const batches: string[][] = []
+  let batch: string[] = []
+  for (const id of ids) {
+    if (batch.length >= size || batch.includes(id)) {
+      batches.push(batch)
+      batch = []
+    }
+    batch.push(id)
   }
-  return chunks
+  if (batch.length > 0) batches.push(batch)
+  return batches
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -112,6 +139,7 @@ export const usePlayerStore = create<PlayerState>()(
       nowPlaying: null,
       queue: [],
       queuePosition: 0,
+      playContext: null,
       repeatMode: 0,
       shuffleMode: 0,
       isQueueOpen: false,
@@ -244,6 +272,7 @@ export const usePlayerStore = create<PlayerState>()(
               startPlaying: options?.startPlaying ?? true,
             })
             logMusicKitDebug('player.playTrack.after-setQueue')
+            set({ playContext: null })
             get()._syncFromMusicKit()
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
@@ -270,6 +299,7 @@ export const usePlayerStore = create<PlayerState>()(
               startPlaying: true,
             })
             logMusicKitDebug('player.playAlbum.after-setQueue')
+            set({ playContext: { key: `album:${albumId}`, offset: 0 } })
             get()._syncFromMusicKit()
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
@@ -296,6 +326,7 @@ export const usePlayerStore = create<PlayerState>()(
               startPlaying: true,
             })
             logMusicKitDebug('player.playPlaylist.after-setQueue')
+            set({ playContext: { key: `playlist:${playlistId}`, offset: 0 } })
             get()._syncFromMusicKit()
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
@@ -305,7 +336,11 @@ export const usePlayerStore = create<PlayerState>()(
         }
       },
 
-      playSongs: async (songIds: string[], startIndex: number = 0) => {
+      playSongs: async (
+        songIds: string[],
+        startIndex: number = 0,
+        contextKey?: string,
+      ) => {
         resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
@@ -316,19 +351,33 @@ export const usePlayerStore = create<PlayerState>()(
           // are therefore queued from the selected song onward: the first
           // batch via setQueue, the rest appended in batches via playLater.
           const isLongList = songIds.length > QUEUE_BATCH_SIZE
-          const orderedIds = isLongList ? songIds.slice(startIndex) : songIds
-          const [firstBatch, ...remainingBatches] = chunkIds(
-            orderedIds,
+          const queueStart = isLongList ? startIndex : 0
+          const batches = batchQueueIds(
+            songIds.slice(queueStart),
             QUEUE_BATCH_SIZE,
           )
+          const [firstBatch] = batches
           if (!firstBatch) return
-          const firstBatchStart = isLongList ? 0 : startIndex
+
+          // A repeated song can split a short list, putting the selected song
+          // in a later batch. Batches up to and including that one are queued
+          // before playback starts; the rest are appended afterwards.
+          const selectedOffset = startIndex - queueStart
+          let selectedBatch = 0
+          let batchEnd = firstBatch.length
+          while (
+            batchEnd <= selectedOffset &&
+            selectedBatch < batches.length - 1
+          ) {
+            selectedBatch++
+            batchEnd += batches[selectedBatch].length
+          }
 
           logMusicKitDebug('player.playSongs.before-setQueue', {
             songCount: songIds.length,
             firstSongId: songIds[0],
             startIndex,
-            batchCount: remainingBatches.length + 1,
+            batchCount: batches.length,
           })
           try {
             set({ playbackError: null })
@@ -337,15 +386,27 @@ export const usePlayerStore = create<PlayerState>()(
             // shifts every later index so `startWith` lands on the wrong song.
             const queue = await mk.setQueue({
               songs: firstBatch,
-              startWith: firstBatchStart,
+              startWith: selectedBatch === 0 ? selectedOffset : 0,
               startPlaying: false,
             })
             logMusicKitDebug('player.playSongs.after-setQueue')
+            set({
+              playContext: contextKey
+                ? { key: contextKey, offset: queueStart }
+                : null,
+            })
+
+            for (const batch of batches.slice(1, selectedBatch + 1)) {
+              // A newer queue request replaced this one; leave it alone.
+              if (generation !== queueGeneration) return
+              await mk.playLater({ songs: batch })
+            }
+            if (generation !== queueGeneration) return
 
             const targetIndex = findQueueIndex(
-              (queue ?? mk.queue)?.items ?? [],
+              (mk.queue ?? queue)?.items ?? [],
               songIds[startIndex],
-              firstBatchStart,
+              selectedOffset,
             )
             if (targetIndex === -1) {
               set({
@@ -372,7 +433,7 @@ export const usePlayerStore = create<PlayerState>()(
             return
           }
 
-          for (const batch of remainingBatches) {
+          for (const batch of batches.slice(selectedBatch + 1)) {
             // A newer queue request replaced this one; stop appending.
             if (generation !== queueGeneration) return
             try {
@@ -394,6 +455,7 @@ export const usePlayerStore = create<PlayerState>()(
         if (mk) {
           // MusicKit v3 queue management
           await mk.setQueue({ song: songId })
+          set({ playContext: null })
           get()._syncFromMusicKit()
         }
       },
@@ -402,6 +464,7 @@ export const usePlayerStore = create<PlayerState>()(
         const mk = getMusicKitInstance()
         if (mk) {
           await mk.setQueue({ song: songId })
+          set({ playContext: null })
           get()._syncFromMusicKit()
         }
       },
@@ -411,6 +474,7 @@ export const usePlayerStore = create<PlayerState>()(
         if (!mk) return
 
         const item = mk.nowPlayingItem
+        let nowPlaying = get().nowPlaying
         if (item) {
           // Parse album ID from the Apple Music URL if available.
           // URLs look like: https://music.apple.com/us/album/{slug}/{albumId}?i={songId}
@@ -420,7 +484,7 @@ export const usePlayerStore = create<PlayerState>()(
             if (match) albumId = match[1]
           }
 
-          const nowPlaying: NowPlayingItem = {
+          nowPlaying = {
             id: item.id,
             name: item.attributes.name,
             artistName: item.attributes.artistName,
@@ -436,7 +500,6 @@ export const usePlayerStore = create<PlayerState>()(
                 }
               : undefined,
           }
-          set({ nowPlaying })
 
           // Resolve artist ID asynchronously via the catalog API.
           // This is a lightweight call that runs in the background.
@@ -475,7 +538,9 @@ export const usePlayerStore = create<PlayerState>()(
           }),
         )
 
+        // One update, so rows never see the new track with the old position.
         set({
+          nowPlaying,
           queue: queueItems,
           queuePosition: mk.queue?.position || 0,
           isPlaying: mk.playbackState === 2, // playing
@@ -488,10 +553,14 @@ export const usePlayerStore = create<PlayerState>()(
         timeUpdateInterval = setInterval(() => {
           const mk = getMusicKitInstance()
           if (mk) {
-            // Detect track changes that event listeners may have missed
-            const currentId = get().nowPlaying?.id
+            // Detect track changes that event listeners may have missed.
+            // Compare positions too: a repeated song keeps the same id.
             const mkItemId = mk.nowPlayingItem?.id
-            if (mkItemId && mkItemId !== currentId) {
+            if (
+              mkItemId &&
+              (mkItemId !== get().nowPlaying?.id ||
+                (mk.queue?.position || 0) !== get().queuePosition)
+            ) {
               get()._syncFromMusicKit()
             }
 
@@ -718,6 +787,41 @@ export function findQueueIndex(
     if (matches && (match === -1 || index <= hint)) match = index
   })
   return match
+}
+
+/**
+ * Index of the row in `trackIds` that is playing, or -1. When the queue was
+ * started from this list (`contextKey`), a repeated song resolves to the
+ * occurrence the queue is on; otherwise to its first occurrence.
+ */
+export function findPlayingTrackIndex(
+  trackIds: string[],
+  contextKey: string,
+  state: Pick<
+    PlayerState,
+    'nowPlaying' | 'queue' | 'queuePosition' | 'playContext' | 'shuffleMode'
+  >,
+): number {
+  const { nowPlaying, queue, queuePosition, playContext, shuffleMode } = state
+  if (!nowPlaying) return -1
+
+  if (
+    playContext?.key === contextKey &&
+    shuffleMode === 0 &&
+    queue[queuePosition]?.id === nowPlaying.id
+  ) {
+    // The queue is the list from `offset` on, minus songs MusicKit couldn't
+    // play. Such a song is dropped at every occurrence, so pairing queue
+    // entries with the list in order finds each entry's row.
+    let trackIndex = playContext.offset - 1
+    for (let i = 0; i <= queuePosition; i++) {
+      trackIndex = trackIds.indexOf(queue[i].id, trackIndex + 1)
+      if (trackIndex === -1) break
+    }
+    if (trackIndex !== -1) return trackIndex
+  }
+
+  return trackIds.indexOf(nowPlaying.id)
 }
 
 export function getPlaybackErrorMessage(error: unknown): PlaybackError {
