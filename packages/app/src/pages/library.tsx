@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { SongRow } from '@/components/ui/song-row'
 import { MediaCard } from '@/components/ui/media-card'
@@ -12,6 +12,7 @@ import {
 } from '@/hooks/use-library'
 import type { LibraryArtist } from '@/hooks/use-library'
 import { useLibraryPlaylists, useCreatePlaylist } from '@/hooks/use-playlists'
+import { useInfiniteScroll } from '@/hooks/use-infinite-scroll'
 import { usePlayerStore } from '@/stores/player-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { formatArtworkUrl } from '@/lib/utils'
@@ -49,6 +50,7 @@ export function LibraryPage() {
     hasNextPage: hasMoreArtists,
     fetchNextPage: fetchMoreArtists,
     isFetchingNextPage: fetchingMoreArtists,
+    isFetchNextPageError: fetchMoreArtistsError,
   } = useLibraryArtists(isAuthorized && section === 'artists')
   const { data: recentlyAdded = [], isLoading: loadingRecent } =
     useLibraryRecentlyAdded(isAuthorized && section === 'recently-added')
@@ -60,30 +62,13 @@ export function LibraryPage() {
     [artistsData],
   )
 
-  // Infinite scroll sentinel for artists
-  const sentinelRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (section !== 'artists') return
-    const sentinel = sentinelRef.current
-    if (!sentinel) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          hasMoreArtists &&
-          !fetchingMoreArtists
-        ) {
-          fetchMoreArtists()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [section, hasMoreArtists, fetchingMoreArtists, fetchMoreArtists])
+  const sentinelRef = useInfiniteScroll({
+    hasNextPage: hasMoreArtists,
+    isFetchingNextPage: fetchingMoreArtists,
+    isFetchNextPageError: fetchMoreArtistsError,
+    fetchNextPage: fetchMoreArtists,
+    enabled: section === 'artists',
+  })
 
   if (!isAuthorized) {
     return (
@@ -279,6 +264,19 @@ export function LibraryPage() {
               {fetchingMoreArtists && (
                 <div className="flex items-center justify-center py-6">
                   <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+
+              {fetchMoreArtistsError && (
+                <div className="flex flex-col items-center gap-2 py-6 text-sm text-muted-foreground">
+                  <p>Couldn&apos;t load more artists.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchMoreArtists()}
+                  >
+                    Try again
+                  </Button>
                 </div>
               )}
             </>
