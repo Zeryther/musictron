@@ -409,6 +409,34 @@ export function getChartData(
   return entry.data ?? []
 }
 
+/**
+ * Whether an id names a library resource (song `i.…`, album `l.…`, playlist
+ * `p.…`). Loading one needs a signed-in user; catalog ids (incl. `pl.…`) don't.
+ */
+export function isLibraryId(id: string): boolean {
+  return /^[ilp]\./.test(id)
+}
+
+/**
+ * Whether Apple Music rejects the signed-in user's token. MusicKit's queue
+ * loader doesn't check response status, so a rejected token there surfaces as
+ * a cryptic TypeError (`undefined is not an object (evaluating 'e.id')`)
+ * rather than an auth error; this asks the API directly.
+ */
+export async function isUserTokenRejected(): Promise<boolean> {
+  const instance = getMusicKitInstance()
+  if (!instance?.isAuthorized) return false
+  try {
+    await instance.api.music('/v1/me/library/songs', { limit: 1 })
+    return false
+  } catch (error) {
+    // MusicKit attaches the failed Response as `data`.
+    const status = (error as { data?: { status?: unknown } } | null)?.data
+      ?.status
+    return status === 401 || status === 403
+  }
+}
+
 // Apple Music API helper
 export async function musicAPI(
   path: string,

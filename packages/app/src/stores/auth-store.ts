@@ -129,6 +129,7 @@ export const useAuthStore = create<AuthState>()(
           const instance = await configureWithToken(token)
           const isAuthorized = instance.isAuthorized
           logMusicKitDebug('auth.initialize.after-configure')
+          watchAuthorization(instance)
 
           set({
             developerToken: token,
@@ -279,6 +280,32 @@ async function configureWithToken(
     }
     throw err
   }
+}
+
+// The instance whose authorization changes the store follows.
+let watchedInstance: MusicKit.MusicKitInstance | null = null
+
+function syncAuthorization() {
+  const instance = getMusicKitInstance()
+  const isAuthorized = instance?.isAuthorized ?? false
+  useAuthStore.setState({
+    isAuthorized,
+    musicUserToken: isAuthorized ? (instance?.musicUserToken ?? null) : null,
+  })
+}
+
+/**
+ * Follow MusicKit's own sign-in state, e.g. when a user token Apple rejected
+ * is cleared, so the UI offers sign-in instead of showing a dead session.
+ */
+function watchAuthorization(instance: MusicKit.MusicKitInstance) {
+  if (watchedInstance === instance) return
+  watchedInstance?.removeEventListener(
+    'authorizationStatusDidChange',
+    syncAuthorization,
+  )
+  instance.addEventListener('authorizationStatusDidChange', syncAuthorization)
+  watchedInstance = instance
 }
 
 /** Low-level token fetch that does not touch store state. */
