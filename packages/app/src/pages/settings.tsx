@@ -424,8 +424,16 @@ const NORMALIZATION_LEVELS: Array<{
 ]
 
 function PlaybackSettings() {
-  const { enabled, level, track, setEnabled, setLevel } =
-    useVolumeNormalizationStore()
+  const {
+    enabled,
+    level,
+    track,
+    stableVolume,
+    stableVolumeFailed,
+    setEnabled,
+    setLevel,
+    setStableVolume,
+  } = useVolumeNormalizationStore()
   const gain = useVolumeNormalizationStore(selectNormalizationGain)
 
   return (
@@ -490,6 +498,24 @@ function PlaybackSettings() {
           )}
         </div>
       )}
+
+      <div className="space-y-2">
+        <SettingsToggle
+          label="Stable volume"
+          badge="Experimental"
+          description="Evens out loud and quiet moments within a song by processing audio in the browser. Some browsers mute protected Apple Music audio when it's processed; if that happens it turns itself off."
+          enabled={stableVolume}
+          onChange={setStableVolume}
+          disabled={stableVolumeFailed}
+        />
+        {stableVolumeFailed && (
+          <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 rounded-lg p-3">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            This browser muted Apple Music audio while processing it, so stable
+            volume was turned off. Reload Musictron to restore sound.
+          </div>
+        )}
+      </div>
     </Card>
   )
 }
@@ -659,6 +685,8 @@ interface SettingsToggleProps {
   description: string
   enabled: boolean
   onChange: (enabled: boolean) => void
+  badge?: string
+  disabled?: boolean
 }
 
 function SettingsToggle({
@@ -666,11 +694,14 @@ function SettingsToggle({
   description,
   enabled,
   onChange,
+  badge,
+  disabled,
 }: SettingsToggleProps) {
   return (
     <button
       onClick={() => onChange(!enabled)}
-      className="flex items-center gap-3 w-full text-left group"
+      disabled={disabled}
+      className="flex items-center gap-3 w-full text-left group disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <div
         className={`relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 ${
@@ -684,7 +715,14 @@ function SettingsToggle({
         />
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-medium">{label}</p>
+        <p className="text-sm font-medium flex items-center gap-2">
+          {label}
+          {badge && (
+            <span className="text-2xs font-medium uppercase tracking-wide text-amber-500 bg-amber-500/10 rounded px-1.5 py-0.5">
+              {badge}
+            </span>
+          )}
+        </p>
         <p className="text-2xs text-muted-foreground">{description}</p>
       </div>
     </button>

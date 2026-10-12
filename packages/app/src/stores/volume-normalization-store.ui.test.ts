@@ -66,7 +66,7 @@ describe('useVolumeNormalizationStore.rememberLoudness', () => {
     expect(cache['1000']).toEqual({ lufs: -10, measuredAt: 1000 })
   })
 
-  it('persists settings and measurements but not the playing track', () => {
+  it('persists settings and measurements but not session state', () => {
     store().setLevel('quiet')
     store().rememberLoudness('42', -9)
     store().setTrack({ songId: '42', status: 'ready', loudness: -9 })
@@ -76,6 +76,7 @@ describe('useVolumeNormalizationStore.rememberLoudness', () => {
       enabled: true,
       level: 'quiet',
       loudnessCache: { '42': { lufs: -9, measuredAt: expect.any(Number) } },
+      stableVolume: false,
     })
   })
 })

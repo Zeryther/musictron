@@ -44,11 +44,17 @@ interface VolumeNormalizationState {
   track: NormalizedTrack | null
   /** Loudness of the last measured track, held while the next one measures. */
   previousLoudness: number | null
+  /** Experimental: compress loud/quiet moments within songs via Web Audio. */
+  stableVolume: boolean
+  /** Stable volume silenced playback this session; a reload is needed. */
+  stableVolumeFailed: boolean
 
   setEnabled: (enabled: boolean) => void
   setLevel: (level: NormalizationLevel) => void
   rememberLoudness: (songId: string, lufs: number) => void
   setTrack: (track: NormalizedTrack | null) => void
+  setStableVolume: (enabled: boolean) => void
+  markStableVolumeFailed: () => void
 }
 
 export const useVolumeNormalizationStore = create<VolumeNormalizationState>()(
@@ -59,6 +65,8 @@ export const useVolumeNormalizationStore = create<VolumeNormalizationState>()(
       loudnessCache: {},
       track: null,
       previousLoudness: null,
+      stableVolume: false,
+      stableVolumeFailed: false,
 
       setEnabled: (enabled) => set({ enabled }),
 
@@ -79,6 +87,12 @@ export const useVolumeNormalizationStore = create<VolumeNormalizationState>()(
           previousLoudness:
             track?.status === 'ready' ? track.loudness : state.previousLoudness,
         })),
+
+      setStableVolume: (stableVolume) =>
+        set((state) => (state.stableVolumeFailed ? {} : { stableVolume })),
+
+      markStableVolumeFailed: () =>
+        set({ stableVolume: false, stableVolumeFailed: true }),
     }),
     {
       name: 'musictron-volume-normalization',
@@ -86,6 +100,7 @@ export const useVolumeNormalizationStore = create<VolumeNormalizationState>()(
         enabled: state.enabled,
         level: state.level,
         loudnessCache: state.loudnessCache,
+        stableVolume: state.stableVolume,
       }),
     },
   ),

@@ -15,6 +15,7 @@ interface Window {
     url?: string,
   ) => Promise<Record<string, unknown>>
   __musictronDrmProbe?: () => Promise<Record<string, unknown>>
+  __musictronAudioProbe?: () => Record<string, unknown>
 }
 
 declare namespace MusicKit {

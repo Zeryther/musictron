@@ -6,6 +6,13 @@ import {
   logMusicKitDebug,
   musicAPI,
 } from '@/lib/musickit'
+import {
+  isAudioProcessingActive,
+  resumeAudioProcessing,
+  setProcessingGains,
+  setStableVolumeCompression,
+  startAudioProcessing,
+} from '@/lib/audio-processing'
 import { formatArtworkUrl } from '@/lib/utils'
 import { normalizeNowPlaying } from '@/lib/volume-normalization'
 import {
@@ -112,6 +119,7 @@ export const usePlayerStore = create<PlayerState>()(
       playbackError: null,
 
       play: async () => {
+        resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (!mk) {
           set({
@@ -221,6 +229,7 @@ export const usePlayerStore = create<PlayerState>()(
         trackId: string,
         options?: { startPlaying?: boolean },
       ) => {
+        resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
           queueGeneration++
@@ -245,6 +254,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       playAlbum: async (albumId: string, startIndex: number = 0) => {
+        resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
           queueGeneration++
@@ -270,6 +280,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       playPlaylist: async (playlistId: string, startIndex: number = 0) => {
+        resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
           queueGeneration++
@@ -295,6 +306,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       playSongs: async (songIds: string[], startIndex: number = 0) => {
+        resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
           const generation = ++queueGeneration
@@ -525,9 +537,18 @@ function applyMusicKitVolume(
     volumeRampTimer = null
   }
 
-  const target =
-    usePlayerStore.getState().volume *
-    selectNormalizationGain(useVolumeNormalizationStore.getState())
+  const { volume } = usePlayerStore.getState()
+  const gain = selectNormalizationGain(useVolumeNormalizationStore.getState())
+
+  // Stable volume routes the audio through Web Audio: MusicKit stays at full
+  // volume and the graph applies both gains around the compressor.
+  if (isAudioProcessingActive()) {
+    if (mk.volume !== 1) mk.volume = 1
+    setProcessingGains(gain, volume, { fade: ramp })
+    return
+  }
+
+  const target = volume * gain
   const start = mk.volume
   if (!ramp || Math.abs(target - start) < 0.001) {
     mk.volume = target
@@ -554,9 +575,35 @@ function syncVolumeNormalization(mk: MusicKit.MusicKitInstance) {
   normalizeNowPlaying(mk.nowPlayingItem, items.slice(position + 1))
 }
 
+/** Start or bypass the experimental stable-volume audio processing. */
+function syncStableVolume() {
+  const { stableVolume } = useVolumeNormalizationStore.getState()
+  if (!stableVolume) {
+    setStableVolumeCompression(false)
+    return
+  }
+  startAudioProcessing({
+    onActiveChange: () => {
+      const mk = getMusicKitInstance()
+      if (mk) applyMusicKitVolume(mk)
+    },
+    onSilence: () => {
+      useVolumeNormalizationStore.getState().markStableVolumeFailed()
+      usePlayerStore.setState({
+        playbackError: {
+          title: 'Stable volume is not supported here',
+          message:
+            'This browser mutes Apple Music audio when it is processed, so stable volume has been turned off. Reload Musictron to restore sound.',
+        },
+      })
+    },
+  })
+}
+
 // Re-apply the volume whenever the normalization gain changes (new track
 // measured, setting toggled, target level changed).
 useVolumeNormalizationStore.subscribe((state, previous) => {
+  if (state.stableVolume !== previous.stableVolume) syncStableVolume()
   const mk = getMusicKitInstance()
   if (!mk) return
   if (state.enabled && !previous.enabled) syncVolumeNormalization(mk)
@@ -852,4 +899,5 @@ export function initializePlayerEvents() {
 
   // Set initial volume
   applyMusicKitVolume(mk)
+  syncStableVolume()
 }
