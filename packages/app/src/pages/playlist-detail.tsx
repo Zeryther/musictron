@@ -17,6 +17,7 @@ import {
   useRenamePlaylist,
 } from '@/hooks/use-playlists'
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll'
+import { usePlayingTrackIndex } from '@/hooks/use-playing-track-index'
 import { usePlayerStore } from '@/stores/player-store'
 import {
   formatArtworkUrl,
@@ -43,7 +44,7 @@ import {
 export function PlaylistDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { playPlaylist, playSongs, nowPlaying, isPlaying } = usePlayerStore()
+  const { playPlaylist, playSongs, isPlaying } = usePlayerStore()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editName, setEditName] = useState('')
 
@@ -63,6 +64,13 @@ export function PlaylistDetailPage() {
     () => tracksData?.pages.flatMap((page) => page.tracks) ?? [],
     [tracksData],
   )
+  const trackIds = useMemo(
+    () => tracks.map((t: MusicKit.Resource) => t.id),
+    [tracks],
+  )
+  // Playlists can repeat a song; only highlight the occurrence playing.
+  const playContextKey = `playlist:${id}`
+  const playingIndex = usePlayingTrackIndex(trackIds, playContextKey)
 
   const sentinelRef = useInfiniteScroll({
     hasNextPage,
@@ -164,8 +172,7 @@ export function PlaylistDetailPage() {
               variant="outline"
               onClick={() => {
                 if (tracks.length > 0) {
-                  const ids = tracks.map((t: MusicKit.Resource) => t.id)
-                  const shuffled = [...ids].sort(() => Math.random() - 0.5)
+                  const shuffled = [...trackIds].sort(() => Math.random() - 0.5)
                   playSongs(shuffled)
                 }
               }}
@@ -215,7 +222,7 @@ export function PlaylistDetailPage() {
       <div className="space-y-px">
         {tracks.map((track: MusicKit.Resource, idx: number) => (
           <SongRow
-            key={track.id}
+            key={`${track.id}-${idx}`}
             id={track.id}
             name={track.attributes?.name}
             artistName={track.attributes?.artistName}
@@ -225,12 +232,9 @@ export function PlaylistDetailPage() {
             )}
             artworkUrl={track.attributes?.artwork?.url}
             duration={track.attributes?.durationInMillis || 0}
-            isActive={nowPlaying?.id === track.id}
-            isPlaying={nowPlaying?.id === track.id && isPlaying}
-            onClick={() => {
-              const ids = tracks.map((t: MusicKit.Resource) => t.id)
-              playSongs(ids, idx)
-            }}
+            isActive={idx === playingIndex}
+            isPlaying={idx === playingIndex && isPlaying}
+            onClick={() => playSongs(trackIds, idx, playContextKey)}
           />
         ))}
       </div>

@@ -23,16 +23,30 @@ function queueOf(ids: string[], position = 0): MusicKit.Queue {
 
 /**
  * Stub MusicKit so `setQueue` builds a queue from the requested songs, minus
- * any `unplayable` ids (MusicKit drops those), positioned at `startWith`.
+ * any `unplayable` ids (MusicKit drops those), positioned at `startWith`, and
+ * `playLater` appends to it. Like MusicKit, a song repeated within one request
+ * only keeps its last occurrence.
  */
 function stubQueue(unplayable: string[] = []) {
   const stub = stubMusicKit()
-  vi.mocked(stub.instance.setQueue).mockImplementation(async (options) => {
-    const songs = (options.songs ?? []).filter(
-      (id) => !unplayable.includes(id),
+  const resolve = (songs: string[] = []) =>
+    songs.filter(
+      (id, index) =>
+        !unplayable.includes(id) && songs.lastIndexOf(id) === index,
     )
-    stub.instance.queue = queueOf(songs, options.startWith ?? 0)
+  vi.mocked(stub.instance.setQueue).mockImplementation(async (options) => {
+    stub.instance.queue = queueOf(
+      resolve(options.songs),
+      options.startWith ?? 0,
+    )
     return stub.instance.queue
+  })
+  vi.mocked(stub.instance.playLater).mockImplementation(async (options) => {
+    const { items, position } = stub.instance.queue
+    stub.instance.queue = queueOf(
+      [...items.map((item) => item.id), ...resolve(options.songs)],
+      position,
+    )
   })
   return stub
 }
@@ -143,5 +157,58 @@ describe('usePlayerStore.playSongs', () => {
     expect(usePlayerStore.getState().playbackError?.title).toBe(
       'Song unavailable',
     )
+  })
+})
+
+describe('usePlayerStore.playSongs with repeated songs', () => {
+  it('never repeats a song within one queue request', async () => {
+    const { instance } = stubQueue()
+
+    await usePlayerStore.getState().playSongs(['a', 'b', 'a', 'c'], 0)
+
+    expect(instance.setQueue).toHaveBeenCalledWith({
+      songs: ['a', 'b'],
+      startWith: 0,
+      startPlaying: false,
+    })
+    expect(instance.play).toHaveBeenCalled()
+    expect(vi.mocked(instance.playLater).mock.calls).toEqual([
+      [{ songs: ['a', 'c'] }],
+    ])
+    expect(instance.queue.items.map((item) => item.id)).toEqual([
+      'a',
+      'b',
+      'a',
+      'c',
+    ])
+  })
+
+  it('plays the clicked occurrence of a repeated song', async () => {
+    const { instance } = stubQueue()
+
+    await usePlayerStore.getState().playSongs(['a', 'b', 'a', 'c'], 2)
+
+    // The batch holding the clicked song is queued before playback starts.
+    expect(instance.playLater).toHaveBeenCalledWith({ songs: ['a', 'c'] })
+    expect(instance.changeToMediaAtIndex).toHaveBeenCalledWith(2)
+    expect(
+      vi.mocked(instance.playLater).mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      vi.mocked(instance.changeToMediaAtIndex).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('records which list the queue was started from', async () => {
+    stubQueue()
+    const songIds = ids(100)
+
+    await usePlayerStore.getState().playSongs(songIds, 10, 'playlist:p.1')
+    expect(usePlayerStore.getState().playContext).toEqual({
+      key: 'playlist:p.1',
+      offset: 10,
+    })
+
+    await usePlayerStore.getState().playSongs(songIds, 10)
+    expect(usePlayerStore.getState().playContext).toBeNull()
   })
 })
