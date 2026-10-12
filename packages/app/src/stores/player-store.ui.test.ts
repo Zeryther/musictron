@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { usePlayerStore } from '@/stores/player-store'
+import { initializePlayerEvents, usePlayerStore } from '@/stores/player-store'
 import { useVolumeNormalizationStore } from '@/stores/volume-normalization-store'
 import { clearMusicKit, stubMusicKit } from '@/test/musickit'
 import { autoResetStores } from '@/test/store'
@@ -159,18 +159,55 @@ describe('volume normalization', () => {
     expect(usePlayerStore.getState().volume).toBe(0.8)
   })
 
-  it('fades to the new level when the gain changes', () => {
+  it('switches straight to the level of a new track', () => {
     const { instance } = stubMusicKit()
     normalization().setTrack({ songId: '1', status: 'ready', loudness: -16 })
     usePlayerStore.getState().setVolume(1)
     expect(instance.volume).toBe(1)
 
     normalization().setTrack({ songId: '2', status: 'ready', loudness: -10 })
+
+    expect(instance.volume).toBeCloseTo(0.501, 3)
+  })
+
+  it('fades when a level changes mid-track', () => {
+    const { instance } = stubMusicKit()
+    normalization().setTrack({
+      songId: '1',
+      status: 'unavailable',
+      loudness: null,
+    })
+    usePlayerStore.getState().setVolume(1)
+    expect(instance.volume).toBeCloseTo(0.501, 3) // assumed -10 LUFS
+
+    // The measurement finished: the track is quieter than assumed.
+    normalization().setTrack({ songId: '1', status: 'ready', loudness: -16 })
     vi.advanceTimersByTime(200)
-    expect(instance.volume).toBeLessThan(1)
-    expect(instance.volume).toBeGreaterThan(0.501)
+    expect(instance.volume).toBeGreaterThan(0.6)
+    expect(instance.volume).toBeLessThan(0.95)
 
     vi.advanceTimersByTime(200)
+    expect(instance.volume).toBe(1)
+  })
+
+  it('sets the level of the next track as soon as MusicKit announces it', () => {
+    const { instance } = stubMusicKit()
+    initializePlayerEvents()
+    normalization().rememberLoudness('42', -10)
+    usePlayerStore.getState().setVolume(1)
+
+    const willChange = vi
+      .mocked(instance.addEventListener)
+      .mock.calls.find(([name]) => name === 'nowPlayingItemWillChange')?.[1]
+    willChange?.({
+      item: { id: '42', type: 'songs', attributes: {} } as MusicKit.MediaItem,
+    })
+
+    expect(normalization().track).toEqual({
+      songId: '42',
+      status: 'ready',
+      loudness: -10,
+    })
     expect(instance.volume).toBeCloseTo(0.501, 3)
   })
 

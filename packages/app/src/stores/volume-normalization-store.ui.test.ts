@@ -4,6 +4,7 @@ import {
   selectEffectiveLoudness,
   selectNormalizationGain,
   useVolumeNormalizationStore,
+  type NormalizationLevel,
 } from '@/stores/volume-normalization-store'
 import { autoResetStores } from '@/test/store'
 
@@ -27,6 +28,16 @@ describe('selectNormalizationGain', () => {
 
     store().setLevel('quiet')
     expect(selectNormalizationGain(store())).toBeCloseTo(0.316, 3) // -10 dB
+  })
+})
+
+describe('selectNormalizationGain with unknown persisted level', () => {
+  it('falls back to balanced instead of producing NaN', () => {
+    useVolumeNormalizationStore.setState({
+      level: 'deafening' as NormalizationLevel,
+    })
+    store().setTrack({ songId: '1', status: 'ready', loudness: -10 })
+    expect(selectNormalizationGain(store())).toBeCloseTo(0.501, 3)
   })
 })
 

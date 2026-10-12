@@ -83,6 +83,10 @@ describe('getNormalizationGain', () => {
     expect(getNormalizationGain(Number.NaN, -16)).toBe(1)
   })
 
+  it('leaves the volume alone for an invalid target', () => {
+    expect(getNormalizationGain(-10, Number.NaN)).toBe(1)
+  })
+
   it('caps the attenuation', () => {
     expect(getNormalizationGain(20, -16)).toBe(MIN_NORMALIZATION_GAIN)
   })

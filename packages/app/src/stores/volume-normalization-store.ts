@@ -141,8 +141,9 @@ export function selectNormalizationGain(
   >,
 ): number {
   if (!state.enabled) return 1
-  return getNormalizationGain(
-    selectEffectiveLoudness(state),
-    NORMALIZATION_TARGETS[state.level],
-  )
+  // Guard against an unknown level in persisted state (edited, or written by
+  // a newer version).
+  const target =
+    NORMALIZATION_TARGETS[state.level] ?? NORMALIZATION_TARGETS.balanced
+  return getNormalizationGain(selectEffectiveLoudness(state), target)
 }

@@ -45,6 +45,31 @@ describe('stable volume', () => {
     expect(volume).toBe(0.6)
   })
 
+  it('writes full volume to MusicKit even when the element is already at 1', () => {
+    // Capturing sets the element to 1 directly, but MusicKit re-applies its
+    // own remembered volume on every new item, so it must be told too.
+    const { instance } = stubMusicKit()
+    const writes: number[] = []
+    Object.defineProperty(instance, 'volume', {
+      get: () => 1,
+      set: (value: number) => writes.push(value),
+    })
+    vi.mocked(isAudioProcessingActive).mockReturnValue(true)
+
+    usePlayerStore.getState().setVolume(0.3)
+
+    expect(writes).toEqual([1])
+  })
+
+  it('turns the toggle back off when processing cannot start', () => {
+    stubMusicKit()
+    vi.mocked(startAudioProcessing).mockReturnValueOnce(false)
+
+    normalization().setStableVolume(true)
+
+    expect(normalization().stableVolume).toBe(false)
+  })
+
   it('starts processing when turned on and bypasses it when turned off', () => {
     stubMusicKit()
 

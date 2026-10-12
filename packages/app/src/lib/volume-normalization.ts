@@ -14,14 +14,28 @@ const DECODE_SAMPLE_RATE = 44100
 /** Upcoming queue items measured ahead of time so they start at the right level. */
 const PREFETCH_COUNT = 2
 
+/** How long to wait before retrying a measurement that failed transiently. */
+const RETRY_AFTER_MS = 60_000
+
 const inFlight = new Map<string, Promise<number | null>>()
-/** Songs that failed to measure this session; not retried until reload. */
-const unavailable = new Set<string>()
+/** Songs that failed to measure, and when they may be tried again. */
+const unavailableUntil = new Map<string, number>()
 /** Prefetches run one at a time so they don't compete with playback. */
 let prefetchChain: Promise<unknown> = Promise.resolve()
+/** Songs the latest prefetch request still wants; stale jobs are skipped. */
+let wantedPrefetches = new Set<string>()
 
-/** Catalog id used as the loudness cache key, or null for uploaded tracks. */
+/** A measurement that will fail the same way if retried. */
+class UnmeasurableError extends Error {}
+
+/**
+ * Catalog id used as the loudness cache key, or null for items that can't be
+ * measured: uploaded tracks, music videos and stations.
+ */
 export function getCatalogSongId(item: MusicKit.MediaItem): string | null {
+  const kind = item.attributes?.playParams?.kind
+  if (kind ? kind !== 'song' : /video|station/.test(item.type)) return null
+
   const catalogId = item.attributes?.playParams?.catalogId
   if (catalogId) return catalogId
   return /^\d+$/.test(item.id) ? item.id : null
@@ -51,11 +65,19 @@ async function resolvePreviewUrl(
 export async function measurePreviewLoudness(url: string): Promise<number> {
   const response = await fetch(url)
   if (!response.ok) {
-    throw new Error(`Preview request failed (${response.status})`)
+    const message = `Preview request failed (${response.status})`
+    throw response.status === 404 || response.status === 410
+      ? new UnmeasurableError(message)
+      : new Error(message)
   }
   const encoded = await response.arrayBuffer()
   const context = new OfflineAudioContext(1, 1, DECODE_SAMPLE_RATE)
-  const audio = await context.decodeAudioData(encoded)
+  const audio = await context.decodeAudioData(encoded).catch((error) => {
+    // Unsupported codec or corrupt file: retrying won't help.
+    throw new UnmeasurableError(
+      error instanceof Error ? error.message : String(error),
+    )
+  })
   const channels = Array.from({ length: audio.numberOfChannels }, (_, i) =>
     audio.getChannelData(i),
   )
@@ -70,7 +92,9 @@ export function getTrackLoudness(
   item: MusicKit.MediaItem,
 ): Promise<number | null> {
   const songId = getCatalogSongId(item)
-  if (!songId || unavailable.has(songId)) return Promise.resolve(null)
+  if (!songId || (unavailableUntil.get(songId) ?? 0) > Date.now()) {
+    return Promise.resolve(null)
+  }
 
   const cached = useVolumeNormalizationStore.getState().loudnessCache[songId]
   if (cached) return Promise.resolve(cached.lufs)
@@ -81,13 +105,21 @@ export function getTrackLoudness(
   const promise = (async () => {
     try {
       const url = await resolvePreviewUrl(item, songId)
-      if (!url) throw new Error('No preview available')
+      if (!url) throw new UnmeasurableError('No preview available')
       const lufs = await measurePreviewLoudness(url)
-      if (!Number.isFinite(lufs)) throw new Error('Preview is silent')
+      if (!Number.isFinite(lufs))
+        throw new UnmeasurableError('Preview is silent')
+      unavailableUntil.delete(songId)
       useVolumeNormalizationStore.getState().rememberLoudness(songId, lufs)
       return lufs
     } catch (error) {
-      unavailable.add(songId)
+      // Network blips and API errors are retried; definitive failures aren't.
+      unavailableUntil.set(
+        songId,
+        error instanceof UnmeasurableError
+          ? Infinity
+          : Date.now() + RETRY_AFTER_MS,
+      )
       logMusicKitDebug('volume-normalization.measure-failed', {
         songId,
         error: error instanceof Error ? error.message : String(error),
@@ -104,11 +136,12 @@ export function getTrackLoudness(
 
 /**
  * Point normalization at the now-playing track, measuring it if needed, and
- * measure the next few queue items in the background. Idempotent per track.
+ * measure the next few `upcoming` queue items in the background (when given).
+ * Idempotent per track.
  */
 export function normalizeNowPlaying(
   item: MusicKit.MediaItem | null,
-  upcoming: MusicKit.MediaItem[] = [],
+  upcoming?: MusicKit.MediaItem[],
 ) {
   const store = useVolumeNormalizationStore.getState()
   if (!store.enabled) return
@@ -117,6 +150,8 @@ export function normalizeNowPlaying(
     if (store.track) store.setTrack(null)
     return
   }
+
+  if (upcoming) prefetchUpcoming(upcoming)
 
   const songId = getCatalogSongId(item) ?? item.id
   if (store.track?.songId === songId) return
@@ -137,8 +172,30 @@ export function normalizeNowPlaying(
       )
     })
   }
+}
 
-  for (const next of upcoming.slice(0, PREFETCH_COUNT)) {
-    prefetchChain = prefetchChain.then(() => getTrackLoudness(next))
+/** Measure the next few queue items in the background, one at a time. */
+function prefetchUpcoming(upcoming: MusicKit.MediaItem[]) {
+  const prefetches = upcoming.slice(0, PREFETCH_COUNT)
+  const ids = prefetches.map((next) => getCatalogSongId(next) ?? next.id)
+  // Already queued for this exact set (syncs fire repeatedly per track).
+  if (
+    ids.length === wantedPrefetches.size &&
+    ids.every((id) => wantedPrefetches.has(id))
+  ) {
+    return
   }
+
+  wantedPrefetches = new Set(ids)
+  prefetches.forEach((next, index) => {
+    const nextId = ids[index]
+    prefetchChain = prefetchChain.then(() =>
+      // Skipped past, or normalization turned off, while queued.
+      nextId &&
+      wantedPrefetches.has(nextId) &&
+      useVolumeNormalizationStore.getState().enabled
+        ? getTrackLoudness(next)
+        : null,
+    )
+  })
 }

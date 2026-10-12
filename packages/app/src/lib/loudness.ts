@@ -164,7 +164,7 @@ export function getNormalizationGain(
   loudness: number,
   targetLufs: number,
 ): number {
-  if (!Number.isFinite(loudness)) return 1
+  if (!Number.isFinite(loudness) || !Number.isFinite(targetLufs)) return 1
   const gain = 10 ** ((targetLufs - loudness) / 20)
   return Math.min(1, Math.max(MIN_NORMALIZATION_GAIN, gain))
 }

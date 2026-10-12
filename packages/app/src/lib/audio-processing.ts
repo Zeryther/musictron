@@ -25,9 +25,8 @@ export const STABLE_VOLUME_COMPRESSOR = {
   release: 0.3,
 }
 
-/** Time constants for gain changes: track changes vs. volume slider moves. */
+/** Time constant for gain fades on track changes. */
 const GAIN_FADE_SECONDS = 0.1
-const GAIN_SMOOTHING_SECONDS = 0.015
 
 const SILENCE_CHECK_MS = 500
 /** Continuous digital silence during playback before giving up. */
@@ -58,6 +57,10 @@ export function createProcessingChain(
   compressor.attack.value = STABLE_VOLUME_COMPRESSOR.attack
   compressor.release.value = STABLE_VOLUME_COMPRESSOR.release
   const output = context.createGain()
+  // Silent until the player sets the real gains, so an element captured
+  // before then can't play at full volume.
+  input.gain.value = 0
+  output.gain.value = 0
 
   input.connect(analyser)
   compressor.connect(output)
@@ -113,6 +116,8 @@ let failed = false
 let wasActive = false
 let silentMs = 0
 let lastPlaybackTime = -1
+/** Source that has produced sound through the graph; it can't be muted. */
+let heardSrc: string | null = null
 let analyserBuffer: Float32Array<ArrayBuffer> | null = null
 const captured = new Set<HTMLMediaElement>()
 
@@ -143,7 +148,8 @@ function notifyIfActiveChanged() {
 }
 
 function captureElements() {
-  if (context && chain && context.state === 'running') {
+  // After a failure, leave new elements playing directly so they're audible.
+  if (context && chain && context.state === 'running' && !failed) {
     for (const element of musicKitElements()) {
       if (captured.has(element)) continue
       try {
@@ -172,7 +178,7 @@ function checkForSilence() {
   // the page has interacted before, so resuming is allowed now.
   if (context.state !== 'running') {
     silentMs = 0
-    void context.resume()
+    resumeAudioProcessing()
     return
   }
   if (!captured.has(playing)) return
@@ -182,12 +188,18 @@ function checkForSilence() {
   const advancing = playing.currentTime !== lastPlaybackTime
   lastPlaybackTime = playing.currentTime
 
+  // A browser that mutes processed audio never yields a single sample, so
+  // once a source has been heard its silent passages (hidden-track gaps,
+  // outros) are real silence, not a failure.
+  const silent = analyserBuffer.every((value) => value === 0)
+  if (!silent) heardSrc = playing.currentSrc
+
   silentMs = nextSilentDuration(
     silentMs,
     {
       advancing,
       audible: playing.volume > 0 && !playing.muted,
-      silent: analyserBuffer.every((value) => value === 0),
+      silent: silent && heardSrc !== playing.currentSrc,
     },
     SILENCE_CHECK_MS,
   )
@@ -236,21 +248,30 @@ export function setStableVolumeCompression(enabled: boolean) {
 /** Resume a suspended AudioContext; call from user-initiated playback. */
 export function resumeAudioProcessing() {
   if (context && context.state !== 'running' && context.state !== 'closed') {
-    void context.resume()
+    // Rejects without a user gesture in some browsers; the next play retries.
+    context.resume().catch(() => {})
   }
 }
 
-/** Set the graph's normalization and volume gains (fading on track changes). */
+/**
+ * Set the graph's normalization and volume gains: faded on track changes,
+ * otherwise immediately (like a media element's volume).
+ */
 export function setProcessingGains(
   normalization: number,
   volume: number,
   { fade = false }: { fade?: boolean } = {},
 ) {
   if (!context || !chain) return
-  const timeConstant = fade ? GAIN_FADE_SECONDS : GAIN_SMOOTHING_SECONDS
   const now = context.currentTime
-  chain.input.gain.setTargetAtTime(normalization, now, timeConstant)
-  chain.output.gain.setTargetAtTime(volume, now, timeConstant)
+  for (const [param, value] of [
+    [chain.input.gain, normalization],
+    [chain.output.gain, volume],
+  ] as const) {
+    param.cancelScheduledValues(now)
+    if (fade) param.setTargetAtTime(value, now, GAIN_FADE_SECONDS)
+    else param.setValueAtTime(value, now)
+  }
 }
 
 /** Snapshot for `window.__musictronAudioProbe()` when testing in a browser. */

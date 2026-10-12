@@ -5,6 +5,10 @@ type AudioProcessing = typeof AudioProcessingModule
 
 class FakeParam {
   value = 1
+  cancelScheduledValues = vi.fn()
+  setValueAtTime = vi.fn((value: number) => {
+    this.value = value
+  })
   setTargetAtTime = vi.fn((value: number) => {
     this.value = value
   })
@@ -103,7 +107,9 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
-  document.body.innerHTML = ''
+  // A fresh <body>, so earlier module instances' MutationObservers (left
+  // behind by vi.resetModules) watch a detached node.
+  document.body = document.createElement('body')
   vi.clearAllTimers()
   vi.useRealTimers()
 })
@@ -199,6 +205,24 @@ describe('startAudioProcessing', () => {
 })
 
 describe('setProcessingGains', () => {
+  it('starts the graph silent until the player sets real gains', () => {
+    processing.startAudioProcessing(callbacks)
+    const [input, output] = FakeAudioContext.latest.gains
+    expect(input?.gain.value).toBe(0)
+    expect(output?.gain.value).toBe(0)
+  })
+
+  it('applies volume changes immediately', () => {
+    processing.startAudioProcessing(callbacks)
+    const [input, output] = FakeAudioContext.latest.gains
+
+    processing.setProcessingGains(0.5, 0.8)
+
+    expect(input?.gain.setValueAtTime).toHaveBeenCalledWith(0.5, 0)
+    expect(output?.gain.setValueAtTime).toHaveBeenCalledWith(0.8, 0)
+    expect(output?.gain.setTargetAtTime).not.toHaveBeenCalled()
+  })
+
   it('fades the normalization and volume gains', () => {
     processing.startAudioProcessing(callbacks)
     const [input, output] = FakeAudioContext.latest.gains
@@ -207,5 +231,62 @@ describe('setProcessingGains', () => {
 
     expect(input?.gain.setTargetAtTime).toHaveBeenCalledWith(0.5, 0, 0.1)
     expect(output?.gain.setTargetAtTime).toHaveBeenCalledWith(0.8, 0, 0.1)
+  })
+})
+
+describe('silence watchdog', () => {
+  function playSource(element: HTMLMediaElement, src: string) {
+    Object.defineProperty(element, 'currentSrc', {
+      configurable: true,
+      get: () => src,
+    })
+  }
+
+  it('ignores real silence in a source that has already produced sound', () => {
+    const element = addMusicKitAudio()
+    processing.startAudioProcessing(callbacks)
+    fakePlayback(element)
+    playSource(element, 'blob:track-1')
+    const { analyser } = FakeAudioContext.latest
+
+    analyser.level = 0.2
+    vi.advanceTimersByTime(1000)
+    analyser.level = 0 // e.g. a long silent outro
+    vi.advanceTimersByTime(processing.SILENCE_LIMIT_MS * 2)
+
+    expect(callbacks.onSilence).not.toHaveBeenCalled()
+  })
+
+  it('still catches a new source that never produces sound', () => {
+    const element = addMusicKitAudio()
+    processing.startAudioProcessing(callbacks)
+    fakePlayback(element)
+    playSource(element, 'blob:track-1')
+    const { analyser } = FakeAudioContext.latest
+
+    analyser.level = 0.2
+    vi.advanceTimersByTime(1000)
+    analyser.level = 0
+    playSource(element, 'https://audio-ssl.itunes.apple.com/preview.m4a')
+    vi.advanceTimersByTime(processing.SILENCE_LIMIT_MS + 500)
+
+    expect(callbacks.onSilence).toHaveBeenCalledTimes(1)
+  })
+
+  it('stops capturing new elements after a failure', async () => {
+    const first = addMusicKitAudio()
+    processing.startAudioProcessing(callbacks)
+    fakePlayback(first)
+    vi.advanceTimersByTime(processing.SILENCE_LIMIT_MS + 500)
+    expect(callbacks.onSilence).toHaveBeenCalled()
+
+    const second = addMusicKitAudio()
+    await Promise.resolve() // MutationObserver callback
+
+    const context = FakeAudioContext.latest
+    // Only the first element; jsdom elements compare deeply equal, so count.
+    expect(context.createMediaElementSource).toHaveBeenCalledTimes(1)
+    expect(second.volume).toBe(0.4)
+    expect(processing.isAudioProcessingActive()).toBe(false)
   })
 })

@@ -66,6 +66,24 @@ describe('getCatalogSongId', () => {
   })
 })
 
+describe('getCatalogSongId for non-song items', () => {
+  it('skips music videos and stations', () => {
+    expect(
+      getCatalogSongId(
+        song('1500000000', {
+          playParams: { id: '1500000000', kind: 'musicVideo' },
+        }),
+      ),
+    ).toBeNull()
+    expect(
+      getCatalogSongId({ ...song('1500000001'), type: 'music-videos' }),
+    ).toBeNull()
+    expect(
+      getCatalogSongId({ ...song('1500000002'), type: 'stations' }),
+    ).toBeNull()
+  })
+})
+
 describe('getTrackLoudness', () => {
   it('measures the preview and caches the result', async () => {
     const fetchMock = stubDecoder(1)
@@ -105,6 +123,42 @@ describe('getTrackLoudness', () => {
       { 'fields[songs]': 'previews' },
     )
     expect(fetchMock).toHaveBeenCalledWith('https://preview/200.m4a')
+  })
+
+  it('retries after a transient failure but not after a definitive one', async () => {
+    const fetchMock = stubDecoder(1)
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000)
+    vi.mocked(musicAPI).mockRejectedValueOnce(new Error('network'))
+    const transient = song('i.t1', {
+      playParams: { id: 'i.t1', kind: 'song', catalogId: '800' },
+    })
+
+    expect(await getTrackLoudness(transient)).toBeNull()
+    expect(await getTrackLoudness(transient)).toBeNull() // backing off
+    expect(musicAPI).toHaveBeenCalledTimes(1)
+
+    now.mockReturnValue(1_000_000 + 61_000)
+    vi.mocked(musicAPI).mockResolvedValue({
+      data: [
+        { id: '800', type: 'songs', attributes: { previews: [{ url: 'u' }] } },
+      ],
+    })
+    expect(await getTrackLoudness(transient)).toBeCloseTo(-3.01, 1)
+
+    // A track whose preview doesn't decode is not retried.
+    vi.stubGlobal(
+      'OfflineAudioContext',
+      class {
+        async decodeAudioData() {
+          throw new Error('EncodingError')
+        }
+      },
+    )
+    const broken = song('801', { previews: [{ url: 'https://p/801' }] })
+    expect(await getTrackLoudness(broken)).toBeNull()
+    now.mockReturnValue(1_000_000 + 10 * 60_000)
+    expect(await getTrackLoudness(broken)).toBeNull()
+    expect(fetchMock).toHaveBeenCalledTimes(2) // 800 once, 801 once
   })
 
   it('resolves to null when the track has no preview', async () => {
@@ -149,6 +203,39 @@ describe('normalizeNowPlaying', () => {
     await vi.waitFor(() => expect(store().loudnessCache['502']).toBeDefined())
     expect(store().loudnessCache['503']).toBeUndefined()
     expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('skips queued prefetches for tracks that are no longer upcoming', async () => {
+    const fetchMock = stubDecoder(0.5)
+    const preview = (id: string) => ({ previews: [{ url: `https://p/${id}` }] })
+    store().rememberLoudness('900', -10)
+    store().rememberLoudness('910', -10)
+
+    normalizeNowPlaying(song('900'), [
+      song('901', preview('901')),
+      song('902', preview('902')),
+    ])
+    // Skipped ahead before those prefetches ran.
+    normalizeNowPlaying(song('910'), [song('911', preview('911'))])
+
+    await vi.waitFor(() => expect(store().loudnessCache['911']).toBeDefined())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith('https://p/911')
+  })
+
+  it('keeps queued prefetches when called without an upcoming list', async () => {
+    const fetchMock = stubDecoder(0.5)
+    store().rememberLoudness('920', -10)
+    store().rememberLoudness('921', -10)
+
+    normalizeNowPlaying(song('920'), [
+      song('922', { previews: [{ url: 'https://p/922' }] }),
+    ])
+    normalizeNowPlaying(song('921')) // MusicKit's will-change event
+
+    await vi.waitFor(() => expect(store().loudnessCache['922']).toBeDefined())
+    expect(fetchMock).toHaveBeenCalledWith('https://p/922')
   })
 
   it('marks tracks that cannot be measured as unavailable', async () => {

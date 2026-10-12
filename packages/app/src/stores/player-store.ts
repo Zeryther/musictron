@@ -541,10 +541,14 @@ function applyMusicKitVolume(
   const gain = selectNormalizationGain(useVolumeNormalizationStore.getState())
 
   // Stable volume routes the audio through Web Audio: MusicKit stays at full
-  // volume and the graph applies both gains around the compressor.
+  // volume and the graph applies both gains around the compressor. The graph
+  // is kept current even while inactive so a newly captured element starts
+  // at the right level.
+  setProcessingGains(gain, volume, { fade: ramp })
   if (isAudioProcessingActive()) {
-    if (mk.volume !== 1) mk.volume = 1
-    setProcessingGains(gain, volume, { fade: ramp })
+    // Always write it: MusicKit re-applies its remembered volume to the
+    // element on every new item, and capturing set only the element to 1.
+    mk.volume = 1
     return
   }
 
@@ -582,7 +586,7 @@ function syncStableVolume() {
     setStableVolumeCompression(false)
     return
   }
-  startAudioProcessing({
+  const started = startAudioProcessing({
     onActiveChange: () => {
       const mk = getMusicKitInstance()
       if (mk) applyMusicKitVolume(mk)
@@ -598,6 +602,13 @@ function syncStableVolume() {
       })
     },
   })
+  if (!started) {
+    // No Web Audio, or it already failed this session.
+    useVolumeNormalizationStore.setState({ stableVolume: false })
+    return
+  }
+  const mk = getMusicKitInstance()
+  if (mk) applyMusicKitVolume(mk)
 }
 
 // Re-apply the volume whenever the normalization gain changes (new track
@@ -608,7 +619,10 @@ useVolumeNormalizationStore.subscribe((state, previous) => {
   if (!mk) return
   if (state.enabled && !previous.enabled) syncVolumeNormalization(mk)
   if (selectNormalizationGain(state) !== selectNormalizationGain(previous)) {
-    applyMusicKitVolume(mk, { ramp: true })
+    // A new track starts at its own level; fade only when the level changes
+    // mid-track (measurement finished, setting changed).
+    const sameTrack = state.track?.songId === previous.track?.songId
+    applyMusicKitVolume(mk, { ramp: sameTrack })
   }
 })
 
@@ -780,6 +794,7 @@ function setMusicKitEventError(
 // can run again after a token re-configure without double-binding every event.
 let boundInstance: MusicKit.MusicKitInstance | null = null
 let boundHandlers: {
+  nowPlayingItemWillChange: (event?: { item?: MusicKit.MediaItem }) => void
   nowPlayingItemDidChange: () => void
   playbackStateDidChange: (event: { state?: number } | number) => void
   queueItemsDidChange: () => void
@@ -804,6 +819,10 @@ export function initializePlayerEvents() {
 
   // Bound to a previous instance — detach its listeners before re-binding.
   if (boundInstance && boundHandlers) {
+    boundInstance.removeEventListener(
+      'nowPlayingItemWillChange',
+      boundHandlers.nowPlayingItemWillChange,
+    )
     boundInstance.removeEventListener(
       'nowPlayingItemDidChange',
       boundHandlers.nowPlayingItemDidChange,
@@ -835,6 +854,11 @@ export function initializePlayerEvents() {
   }
 
   const handlers = {
+    // Fires synchronously before the switch: set the next track's level now
+    // so a loud song doesn't start at the previous song's level.
+    nowPlayingItemWillChange: (event?: { item?: MusicKit.MediaItem }) => {
+      if (event?.item) normalizeNowPlaying(event.item)
+    },
     nowPlayingItemDidChange: () => {
       // Defer sync slightly — MusicKit may not have updated nowPlayingItem yet
       // when this event fires, causing stale reads
@@ -883,6 +907,10 @@ export function initializePlayerEvents() {
     },
   }
 
+  mk.addEventListener(
+    'nowPlayingItemWillChange',
+    handlers.nowPlayingItemWillChange,
+  )
   mk.addEventListener(
     'nowPlayingItemDidChange',
     handlers.nowPlayingItemDidChange,
