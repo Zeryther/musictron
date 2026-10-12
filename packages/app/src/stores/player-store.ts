@@ -7,6 +7,11 @@ import {
   musicAPI,
 } from '@/lib/musickit'
 import { formatArtworkUrl } from '@/lib/utils'
+import { normalizeNowPlaying } from '@/lib/volume-normalization'
+import {
+  selectNormalizationGain,
+  useVolumeNormalizationStore,
+} from '@/stores/volume-normalization-store'
 
 export interface NowPlayingItem {
   id: string
@@ -177,8 +182,8 @@ export const usePlayerStore = create<PlayerState>()(
       setVolume: (volume: number) => {
         const mk = getMusicKitInstance()
         if (mk) {
-          mk.volume = volume
           set({ volume })
+          applyMusicKitVolume(mk)
         }
       },
 
@@ -444,6 +449,7 @@ export const usePlayerStore = create<PlayerState>()(
               // Non-critical — artist link just won't be available
             })
         }
+        syncVolumeNormalization(mk)
 
         // Sync queue
         const queueItems: NowPlayingItem[] = (mk.queue?.items || []).map(
@@ -462,7 +468,6 @@ export const usePlayerStore = create<PlayerState>()(
           queuePosition: mk.queue?.position || 0,
           isPlaying: mk.playbackState === 2, // playing
           duration: mk.currentPlaybackDuration || 0,
-          volume: mk.volume,
         })
       },
 
@@ -502,6 +507,63 @@ export const usePlayerStore = create<PlayerState>()(
     },
   ),
 )
+
+const VOLUME_RAMP_MS = 400
+const VOLUME_RAMP_STEPS = 10
+let volumeRampTimer: ReturnType<typeof setInterval> | null = null
+
+/**
+ * Write the user's volume, scaled by the current track's normalization gain,
+ * to MusicKit. With `ramp`, fade to it so a gain change isn't an audible jump.
+ */
+function applyMusicKitVolume(
+  mk: MusicKit.MusicKitInstance,
+  { ramp = false }: { ramp?: boolean } = {},
+) {
+  if (volumeRampTimer) {
+    clearInterval(volumeRampTimer)
+    volumeRampTimer = null
+  }
+
+  const target =
+    usePlayerStore.getState().volume *
+    selectNormalizationGain(useVolumeNormalizationStore.getState())
+  const start = mk.volume
+  if (!ramp || Math.abs(target - start) < 0.001) {
+    mk.volume = target
+    return
+  }
+
+  let step = 0
+  const timer = setInterval(() => {
+    step++
+    if (step >= VOLUME_RAMP_STEPS) {
+      mk.volume = target
+      clearInterval(timer)
+      if (volumeRampTimer === timer) volumeRampTimer = null
+    } else {
+      mk.volume = start + ((target - start) * step) / VOLUME_RAMP_STEPS
+    }
+  }, VOLUME_RAMP_MS / VOLUME_RAMP_STEPS)
+  volumeRampTimer = timer
+}
+
+function syncVolumeNormalization(mk: MusicKit.MusicKitInstance) {
+  const items = mk.queue?.items ?? []
+  const position = mk.queue?.position ?? 0
+  normalizeNowPlaying(mk.nowPlayingItem, items.slice(position + 1))
+}
+
+// Re-apply the volume whenever the normalization gain changes (new track
+// measured, setting toggled, target level changed).
+useVolumeNormalizationStore.subscribe((state, previous) => {
+  const mk = getMusicKitInstance()
+  if (!mk) return
+  if (state.enabled && !previous.enabled) syncVolumeNormalization(mk)
+  if (selectNormalizationGain(state) !== selectNormalizationGain(previous)) {
+    applyMusicKitVolume(mk, { ramp: true })
+  }
+})
 
 let previewFallbackTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -689,7 +751,7 @@ export function initializePlayerEvents() {
 
   // Already bound to this instance — nothing to re-wire.
   if (boundInstance === mk) {
-    mk.volume = usePlayerStore.getState().volume
+    applyMusicKitVolume(mk)
     return
   }
 
@@ -789,5 +851,5 @@ export function initializePlayerEvents() {
   boundHandlers = handlers
 
   // Set initial volume
-  mk.volume = usePlayerStore.getState().volume
+  applyMusicKitVolume(mk)
 }

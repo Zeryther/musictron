@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { usePlayerStore } from '@/stores/player-store'
+import { useVolumeNormalizationStore } from '@/stores/volume-normalization-store'
 import { clearMusicKit, stubMusicKit } from '@/test/musickit'
 import { autoResetStores } from '@/test/store'
 
-autoResetStores(usePlayerStore)
+autoResetStores(usePlayerStore, useVolumeNormalizationStore)
 
 const ids = (count: number) =>
   Array.from({ length: count }, (_, i) => `i.song${i}`)
@@ -28,9 +29,7 @@ function queueOf(ids: string[], position = 0): MusicKit.Queue {
 function stubQueue(unplayable: string[] = []) {
   const stub = stubMusicKit()
   vi.mocked(stub.instance.setQueue).mockImplementation(async (options) => {
-    const songs = (options.songs ?? []).filter(
-      (id) => !unplayable.includes(id),
-    )
+    const songs = (options.songs ?? []).filter((id) => !unplayable.includes(id))
     stub.instance.queue = queueOf(songs, options.startWith ?? 0)
     return stub.instance.queue
   })
@@ -143,5 +142,46 @@ describe('usePlayerStore.playSongs', () => {
     expect(usePlayerStore.getState().playbackError?.title).toBe(
       'Song unavailable',
     )
+  })
+})
+
+describe('volume normalization', () => {
+  const normalization = () => useVolumeNormalizationStore.getState()
+
+  it('scales the user volume by the current track gain', () => {
+    const { instance } = stubMusicKit()
+    normalization().setTrack({ songId: '1', status: 'ready', loudness: -10 })
+
+    usePlayerStore.getState().setVolume(0.8)
+
+    // Balanced targets -16 LUFS: -6 dB on a -10 LUFS track.
+    expect(instance.volume).toBeCloseTo(0.8 * 0.501, 3)
+    expect(usePlayerStore.getState().volume).toBe(0.8)
+  })
+
+  it('fades to the new level when the gain changes', () => {
+    const { instance } = stubMusicKit()
+    normalization().setTrack({ songId: '1', status: 'ready', loudness: -16 })
+    usePlayerStore.getState().setVolume(1)
+    expect(instance.volume).toBe(1)
+
+    normalization().setTrack({ songId: '2', status: 'ready', loudness: -10 })
+    vi.advanceTimersByTime(200)
+    expect(instance.volume).toBeLessThan(1)
+    expect(instance.volume).toBeGreaterThan(0.501)
+
+    vi.advanceTimersByTime(200)
+    expect(instance.volume).toBeCloseTo(0.501, 3)
+  })
+
+  it('restores the full volume when normalization is turned off', () => {
+    const { instance } = stubMusicKit()
+    normalization().setTrack({ songId: '1', status: 'ready', loudness: -10 })
+    usePlayerStore.getState().setVolume(0.5)
+
+    normalization().setEnabled(false)
+    vi.advanceTimersByTime(400)
+
+    expect(instance.volume).toBe(0.5)
   })
 })

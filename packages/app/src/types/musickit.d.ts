@@ -96,6 +96,7 @@ declare namespace MusicKit {
       genreNames?: string[]
       isrc?: string
       url?: string
+      previews?: Array<{ url: string }>
     }
     relationships?: Record<string, any>
   }

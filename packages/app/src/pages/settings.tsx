@@ -5,6 +5,12 @@ import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/auth-store'
 import { useLastfmStore } from '@/stores/lastfm-store'
 import {
+  NORMALIZATION_TARGETS,
+  selectNormalizationGain,
+  useVolumeNormalizationStore,
+  type NormalizationLevel,
+} from '@/stores/volume-normalization-store'
+import {
   useThemeStore,
   UI_SCALE_OPTIONS,
   type Theme,
@@ -27,6 +33,7 @@ import {
   Monitor,
   Palette,
   Radio,
+  AudioLines,
 } from 'lucide-react'
 
 export function SettingsPage() {
@@ -295,6 +302,9 @@ export function SettingsPage() {
           </div>
         </Card>
 
+        {/* Playback */}
+        <PlaybackSettings />
+
         {/* Last.fm */}
         <LastfmSettings />
 
@@ -400,6 +410,93 @@ export function SettingsPage() {
       </div>
     </div>
   )
+}
+
+// ─── Playback Settings ───────────────────────────────────────────────────────
+
+const NORMALIZATION_LEVELS: Array<{
+  value: NormalizationLevel
+  label: string
+}> = [
+  { value: 'quiet', label: 'Quiet' },
+  { value: 'balanced', label: 'Balanced' },
+  { value: 'loud', label: 'Loud' },
+]
+
+function PlaybackSettings() {
+  const { enabled, level, track, setEnabled, setLevel } =
+    useVolumeNormalizationStore()
+  const gain = useVolumeNormalizationStore(selectNormalizationGain)
+
+  return (
+    <Card className="space-y-5">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <AudioLines className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold">Playback</h2>
+          <p className="text-xs text-muted-foreground">
+            Control how songs sound
+          </p>
+        </div>
+      </div>
+
+      <SettingsToggle
+        label="Normalize volume"
+        description="Play every song at the same loudness, so loud tracks don't blast after quiet ones"
+        enabled={enabled}
+        onChange={setEnabled}
+      />
+
+      {enabled && (
+        <div className="space-y-2.5">
+          <div>
+            <h3 className="text-sm font-medium">Target loudness</h3>
+            <p className="text-xs text-muted-foreground">
+              Louder songs are turned down to this level. Quieter songs are
+              never boosted.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2.5">
+            {NORMALIZATION_LEVELS.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setLevel(value)}
+                className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all duration-150 ${
+                  level === value
+                    ? 'border-primary bg-primary/[0.08] text-foreground'
+                    : 'border-border text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+                }`}
+              >
+                <span className="text-sm font-medium">{label}</span>
+                <span className="text-2xs text-muted-foreground">
+                  {NORMALIZATION_TARGETS[value]} LUFS
+                </span>
+              </button>
+            ))}
+          </div>
+          {track && (
+            <p className="text-2xs text-muted-foreground">
+              Now playing:{' '}
+              {track.status === 'pending'
+                ? 'measuring loudness…'
+                : track.status === 'ready' && track.loudness !== null
+                  ? `${track.loudness.toFixed(1)} LUFS`
+                  : 'loudness unavailable, using a typical level'}
+              {track.status !== 'pending' &&
+                ` · adjusted ${formatGainDb(gain)}`}
+            </p>
+          )}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function formatGainDb(gain: number): string {
+  const db = 20 * Math.log10(gain)
+  return Math.abs(db) < 0.05 ? '0.0 dB' : `${db.toFixed(1)} dB`
 }
 
 // ─── Last.fm Settings ────────────────────────────────────────────────────────
