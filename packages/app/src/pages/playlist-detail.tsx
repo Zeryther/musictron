@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Artwork } from '@/components/ui/artwork'
 import { SongRow } from '@/components/ui/song-row'
@@ -12,11 +12,11 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import {
-  usePlaylistDetail,
   usePlaylistTracks,
   useDeletePlaylist,
   useRenamePlaylist,
 } from '@/hooks/use-playlists'
+import { useInfiniteScroll } from '@/hooks/use-infinite-scroll'
 import { usePlayerStore } from '@/stores/player-store'
 import {
   formatArtworkUrl,
@@ -47,42 +47,29 @@ export function PlaylistDetailPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editName, setEditName] = useState('')
 
-  const { data: detailData, isLoading: loadingDetail } = usePlaylistDetail(id)
   const {
     data: tracksData,
-    isLoading: loadingTracks,
+    isLoading: loading,
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
+    isFetchNextPageError,
   } = usePlaylistTracks(id)
   const deletePlaylistMutation = useDeletePlaylist()
   const renamePlaylistMutation = useRenamePlaylist()
 
-  const playlist = detailData?.playlist ?? null
+  const playlist = tracksData?.pages[0]?.playlist ?? null
   const tracks = useMemo(
     () => tracksData?.pages.flatMap((page) => page.tracks) ?? [],
     [tracksData],
   )
 
-  // Infinite scroll sentinel
-  const sentinelRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current
-    if (!sentinel) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+  const sentinelRef = useInfiniteScroll({
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    fetchNextPage,
+  })
 
   const handleRename = async () => {
     if (!id || !editName.trim()) return
@@ -98,8 +85,6 @@ export function PlaylistDetailPage() {
     await deletePlaylistMutation.mutateAsync(id)
     navigate('/library/playlists')
   }
-
-  const loading = loadingDetail || loadingTracks
 
   if (loading) {
     return (
@@ -256,6 +241,15 @@ export function PlaylistDetailPage() {
       {isFetchingNextPage && (
         <div className="flex items-center justify-center py-6">
           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
+      {isFetchNextPageError && (
+        <div className="flex flex-col items-center gap-2 py-6 text-sm text-muted-foreground">
+          <p>Couldn&apos;t load more songs.</p>
+          <Button variant="outline" size="sm" onClick={() => fetchNextPage()}>
+            Try again
+          </Button>
         </div>
       )}
 

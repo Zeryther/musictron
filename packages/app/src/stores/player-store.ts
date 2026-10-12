@@ -76,6 +76,20 @@ interface PlayerState {
 
 let timeUpdateInterval: ReturnType<typeof setInterval> | null = null
 
+/** Max ids MusicKit is asked to resolve per queue request. */
+const QUEUE_BATCH_SIZE = 25
+
+/** Incremented on every new queue so stale batch appends can bail out. */
+let queueGeneration = 0
+
+function chunkIds(ids: string[], size: number): string[][] {
+  const chunks: string[][] = []
+  for (let i = 0; i < ids.length; i += size) {
+    chunks.push(ids.slice(i, i + size))
+  }
+  return chunks
+}
+
 export const usePlayerStore = create<PlayerState>()(
   persist(
     (set, get) => ({
@@ -204,6 +218,7 @@ export const usePlayerStore = create<PlayerState>()(
       ) => {
         const mk = getMusicKitInstance()
         if (mk) {
+          queueGeneration++
           logMusicKitDebug('player.playTrack.before-setQueue', {
             trackId,
             startPlaying: options?.startPlaying ?? true,
@@ -227,6 +242,7 @@ export const usePlayerStore = create<PlayerState>()(
       playAlbum: async (albumId: string, startIndex: number = 0) => {
         const mk = getMusicKitInstance()
         if (mk) {
+          queueGeneration++
           logMusicKitDebug('player.playAlbum.before-setQueue', {
             albumId,
             startIndex,
@@ -251,6 +267,7 @@ export const usePlayerStore = create<PlayerState>()(
       playPlaylist: async (playlistId: string, startIndex: number = 0) => {
         const mk = getMusicKitInstance()
         if (mk) {
+          queueGeneration++
           logMusicKitDebug('player.playPlaylist.before-setQueue', {
             playlistId,
             startIndex,
@@ -275,10 +292,26 @@ export const usePlayerStore = create<PlayerState>()(
       playSongs: async (songIds: string[], startIndex: number = 0) => {
         const mk = getMusicKitInstance()
         if (mk) {
+          const generation = ++queueGeneration
+          // MusicKit resolves every queued id in a single
+          // `/v1/me/library/songs?ids=…` (or catalog) request, which Apple
+          // rejects with a non-JSON body once the list gets long. Long lists
+          // are therefore queued from the selected song onward: the first
+          // batch via setQueue, the rest appended in batches via playLater.
+          const isLongList = songIds.length > QUEUE_BATCH_SIZE
+          const orderedIds = isLongList ? songIds.slice(startIndex) : songIds
+          const [firstBatch, ...remainingBatches] = chunkIds(
+            orderedIds,
+            QUEUE_BATCH_SIZE,
+          )
+          if (!firstBatch) return
+          const firstBatchStart = isLongList ? 0 : startIndex
+
           logMusicKitDebug('player.playSongs.before-setQueue', {
             songCount: songIds.length,
             firstSongId: songIds[0],
             startIndex,
+            batchCount: remainingBatches.length + 1,
           })
           try {
             set({ playbackError: null })
@@ -286,8 +319,8 @@ export const usePlayerStore = create<PlayerState>()(
             // songs it can't play (e.g. unavailable in the storefront), which
             // shifts every later index so `startWith` lands on the wrong song.
             const queue = await mk.setQueue({
-              songs: songIds,
-              startWith: startIndex,
+              songs: firstBatch,
+              startWith: firstBatchStart,
               startPlaying: false,
             })
             logMusicKitDebug('player.playSongs.after-setQueue')
@@ -295,7 +328,7 @@ export const usePlayerStore = create<PlayerState>()(
             const targetIndex = findQueueIndex(
               (queue ?? mk.queue)?.items ?? [],
               songIds[startIndex],
-              startIndex,
+              firstBatchStart,
             )
             if (targetIndex === -1) {
               set({
@@ -319,7 +352,23 @@ export const usePlayerStore = create<PlayerState>()(
             schedulePreviewFallbackCheck()
           } catch (error) {
             set({ playbackError: getPlaybackErrorMessage(error) })
+            return
           }
+
+          for (const batch of remainingBatches) {
+            // A newer queue request replaced this one; stop appending.
+            if (generation !== queueGeneration) return
+            try {
+              await mk.playLater({ songs: batch })
+            } catch (error) {
+              // Playback has already started; keep what is queued.
+              logMusicKitDebug('player.playSongs.append-failed', {
+                error: error instanceof Error ? error.message : String(error),
+              })
+              return
+            }
+          }
+          get()._syncFromMusicKit()
         }
       },
 
