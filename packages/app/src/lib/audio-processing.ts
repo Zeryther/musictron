@@ -2,11 +2,13 @@
 // Audio and compress the loud and quiet moments within a song, like YouTube's
 // Stable Volume.
 //
-// Browsers may refuse to expose DRM-protected (EME) audio to Web Audio and
-// output silence instead, and cross-origin audio without CORS (e.g. previews)
-// is silenced the same way. An element can't be un-routed from an
-// AudioContext, so a watchdog detects that silence, turns the feature off and
-// the user has to reload to get sound back.
+// Browsers may refuse to hand protected or cross-origin audio to Web Audio.
+// Chromium then mutes the element; Safari (which plays Apple Music as a
+// direct HLS stream) keeps playing it straight to the speakers, bypassing the
+// graph. Either way the graph only ever sees silence. So volume control moves
+// into the graph only once real sound has been seen flowing through it; until
+// then, and after a failure, the element's own volume is used. A watchdog
+// detects the silence and turns the feature off.
 
 /** Id MusicKit gives every <audio> element it plays through. */
 const MUSICKIT_AUDIO_ID = 'apple-music-player'
@@ -56,11 +58,9 @@ export function createProcessingChain(
   compressor.ratio.value = STABLE_VOLUME_COMPRESSOR.ratio
   compressor.attack.value = STABLE_VOLUME_COMPRESSOR.attack
   compressor.release.value = STABLE_VOLUME_COMPRESSOR.release
+  // Gains start at unity: until processing is verified the element's own
+  // volume is in charge and the graph just passes it through.
   const output = context.createGain()
-  // Silent until the player sets the real gains, so an element captured
-  // before then can't play at full volume.
-  input.gain.value = 0
-  output.gain.value = 0
 
   input.connect(analyser)
   compressor.connect(output)
@@ -120,6 +120,10 @@ let lastPlaybackTime = -1
 let heardSrc: string | null = null
 let analyserBuffer: Float32Array<ArrayBuffer> | null = null
 const captured = new Set<HTMLMediaElement>()
+/** Elements whose audio has been seen in the graph, not just routed to it. */
+const verified = new WeakSet<HTMLMediaElement>()
+/** The element MusicKit is playing through (or last played through). */
+let currentElement: HTMLMediaElement | null = null
 
 function musicKitElements(): HTMLMediaElement[] {
   return Array.from(
@@ -130,13 +134,19 @@ function musicKitElements(): HTMLMediaElement[] {
 }
 
 /**
- * True while every MusicKit element plays through the graph, so volume must
- * be applied to the graph (elements stay at 1) instead of to MusicKit.
+ * True while MusicKit's current element verifiably plays through the graph,
+ * so volume must be applied to the graph (MusicKit stays at 1). False while
+ * merely routed: in Safari the audio may bypass the graph entirely, and
+ * holding the element at full volume would then blast at full volume.
  */
 export function isAudioProcessingActive(): boolean {
-  if (!context || context.state !== 'running') return false
-  const elements = musicKitElements()
-  return elements.length > 0 && elements.every((el) => captured.has(el))
+  if (failed || !context || context.state !== 'running') return false
+  return (
+    currentElement !== null &&
+    currentElement.isConnected &&
+    captured.has(currentElement) &&
+    verified.has(currentElement)
+  )
 }
 
 function notifyIfActiveChanged() {
@@ -155,8 +165,6 @@ function captureElements() {
       try {
         context.createMediaElementSource(element).connect(chain.input)
         captured.add(element)
-        // Volume now lives in the graph so the compressor sees a steady level.
-        element.volume = 1
       } catch {
         // Already routed into another context; leave it playing directly.
       }
@@ -173,6 +181,7 @@ function checkForSilence() {
     silentMs = 0
     return
   }
+  currentElement = playing
 
   // Playback started without a fresh user gesture (media keys, auto-advance):
   // the page has interacted before, so resuming is allowed now.
@@ -181,8 +190,12 @@ function checkForSilence() {
     resumeAudioProcessing()
     return
   }
-  if (!captured.has(playing)) return
+  if (captured.has(playing)) checkElement(playing)
+  if (!failed) notifyIfActiveChanged()
+}
 
+function checkElement(playing: HTMLMediaElement) {
+  if (!chain) return
   analyserBuffer ??= new Float32Array(chain.analyser.fftSize)
   chain.analyser.getFloatTimeDomainData(analyserBuffer)
   const advancing = playing.currentTime !== lastPlaybackTime
@@ -192,7 +205,10 @@ function checkForSilence() {
   // once a source has been heard its silent passages (hidden-track gaps,
   // outros) are real silence, not a failure.
   const silent = analyserBuffer.every((value) => value === 0)
-  if (!silent) heardSrc = playing.currentSrc
+  if (!silent) {
+    heardSrc = playing.currentSrc
+    verified.add(playing)
+  }
 
   silentMs = nextSilentDuration(
     silentMs,
@@ -206,6 +222,8 @@ function checkForSilence() {
 
   if (silentMs >= SILENCE_LIMIT_MS) {
     failed = true
+    // Hand volume back to the element first: in Safari it's still audible.
+    notifyIfActiveChanged()
     callbacks?.onSilence()
   }
 }
@@ -290,7 +308,9 @@ export function getAudioProcessingDebug() {
     normalizationGain: chain?.input.gain.value ?? null,
     volumeGain: chain?.output.gain.value ?? null,
     elements: elements.map((el) => ({
+      current: el === currentElement,
       captured: captured.has(el),
+      verified: verified.has(el),
       paused: el.paused,
       currentTime: el.currentTime,
       volume: el.volume,
