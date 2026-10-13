@@ -409,6 +409,51 @@ export function getChartData(
   return entry.data ?? []
 }
 
+/**
+ * Whether an id names a library resource (song `i.…`, album `l.…`, playlist
+ * `p.…`). Loading one needs a signed-in user; catalog ids (incl. `pl.…`) don't.
+ */
+export function isLibraryId(id: string): boolean {
+  return /^[ilp]\./.test(id)
+}
+
+/**
+ * Whether Apple Music rejects the signed-in user's token. MusicKit's queue
+ * loader doesn't check response status, so a rejected token there surfaces as
+ * a cryptic TypeError (`undefined is not an object (evaluating 'e.id')`)
+ * rather than an auth error; this asks the API directly.
+ */
+export async function isUserTokenRejected(): Promise<boolean> {
+  const instance = getMusicKitInstance()
+  if (!instance?.isAuthorized) return false
+  try {
+    // Needs nothing but a valid user token (no subscription or library).
+    await instance.api.music('/v1/me/storefront')
+    return false
+  } catch (error) {
+    // MusicKit attaches the failed Response as `data`. 403 is a rejected user
+    // token; 401 is a bad developer token, which signing out wouldn't fix.
+    const status = (error as { data?: { status?: unknown } } | null)?.data
+      ?.status
+    return status === 403
+  }
+}
+
+/**
+ * Sign out if Apple no longer accepts the user's token. MusicKit keeps such a
+ * token until the next page load, and `authorize()` won't replace it, so it
+ * has to be cleared before the user can sign in again. Returns whether it was.
+ */
+export async function clearRejectedSession(): Promise<boolean> {
+  if (!(await isUserTokenRejected())) return false
+  try {
+    await getMusicKitInstance()?.unauthorize()
+  } catch {
+    // The token is unusable either way.
+  }
+  return true
+}
+
 // Apple Music API helper
 export async function musicAPI(
   path: string,

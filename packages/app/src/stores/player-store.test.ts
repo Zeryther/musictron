@@ -99,6 +99,14 @@ describe('findQueueIndex', () => {
     // One earlier song dropped: clicked index 3 is now at 2.
     expect(findQueueIndex(items, 'a', 3)).toBe(2)
   })
+
+  it('uses the occurrence when dropped songs shift a duplicate onto the hint', () => {
+    // List was [x, y, a, b, a]; MusicKit dropped "x" and "y". Clicking the
+    // first "a" (index 2) must not land on the second "a" (queue index 2).
+    const items = [mediaItem('a'), mediaItem('b'), mediaItem('a')]
+    expect(findQueueIndex(items, 'a', 2, 0)).toBe(0)
+    expect(findQueueIndex(items, 'a', 4, 1)).toBe(2)
+  })
 })
 
 describe('findPlayingTrackIndex', () => {

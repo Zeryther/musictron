@@ -1,8 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import {
+  clearRejectedSession,
   getBrowserPlaybackSupport,
   getMusicKitInstance,
+  isLibraryId,
   logMusicKitDebug,
   musicAPI,
 } from '@/lib/musickit'
@@ -50,6 +52,8 @@ export interface PlayContext {
 export interface PlaybackError {
   title: string
   message: string
+  /** Signing in again may fix it; the UI offers `signInAndRetry`. */
+  canSignIn?: boolean
 }
 
 interface PlayerState {
@@ -80,6 +84,8 @@ interface PlayerState {
   toggleQueue: () => void
   setFullscreen: (value: boolean) => void
   clearPlaybackError: () => void
+  /** Sign in to Apple Music, then retry the request that needed it. */
+  signInAndRetry: () => Promise<void>
 
   // Queue management
   playTrack: (
@@ -106,6 +112,19 @@ let timeUpdateInterval: ReturnType<typeof setInterval> | null = null
 
 /** Max ids MusicKit is asked to resolve per queue request. */
 const QUEUE_BATCH_SIZE = 25
+
+/** Signs the user in to Apple Music; registered by the auth store. */
+let signInHandler: (() => Promise<void>) | null = null
+
+export function setSignInHandler(handler: (() => Promise<void>) | null) {
+  signInHandler = handler
+}
+
+/** The play request that failed for lack of a valid sign-in. */
+let retryAfterSignIn: (() => Promise<void>) | null = null
+
+/** Whether a sign-in started by playback is in progress. */
+let isSigningIn = false
 
 /** Incremented on every new queue so stale batch appends can bail out. */
 let queueGeneration = 0
@@ -250,7 +269,31 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       clearPlaybackError: () => {
+        retryAfterSignIn = null
         set({ playbackError: null })
+      },
+
+      signInAndRetry: async () => {
+        // The running sign-in retries whatever was requested last.
+        if (isSigningIn) return
+        set({ playbackError: null })
+        // Called straight from a click, so MusicKit's sign-in popup isn't
+        // blocked: nothing may be awaited before the handler runs.
+        isSigningIn = true
+        try {
+          await signInHandler?.()
+        } finally {
+          isSigningIn = false
+        }
+        // Read after signing in: the user may have picked something else.
+        const retry = retryAfterSignIn
+        retryAfterSignIn = null
+        if (!getMusicKitInstance()?.isAuthorized) {
+          retryAfterSignIn = retry
+          set({ playbackError: SIGN_IN_REQUIRED })
+          return
+        }
+        await retry?.()
       },
 
       playTrack: async (
@@ -260,7 +303,13 @@ export const usePlayerStore = create<PlayerState>()(
         resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
-          queueGeneration++
+          if (
+            blockedBySignIn(mk, [trackId], () =>
+              get().playTrack(trackId, options),
+            )
+          )
+            return
+          const generation = ++queueGeneration
           logMusicKitDebug('player.playTrack.before-setQueue', {
             trackId,
             startPlaying: options?.startPlaying ?? true,
@@ -277,7 +326,13 @@ export const usePlayerStore = create<PlayerState>()(
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
           } catch (error) {
-            set({ playbackError: getPlaybackErrorMessage(error) })
+            const playbackError = await getQueueErrorMessage(
+              error,
+              [trackId],
+              () => get().playTrack(trackId, options),
+            )
+            // A newer queue request owns the error state now.
+            if (generation === queueGeneration) set({ playbackError })
           }
         }
       },
@@ -286,7 +341,13 @@ export const usePlayerStore = create<PlayerState>()(
         resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
-          queueGeneration++
+          if (
+            blockedBySignIn(mk, [albumId], () =>
+              get().playAlbum(albumId, startIndex),
+            )
+          )
+            return
+          const generation = ++queueGeneration
           logMusicKitDebug('player.playAlbum.before-setQueue', {
             albumId,
             startIndex,
@@ -304,7 +365,13 @@ export const usePlayerStore = create<PlayerState>()(
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
           } catch (error) {
-            set({ playbackError: getPlaybackErrorMessage(error) })
+            const playbackError = await getQueueErrorMessage(
+              error,
+              [albumId],
+              () => get().playAlbum(albumId, startIndex),
+            )
+            // A newer queue request owns the error state now.
+            if (generation === queueGeneration) set({ playbackError })
           }
         }
       },
@@ -313,7 +380,13 @@ export const usePlayerStore = create<PlayerState>()(
         resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
-          queueGeneration++
+          if (
+            blockedBySignIn(mk, [playlistId], () =>
+              get().playPlaylist(playlistId, startIndex),
+            )
+          )
+            return
+          const generation = ++queueGeneration
           logMusicKitDebug('player.playPlaylist.before-setQueue', {
             playlistId,
             startIndex,
@@ -331,7 +404,13 @@ export const usePlayerStore = create<PlayerState>()(
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
           } catch (error) {
-            set({ playbackError: getPlaybackErrorMessage(error) })
+            const playbackError = await getQueueErrorMessage(
+              error,
+              [playlistId],
+              () => get().playPlaylist(playlistId, startIndex),
+            )
+            // A newer queue request owns the error state now.
+            if (generation === queueGeneration) set({ playbackError })
           }
         }
       },
@@ -344,6 +423,12 @@ export const usePlayerStore = create<PlayerState>()(
         resumeAudioProcessing()
         const mk = getMusicKitInstance()
         if (mk) {
+          if (
+            blockedBySignIn(mk, songIds, () =>
+              get().playSongs(songIds, startIndex, contextKey),
+            )
+          )
+            return
           const generation = ++queueGeneration
           // MusicKit resolves every queued id in a single
           // `/v1/me/library/songs?ids=…` (or catalog) request, which Apple
@@ -390,11 +475,6 @@ export const usePlayerStore = create<PlayerState>()(
               startPlaying: false,
             })
             logMusicKitDebug('player.playSongs.after-setQueue')
-            set({
-              playContext: contextKey
-                ? { key: contextKey, offset: queueStart }
-                : null,
-            })
 
             for (const batch of batches.slice(1, selectedBatch + 1)) {
               // A newer queue request replaced this one; leave it alone.
@@ -403,10 +483,20 @@ export const usePlayerStore = create<PlayerState>()(
             }
             if (generation !== queueGeneration) return
 
+            set({
+              playContext: contextKey
+                ? { key: contextKey, offset: queueStart }
+                : null,
+            })
+
+            const songId = songIds[startIndex]
             const targetIndex = findQueueIndex(
               (mk.queue ?? queue)?.items ?? [],
-              songIds[startIndex],
+              songId,
               selectedOffset,
+              songIds
+                .slice(queueStart, startIndex)
+                .filter((id) => id === songId).length,
             )
             if (targetIndex === -1) {
               set({
@@ -429,7 +519,13 @@ export const usePlayerStore = create<PlayerState>()(
             get()._startTimeUpdater()
             schedulePreviewFallbackCheck()
           } catch (error) {
-            set({ playbackError: getPlaybackErrorMessage(error) })
+            const playbackError = await getQueueErrorMessage(
+              error,
+              songIds,
+              () => get().playSongs(songIds, startIndex, contextKey),
+            )
+            // A newer queue request owns the error state now.
+            if (generation === queueGeneration) set({ playbackError })
             return
           }
 
@@ -474,8 +570,14 @@ export const usePlayerStore = create<PlayerState>()(
         if (!mk) return
 
         const item = mk.nowPlayingItem
-        let nowPlaying = get().nowPlaying
+        const previous = get().nowPlaying
+        let nowPlaying = previous
         if (item) {
+          // Syncs also run when only the queue changed (e.g. appended
+          // batches, a repeated song); keep the artist already resolved.
+          const knownArtistId =
+            previous?.id === item.id ? previous.artistId : undefined
+
           // Parse album ID from the Apple Music URL if available.
           // URLs look like: https://music.apple.com/us/album/{slug}/{albumId}?i={songId}
           let albumId: string | undefined
@@ -499,30 +601,36 @@ export const usePlayerStore = create<PlayerState>()(
                   text2: `#${item.attributes.artwork.textColor2 || 'cccccc'}`,
                 }
               : undefined,
+            artistId: knownArtistId,
           }
 
           // Resolve artist ID asynchronously via the catalog API.
           // This is a lightweight call that runs in the background.
-          const songCatalogId = item.attributes.playParams?.catalogId || item.id
-          musicAPI(`/v1/catalog/{{storefrontId}}/songs/${songCatalogId}`, {
-            'fields[songs]': 'artistUrl',
-            relate: 'artists',
-            'fields[artists]': 'name',
-          })
-            .then((data) => {
-              const artistEntry =
-                data.data?.[0]?.relationships?.artists?.data?.[0]
-              if (artistEntry?.id) {
-                const current = get().nowPlaying
-                // Only update if we're still on the same track
-                if (current?.id === item.id) {
-                  set({ nowPlaying: { ...current, artistId: artistEntry.id } })
+          if (!knownArtistId) {
+            const songCatalogId =
+              item.attributes.playParams?.catalogId || item.id
+            musicAPI(`/v1/catalog/{{storefrontId}}/songs/${songCatalogId}`, {
+              'fields[songs]': 'artistUrl',
+              relate: 'artists',
+              'fields[artists]': 'name',
+            })
+              .then((data) => {
+                const artistEntry =
+                  data.data?.[0]?.relationships?.artists?.data?.[0]
+                if (artistEntry?.id) {
+                  const current = get().nowPlaying
+                  // Only update if we're still on the same track
+                  if (current?.id === item.id) {
+                    set({
+                      nowPlaying: { ...current, artistId: artistEntry.id },
+                    })
+                  }
                 }
-              }
-            })
-            .catch(() => {
-              // Non-critical — artist link just won't be available
-            })
+              })
+              .catch(() => {
+                // Non-critical — artist link just won't be available
+              })
+          }
         }
         syncVolumeNormalization(mk)
 
@@ -767,25 +875,37 @@ async function detectPreviewFallback() {
 /**
  * Find a song's position in a MusicKit queue. MusicKit drops unplayable songs
  * when building a queue, so the index the UI passed (`hint`) can only be at or
- * past the real one. Prefer the closest match at or before `hint` so duplicate
- * songs in a list resolve to the occurrence that was clicked.
+ * past the real one. When `occurrence` (how many earlier copies of the song
+ * precede the clicked one in the list) is known, it picks the match directly:
+ * a dropped song is dropped at every occurrence, so the clicked copy keeps its
+ * rank. Otherwise prefer the closest match at or before `hint`.
  */
 export function findQueueIndex(
   items: MusicKit.MediaItem[],
   songId: string | undefined,
   hint: number,
+  occurrence?: number,
 ): number {
   if (!songId) return -1
 
-  let match = -1
+  const matches: number[] = []
   items.forEach((item, index) => {
     const playParams = item.attributes?.playParams
-    const matches =
+    if (
       item.id === songId ||
       playParams?.id === songId ||
       playParams?.catalogId === songId
-    if (matches && (match === -1 || index <= hint)) match = index
+    ) {
+      matches.push(index)
+    }
   })
+  if (matches.length === 0) return -1
+  if (occurrence !== undefined && occurrence < matches.length) {
+    return matches[occurrence]
+  }
+
+  let match = matches[0]
+  for (const index of matches) if (index <= hint) match = index
   return match
 }
 
@@ -822,6 +942,56 @@ export function findPlayingTrackIndex(
   }
 
   return trackIds.indexOf(nowPlaying.id)
+}
+
+const SIGN_IN_REQUIRED: PlaybackError = {
+  title: 'Sign in required',
+  message: 'Sign in to Apple Music to play songs from your library.',
+  canSignIn: true,
+}
+
+const SESSION_EXPIRED: PlaybackError = {
+  title: 'Apple Music session expired',
+  message: 'Sign in again to play songs from your library.',
+  canSignIn: true,
+}
+
+/**
+ * Library items can't be loaded while signed out (MusicKit fails with a
+ * cryptic error), so sign in first and play once that succeeds. Runs in the
+ * click that started playback, which lets MusicKit open its sign-in popup.
+ */
+function blockedBySignIn(
+  mk: MusicKit.MusicKitInstance,
+  ids: string[],
+  retry: () => Promise<void>,
+): boolean {
+  if (mk.isAuthorized || !ids.some(isLibraryId)) {
+    // A newer request replaces any that was waiting on sign-in.
+    retryAfterSignIn = null
+    return false
+  }
+  retryAfterSignIn = retry
+  void usePlayerStore.getState().signInAndRetry()
+  return true
+}
+
+/**
+ * Error to show when MusicKit failed to queue `ids`. If Apple has stopped
+ * accepting the user's token, MusicKit crashes on the error response instead
+ * of reporting it; that session is cleared so the user can sign in again.
+ * The popup can't open here (the click is long past), so the error offers it.
+ */
+async function getQueueErrorMessage(
+  error: unknown,
+  ids: string[],
+  retry: () => Promise<void>,
+): Promise<PlaybackError> {
+  if (ids.some(isLibraryId) && (await clearRejectedSession())) {
+    retryAfterSignIn = retry
+    return SESSION_EXPIRED
+  }
+  return getPlaybackErrorMessage(error)
 }
 
 export function getPlaybackErrorMessage(error: unknown): PlaybackError {

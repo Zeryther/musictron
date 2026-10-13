@@ -45,4 +45,33 @@ describe('PlayerBar', () => {
 
     expect(togglePlayPause).toHaveBeenCalledTimes(1)
   })
+
+  it('offers to sign in when the playback error calls for it', async () => {
+    const signInAndRetry = vi.fn(async () => {})
+    usePlayerStore.setState({
+      playbackError: {
+        title: 'Apple Music session expired',
+        message: 'Sign in again to play songs from your library.',
+        canSignIn: true,
+      },
+      signInAndRetry,
+    })
+
+    renderWithProviders(<PlayerBar />)
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(signInAndRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers no sign-in for other playback errors', () => {
+    usePlayerStore.setState({
+      playbackError: { title: 'Playback failed', message: 'boom' },
+    })
+
+    renderWithProviders(<PlayerBar />)
+
+    expect(
+      screen.queryByRole('button', { name: 'Sign in' }),
+    ).not.toBeInTheDocument()
+  })
 })

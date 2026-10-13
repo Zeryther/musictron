@@ -248,7 +248,7 @@ export function PlaylistDetailPage() {
         </div>
       )}
 
-      {isFetchNextPageError && (
+      {isFetchNextPageError && !isFetchingNextPage && (
         <div className="flex flex-col items-center gap-2 py-6 text-sm text-muted-foreground">
           <p>Couldn&apos;t load more songs.</p>
           <Button variant="outline" size="sm" onClick={() => fetchNextPage()}>

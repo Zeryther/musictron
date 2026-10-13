@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { decodeJwtPayload, getChartData } from '@/lib/musickit'
+import { decodeJwtPayload, getChartData, isLibraryId } from '@/lib/musickit'
 import { makeSong } from '@/test/factories'
 
 describe('getChartData', () => {
@@ -45,5 +45,18 @@ describe('decodeJwtPayload', () => {
   it('returns null for a malformed token', () => {
     expect(decodeJwtPayload('only-one-segment')).toBeNull()
     expect(decodeJwtPayload('a.@@@notbase64@@@.c')).toBeNull()
+  })
+})
+
+describe('isLibraryId', () => {
+  it('matches library songs, albums and playlists', () => {
+    expect(isLibraryId('i.abc123')).toBe(true)
+    expect(isLibraryId('l.abc123')).toBe(true)
+    expect(isLibraryId('p.abc123')).toBe(true)
+  })
+
+  it('does not match catalog ids', () => {
+    expect(isLibraryId('1440857781')).toBe(false)
+    expect(isLibraryId('pl.u-abc123')).toBe(false)
   })
 })

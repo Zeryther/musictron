@@ -267,7 +267,7 @@ export function LibraryPage() {
                 </div>
               )}
 
-              {fetchMoreArtistsError && (
+              {fetchMoreArtistsError && !fetchingMoreArtists && (
                 <div className="flex flex-col items-center gap-2 py-6 text-sm text-muted-foreground">
                   <p>Couldn&apos;t load more artists.</p>
                   <Button
