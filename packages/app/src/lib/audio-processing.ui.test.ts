@@ -153,9 +153,59 @@ describe('startAudioProcessing', () => {
 
     const context = FakeAudioContext.latest
     expect(context.createMediaElementSource).toHaveBeenCalledWith(element)
-    expect(element.volume).toBe(1)
+    // Routed, but not trusted until sound is seen in the graph.
+    expect(element.volume).toBe(0.4)
+    expect(processing.isAudioProcessingActive()).toBe(false)
+
+    fakePlayback(element)
+    context.analyser.level = 0.2
+    vi.advanceTimersByTime(500)
+
     expect(processing.isAudioProcessingActive()).toBe(true)
-    expect(callbacks.onActiveChange).toHaveBeenCalled()
+    expect(callbacks.onActiveChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('never takes over volume when the audio bypasses the graph (Safari)', () => {
+    // Safari keeps playing protected HLS straight to the speakers while the
+    // graph only sees silence: the element's volume must stay in charge.
+    const element = addMusicKitAudio()
+    processing.startAudioProcessing(callbacks)
+    fakePlayback(element)
+
+    vi.advanceTimersByTime(processing.SILENCE_LIMIT_MS - 500)
+    expect(processing.isAudioProcessingActive()).toBe(false)
+    expect(callbacks.onActiveChange).not.toHaveBeenCalled()
+    expect(element.volume).toBe(0.4)
+
+    vi.advanceTimersByTime(1000)
+    expect(callbacks.onSilence).toHaveBeenCalledTimes(1)
+    expect(processing.isAudioProcessingActive()).toBe(false)
+  })
+
+  it('hands volume back to the element when a verified graph fails', () => {
+    const element = addMusicKitAudio()
+    processing.startAudioProcessing(callbacks)
+    fakePlayback(element)
+    const { analyser } = FakeAudioContext.latest
+    Object.defineProperty(element, 'currentSrc', {
+      configurable: true,
+      get: () => 'blob:track-1',
+    })
+    analyser.level = 0.2
+    vi.advanceTimersByTime(500)
+    expect(processing.isAudioProcessingActive()).toBe(true)
+
+    // A cross-origin preview on the same element: muted by the browser.
+    analyser.level = 0
+    Object.defineProperty(element, 'currentSrc', {
+      configurable: true,
+      get: () => 'https://audio-ssl.itunes.apple.com/preview.m4a',
+    })
+    vi.advanceTimersByTime(processing.SILENCE_LIMIT_MS + 500)
+
+    expect(callbacks.onSilence).toHaveBeenCalledTimes(1)
+    expect(processing.isAudioProcessingActive()).toBe(false)
+    expect(callbacks.onActiveChange).toHaveBeenCalledTimes(2) // on, then off
   })
 
   it('waits for a suspended context to start before capturing', async () => {
@@ -177,7 +227,7 @@ describe('startAudioProcessing', () => {
 
     context.setState('running')
     expect(context.createMediaElementSource).toHaveBeenCalledWith(element)
-    expect(processing.isAudioProcessingActive()).toBe(true)
+    expect(element.volume).toBe(0.4)
   })
 
   it('reports silent playback once it has lasted long enough', () => {
@@ -205,11 +255,11 @@ describe('startAudioProcessing', () => {
 })
 
 describe('setProcessingGains', () => {
-  it('starts the graph silent until the player sets real gains', () => {
+  it('starts the graph at unity so routed audio keeps its element volume', () => {
     processing.startAudioProcessing(callbacks)
     const [input, output] = FakeAudioContext.latest.gains
-    expect(input?.gain.value).toBe(0)
-    expect(output?.gain.value).toBe(0)
+    expect(input?.gain.value).toBe(1)
+    expect(output?.gain.value).toBe(1)
   })
 
   it('applies volume changes immediately', () => {

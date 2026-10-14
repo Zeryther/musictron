@@ -61,6 +61,17 @@ describe('stable volume', () => {
     expect(writes).toEqual([1])
   })
 
+  it('keeps the volume on MusicKit until processing is verified', () => {
+    // E.g. Safari, where routed audio still plays directly to the speakers.
+    const { instance } = stubMusicKit()
+    normalization().setTrack({ songId: '1', status: 'ready', loudness: -10 })
+
+    usePlayerStore.getState().setVolume(0.6)
+
+    expect(instance.volume).toBeCloseTo(0.6 * 0.501, 3)
+    expect(setProcessingGains).toHaveBeenLastCalledWith(1, 1)
+  })
+
   it('turns the toggle back off when processing cannot start', () => {
     stubMusicKit()
     vi.mocked(startAudioProcessing).mockReturnValueOnce(false)

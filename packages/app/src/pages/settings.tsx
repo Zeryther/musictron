@@ -503,7 +503,7 @@ function PlaybackSettings() {
         <SettingsToggle
           label="Stable volume"
           badge="Experimental"
-          description="Evens out loud and quiet moments within a song by processing audio in the browser. Some browsers mute protected Apple Music audio when it's processed; if that happens it turns itself off."
+          description="Evens out loud and quiet moments within a song by processing audio in the browser. Some browsers don't allow processing protected Apple Music audio; if so it turns itself off."
           enabled={stableVolume}
           onChange={setStableVolume}
           disabled={stableVolumeFailed}
@@ -511,8 +511,9 @@ function PlaybackSettings() {
         {stableVolumeFailed && (
           <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 rounded-lg p-3">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-            This browser muted Apple Music audio while processing it, so stable
-            volume was turned off. Reload Musictron to restore sound.
+            This browser doesn&apos;t let Musictron process Apple Music audio,
+            so stable volume was turned off. If playback is silent, reload
+            Musictron.
           </div>
         )}
       </div>

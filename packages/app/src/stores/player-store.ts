@@ -717,17 +717,18 @@ function applyMusicKitVolume(
   const { volume } = usePlayerStore.getState()
   const gain = selectNormalizationGain(useVolumeNormalizationStore.getState())
 
-  // Stable volume routes the audio through Web Audio: MusicKit stays at full
-  // volume and the graph applies both gains around the compressor. The graph
-  // is kept current even while inactive so a newly captured element starts
-  // at the right level.
-  setProcessingGains(gain, volume, { fade: ramp })
+  // Stable volume, once verified working: MusicKit stays at full volume and
+  // the graph applies both gains around the compressor so it sees a steady
+  // level. Always write mk.volume, since MusicKit re-applies its remembered
+  // volume to the element on every new item.
   if (isAudioProcessingActive()) {
-    // Always write it: MusicKit re-applies its remembered volume to the
-    // element on every new item, and capturing set only the element to 1.
+    setProcessingGains(gain, volume, { fade: ramp })
     mk.volume = 1
     return
   }
+  // Otherwise the element's volume is in charge; the graph (if any element
+  // is routed through it) passes that through unchanged.
+  setProcessingGains(1, 1)
 
   const target = volume * gain
   const start = mk.volume
@@ -774,7 +775,7 @@ function syncStableVolume() {
         playbackError: {
           title: 'Stable volume is not supported here',
           message:
-            'This browser mutes Apple Music audio when it is processed, so stable volume has been turned off. Reload Musictron to restore sound.',
+            "This browser doesn't let Musictron process Apple Music audio, so stable volume has been turned off. If playback stays silent, reload Musictron.",
         },
       })
     },
